@@ -1,0 +1,890 @@
+1:<!DOCTYPE html>
+2:<html lang="de">
+3:<head>
+4:    <meta charset="UTF-8">
+5:    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+6:    <title>33minutes spreadsheet</title>
+7:    <link rel="preconnect" href="https://fonts.googleapis.com">
+8:    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+9:    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+10:    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+11:    <style>
+12:        :root {
+13:            --bg-color: #ffffff;
+14:            --text-color: #202124;
+15:            --header-bg: #ffffff;
+16:            --container-bg: #ffffff;
+17:            --field-bg: #f1f3f4;
+18:            --border-color: #dadce0;
+19:            --accent-color: #1a73e8;
+20:            --btn-primary: #1a73e8;
+21:            --btn-primary-hover: #1765cc;
+22:            --shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+23:            --font-family: 'DM Sans', sans-serif;
+24:        }
+26:        [data-theme="dark"] {
+27:            --bg-color: #202124;
+28:            --text-color: #e8eaed;
+29:            --header-bg: #202124;
+30:            --container-bg: #292a2d;
+31:            --field-bg: #3c4043;
+32:            --border-color: #5f6368;
+33:            --accent-color: #8ab4f8;
+34:            --btn-primary: #8ab4f8;
+35:            --btn-primary-hover: #93baf9;
+36:            --shadow: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+37:        }
+39:        * {
+40:            margin: 0;
+41:            padding: 0;
+42:            box-sizing: border-box;
+43:        }
+45:        body {
+46:            font-family: var(--font-family);
+47:            background: var(--bg-color);
+48:            color: var(--text-color);
+49:            padding: 20px;
+50:            transition: background 0.3s, color 0.3s;
+51:        }
+53:        .container {
+54:            max-width: 1600px;
+55:            margin: 0 auto;
+56:            background: var(--container-bg);
+57:            border-radius: 8px;
+58:            box-shadow: var(--shadow);
+59:            overflow: hidden;
+60:            border: 1px solid var(--border-color);
+61:        }
+63:        .header {
+64:            background: var(--header-bg);
+65:            padding: 20px 30px;
+66:            display: flex;
+67:            justify-content: space-between;
+68:            align-items: center;
+69:            border-bottom: 1px solid var(--border-color);
+70:        }
+72:        .header h1 {
+73:            font-size: 1.5em;
+74:            font-weight: 700;
+75:        }
+77:        .header-actions {
+78:            display: flex;
+79:            gap: 10px;
+80:            align-items: center;
+81:        }
+83:        .btn {
+84:            background: transparent;
+85:            color: var(--text-color);
+86:            border: 1px solid var(--border-color);
+87:            padding: 8px 16px;
+88:            border-radius: 6px;
+89:            font-weight: 500;
+90:            cursor: pointer;
+91:            transition: all 0.2s;
+92:            font-size: 0.9em;
+93:            display: inline-flex;
+94:            align-items: center;
+95:            gap: 8px;
+96:        }
+98:        .btn:hover {
+99:            background: var(--field-bg);
+100:            border-color: var(--accent-color);
+101:        }
+103:        .btn-primary {
+104:            background: var(--btn-primary);
+105:            color: #ffffff;
+106:            border: none;
+107:        }
+109:        .btn-primary:hover {
+110:            background: var(--btn-primary-hover);
+111:            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 1px 3px 1px rgba(60,64,67,0.149);
+112:        }
+114:        .theme-toggle {
+115:            cursor: pointer;
+116:            padding: 8px;
+117:            background: none;
+118:            border: none;
+119:            color: var(--text-color);
+120:            border-radius: 50%;
+121:            display: flex;
+122:            align-items: center;
+123:            justify-content: center;
+124:        }
+126:        .theme-toggle:hover {
+127:            background: var(--field-bg);
+128:        }
+130:        .main-content {
+131:            padding: 30px;
+132:        }
+134:        .quick-add {
+135:            background: var(--container-bg);
+136:            border: 1px solid var(--border-color);
+137:            border-radius: 8px;
+138:            padding: 25px;
+139:            margin-bottom: 30px;
+140:        }
+142:        .quick-add-header {
+143:            display: flex;
+144:            justify-content: space-between;
+145:            align-items: center;
+146:            margin-bottom: 20px;
+147:        }
+149:        .quick-add-header h2 {
+150:            font-size: 1.1em;
+151:            font-weight: 600;
+152:            display: flex;
+153:            align-items: center;
+154:        }
+156:        .type-selector {
+157:            display: flex;
+158:            flex-wrap: wrap;
+159:            gap: 20px;
+160:            margin-bottom: 25px;
+161:        }
+163:        .type-item {
+164:            display: flex;
+165:            align-items: center;
+166:            gap: 6px;
+167:            cursor: pointer;
+168:            opacity: 0.5;
+169:            transition: all 0.2s;
+170:            font-weight: 500;
+171:            font-size: 0.95em;
+172:            color: var(--text-color);
+173:            user-select: none;
+174:        }
+176:        .type-item:hover, .type-item.active {
+177:            opacity: 1;
+178:            color: var(--accent-color);
+179:        }
+181:        .type-item .material-icons {
+182:            font-size: 18px;
+183:        }
+185:        .quick-row {
+186:            display: grid;
+187:            grid-template-columns: 150px 1fr 60px;
+188:            gap: 15px;
+189:            align-items: end;
+190:        }
+192:        .field-group {
+193:            display: flex;
+194:            flex-direction: column;
+195:            gap: 8px;
+196:        }
+198:        .field-group label {
+199:            font-size: 0.85em;
+200:            font-weight: 500;
+201:            color: var(--text-color);
+202:            opacity: 0.7;
+203:        }
+205:        .quick-input, .quick-select {
+206:            padding: 10px;
+207:            border: 1px solid var(--border-color);
+208:            border-radius: 6px;
+209:            font-size: 0.95em;
+210:            transition: all 0.2s;
+211:            background: var(--field-bg);
+212:            color: var(--text-color);
+213:        }
+215:        .quick-input:focus, .quick-select:focus {
+216:            outline: none;
+217:            border-color: var(--accent-color);
+218:        }
+220:        .btn-add {
+221:            background: var(--btn-primary);
+222:            color: var(--bg-color);
+223:            border: none;
+224:            padding: 10px;
+225:            border-radius: 6px;
+226:            cursor: pointer;
+227:            font-weight: 600;
+228:            height: 41px;
+229:        }
+231:        .data-grid {
+232:            width: 100%;
+233:            border-collapse: collapse;
+234:        }
+236:        .data-grid th {
+237:            text-align: left;
+238:            padding: 12px;
+239:            font-size: 0.85em;
+240:            font-weight: 600;
+241:            border-bottom: 2px solid var(--border-color);
+242:            color: var(--accent-color);
+243:        }
+245:        .data-grid td {
+246:            padding: 12px;
+247:            border-bottom: 1px solid var(--border-color);
+248:            font-size: 0.9em;
+249:        }
+251:        .data-grid tr:hover {
+252:            background: var(--field-bg);
+253:        }
+255:        .person-badge {
+256:            padding: 4px 10px;
+257:            border-radius: 4px;
+258:            font-weight: 600;
+259:            font-size: 0.85em;
+260:        }
+262:        .badge-jerry { background: #ebf8ff; color: #2b6cb0; }
+263:        .badge-marc { background: #f0fff4; color: #2f855a; }
+264:        .badge-kodiak { background: #faf5ff; color: #6b46c1; }
+265:        .badge-taube { background: #fff5f5; color: #c53030; }
+266:        .badge-käthe { background: #fffaf0; color: #c05621; }
+268:        [data-theme="dark"] .badge-jerry { background: #2c5282; color: #ebf8ff; }
+269:        [data-theme="dark"] .badge-marc { background: #276749; color: #f0fff4; }
+270:        [data-theme="dark"] .badge-kodiak { background: #553c9a; color: #faf5ff; }
+271:        [data-theme="dark"] .badge-taube { background: #9b2c2c; color: #fff5f5; }
+272:        [data-theme="dark"] .badge-käthe { background: #9c4221; color: #fffaf0; }
+274:        .global-fields {
+275:            display: grid;
+276:            grid-template-columns: repeat(4, 1fr);
+277:            gap: 15px;
+278:            margin-top: 20px;
+279:            padding-top: 20px;
+280:            border-top: 1px solid var(--border-color);
+281:            display: none; /* Hidden by default */
+282:        }
+284:        .global-fields.visible {
+285:            display: grid;
+286:        }
+288:        .notification {
+289:            position: fixed;
+290:            bottom: 20px;
+291:            right: 20px;
+292:            background: var(--btn-primary);
+293:            color: var(--bg-color);
+294:            padding: 12px 20px;
+295:            border-radius: 6px;
+296:            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+297:            z-index: 10000;
+298:            font-size: 0.9em;
+299:            animation: slideIn 0.3s ease-out;
+300:        }
+302:        @keyframes slideIn {
+303:            from { transform: translateY(20px); opacity: 0; }
+304:            to { transform: translateY(0); opacity: 1; }
+305:        }
+307:        .empty-state {
+308:            text-align: center;
+309:            padding: 40px;
+310:            color: var(--accent-color);
+311:            opacity: 0.5;
+312:        }
+314:        .city-grid {
+315:            display: grid;
+316:            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+317:            gap: 8px;
+318:            margin-top: 8px;
+319:        }
+321:        .city-checkbox {
+322:            display: flex;
+323:            align-items: center;
+324:            gap: 6px;
+325:            background: var(--field-bg);
+326:            padding: 6px 10px;
+327:            border: 1px solid var(--border-color);
+328:            border-radius: 4px;
+329:            cursor: pointer;
+330:            font-size: 0.85em;
+331:        }
+333:        .city-checkbox.active {
+334:            border-color: var(--accent-color);
+335:            background: var(--accent-color);
+336:            color: var(--bg-color);
+337:        }
+339:        .action-btn {
+340:            background: none;
+341:            border: none;
+342:            cursor: pointer;
+343:            padding: 4px;
+344:            opacity: 0.6;
+345:            transition: opacity 0.2s;
+346:        }
+348:        .action-btn:hover {
+349:            opacity: 1;
+350:        }
+352:        .type-badge {
+353:            font-size: 0.85em;
+354:            opacity: 0.8;
+355:        }
+357:        .editable-cell input, .editable-cell select, .editable-cell textarea {
+358:            width: 100%;
+359:            padding: 6px;
+360:            border: 1px solid var(--accent-color);
+361:            background: var(--field-bg);
+362:            color: var(--text-color);
+363:            border-radius: 4px;
+364:        }
+365:    </style>
+366:</head>
+367:<body>
+368:<div class="container">
+369:    <div class="header">
+370:        <h1>33minutes spreadsheet</h1>
+371:        <div class="header-actions">
+372:            <button class="theme-toggle" onclick="toggleTheme()" title="Theme wechseln">
+373:                <span class="material-icons">brightness_medium</span>
+374:            </button>
+375:            <button class="btn btn-primary" onclick="exportData()">
+376:                <span class="material-icons">send</span> Daten senden
+377:            </button>
+378:        </div>
+379:    </div>
+381:    <div class="main-content">
+382:        <div class="quick-add">
+383:            <div class="quick-add-header">
+384:                <h2>Neue Animation</h2>
+385:                <span class="material-icons" style="cursor: pointer; opacity: 0.5;" onclick="toggleGlobalFields()" title="Optionale Felder zeigen/verstecken">settings</span>
+386:            </div>
+388:            <div class="type-selector" id="typeSelector">
+389:                <div class="type-item" onclick="selectType('temperatur')"><span>Temperatur</span> <span class="material-icons">add</span></div>
+390:                <div class="type-item" onclick="selectType('zeit')"><span>Zeit</span> <span class="material-icons">add</span></div>
+391:                <div class="type-item" onclick="selectType('geld')"><span>Geld</span> <span class="material-icons">add</span></div>
+392:                <div class="type-item" onclick="selectType('uebersicht')"><span>Übersicht</span> <span class="material-icons">add</span></div>
+393:                <div class="type-item" onclick="selectType('textbox')"><span>TextBox</span> <span class="material-icons">add</span></div>
+394:                <div class="type-item" onclick="selectType('todo')"><span>To-Do</span> <span class="material-icons">add</span></div>
+395:            </div>
+397:            <form id="quickForm" style="display: none;">
+398:                <input type="hidden" id="qType">
+399:                <div class="quick-row">
+400:                    <div class="field-group">
+401:                        <label>Person</label>
+402:                        <select class="quick-select" id="qPerson" required>
+403:                            <option value="">Wählen...</option>
+404:                            <option value="Jerry">Jerry</option>
+405:                            <option value="Marc">Marc</option>
+406:                            <option value="Kodiak">Kodiak</option>
+407:                            <option value="Taube">Taube</option>
+408:                            <option value="Käthe">Käthe</option>
+409:                        </select>
+410:                    </div>
+411:                    <div class="field-group" id="dynamicField">
+412:                        <label id="dynamicLabel">Wert</label>
+413:                        <input type="text" class="quick-input" id="qValue">
+414:                    </div>
+415:                    <button type="submit" class="btn-add">
+416:                        <span class="material-icons">add</span>
+417:                    </button>
+418:                </div>
+419:                <div id="extraFields" style="margin-top: 15px; display: none;"></div>
+420:
+421:                <div class="global-fields" id="globalFields">
+422:                    <div class="field-group">
+423:                        <label>Show</label>
+424:                        <select class="quick-select" id="qShow">
+425:                            <option value="WCC">WCC</option>
+426:                            <option value="TR3">TR3</option>
+427:                        </select>
+428:                    </div>
+429:                    <div class="field-group">
+430:                        <label>Sequenz</label>
+431:                        <input type="text" class="quick-input" id="qSequence">
+432:                    </div>
+433:                    <div class="field-group">
+434:                        <label>Schnitt Zeitstempel</label>
+435:                        <input type="text" class="quick-input" id="qTimestamp">
+436:                    </div>
+437:                    <div class="field-group">
+438:                        <label>Cutter Info</label>
+439:                        <input type="text" class="quick-input" id="qCutterInfo">
+440:                    </div>
+441:                </div>
+442:            </form>
+443:        </div>
+445:        <div class="table-container" style="overflow-x: auto;">
+446:            <table class="data-grid">
+447:                <thead>
+448:                <tr>
+449:                    <th style="width: 90px;">Datum</th>
+450:                    <th style="width: 70px;">Show</th>
+451:                    <th style="width: 100px;">Sequenz</th>
+452:                    <th style="width: 100px;">Typ</th>
+453:                    <th style="width: 120px;">Person</th>
+454:                    <th style="width: 80px;">Temp</th>
+455:                    <th style="width: 80px;">Zeit</th>
+456:                    <th style="width: 90px;">Start</th>
+457:                    <th style="width: 80px;">+/-</th>
+458:                    <th style="width: 90px;">Aktuell</th>
+459:                    <th style="width: 120px;">Stempel</th>
+460:                    <th style="width: 150px;">Titel</th>
+461:                    <th>Text</th>
+462:                    <th style="width: 150px;">To-Do</th>
+463:                    <th style="width: 120px;">Schnitt-TS</th>
+464:                    <th style="width: 150px;">Cutter Info</th>
+465:                    <th style="width: 80px;">Aktionen</th>
+466:                </tr>
+467:                </thead>
+468:                <tbody id="dataBody">
+469:                <tr>
+470:                    <td colspan="17">
+471:                        <div class="empty-state">
+472:                            <div class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">post_add</div>
+473:                            <h3>Noch keine Animationen</h3>
+474:                            <p>Füge oben deine erste Animation hinzu</p>
+475:                        </div>
+476:                    </td>
+477:                </tr>
+478:                </tbody>
+479:            </table>
+480:        </div>
+481:    </div>
+482:</div>
+484:<script>
+485:    const colorMap = {
+486:        'Jerry': 'Blau',
+487:        'Marc': 'Grün',
+488:        'Kodiak': 'Lila',
+489:        'Taube': 'Rot',
+490:        'Käthe': 'Orange'
+491:    };
+493:    const badgeClass = {
+494:        'Jerry': 'badge-jerry',
+495:        'Marc': 'badge-marc',
+496:        'Kodiak': 'badge-kodiak',
+497:        'Taube': 'badge-taube',
+498:        'Käthe': 'badge-käthe'
+499:    };
+501:    const typeIcon = {
+502:        'temperatur': 'thermostat',
+503:        'zeit': 'schedule',
+504:        'geld': 'payments',
+505:        'uebersicht': 'assessment',
+506:        'textbox': 'chat_bubble',
+507:        'todo': 'check_circle'
+508:    };
+510:    let animations = JSON.parse(localStorage.getItem('raceAnimations') || '[]');
+511:    let editingRow = null;
+513:    function selectType(type) {
+514:        document.getElementById('qType').value = type;
+515:        document.getElementById('quickForm').style.display = 'block';
+516:
+517:        // Update active class in selector
+518:        document.querySelectorAll('.type-item').forEach(item => {
+519:            if (item.getAttribute('onclick').includes(`'${type}'`)) {
+520:                item.classList.add('active');
+521:            } else {
+522:                item.classList.remove('active');
+523:            }
+524:        });
+526:        updateFields();
+527:    }
+529:    function showNotification(message, duration = 3000) {
+530:        const notification = document.createElement('div');
+531:        notification.className = 'notification';
+532:        notification.textContent = message;
+533:        document.body.appendChild(notification);
+535:        setTimeout(() => {
+536:            notification.style.animation = 'slideOut 0.3s ease-out';
+537:            setTimeout(() => notification.remove(), 300);
+538:        }, duration);
+539:    }
+541:    const style = document.createElement('style');
+542:    style.textContent = `
+543:            @keyframes slideOut {
+544:                from { transform: translateX(0); opacity: 1; }
+545:                to { transform: translateX(400px); opacity: 0; }
+546:            }
+547:        `;
+548:    document.head.appendChild(style);
+550:    function toggleTheme() {
+551:        const body = document.body;
+552:        const currentTheme = body.getAttribute('data-theme');
+553:        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+554:        body.setAttribute('data-theme', newTheme);
+555:        localStorage.setItem('theme', newTheme);
+556:    }
+558:    function toggleGlobalFields() {
+559:        const fields = document.getElementById('globalFields');
+560:        fields.classList.toggle('visible');
+561:    }
+563:    // Load saved theme
+564:    if (localStorage.getItem('theme') === 'dark') {
+565:        document.body.setAttribute('data-theme', 'dark');
+566:    }
+568:    function updateFields() {
+569:        const type = document.getElementById('qType').value;
+570:        const extraFields = document.getElementById('extraFields');
+571:        const dynamicLabel = document.getElementById('dynamicLabel');
+572:        const dynamicField = document.getElementById('dynamicField');
+573:        const qValue = document.getElementById('qValue');
+575:        extraFields.innerHTML = '';
+576:        extraFields.style.display = 'none';
+577:        qValue.onblur = null; // Reset blur handler
+578:        qValue.style.display = 'block';
+579:        dynamicLabel.style.display = 'block';
+580:        dynamicField.style.display = 'flex';
+582:        switch(type) {
+583:            case 'temperatur':
+584:                dynamicLabel.textContent = 'Temperatur';
+585:                dynamicField.style.display = 'flex';
+586:                // Auto-append °C on blur if it's just a number
+587:                qValue.onblur = () => {
+588:                    if (qValue.value && !isNaN(qValue.value.replace(',', '.')) && !qValue.value.includes('°')) {
+589:                        qValue.value += '°C';
+590:                    }
+591:                };
+592:                break;
+593:            case 'zeit':
+594:                dynamicLabel.textContent = 'Zeit';
+595:                dynamicField.style.display = 'flex';
+596:                break;
+597:            case 'geld':
+598:                dynamicLabel.textContent = 'Start-Betrag';
+599:                dynamicField.style.display = 'flex';
+600:                extraFields.style.display = 'grid';
+601:                extraFields.style.gridTemplateColumns = '1fr 1fr';
+602:                extraFields.style.gap = '10px';
+603:                extraFields.innerHTML = `
+604:                        <div class="field-group">
+605:                            <label>Was passiert?</label>
+606:                            <select class="quick-select" id="qGeldTyp">
+607:                                <option value="+">Geld dazu</option>
+608:                                <option value="-">Geld weg</option>
+609:                            </select>
+610:                        </div>
+611:                        <div class="field-group">
+612:                            <label>Betrag</label>
+613:                            <input type="number" step="any" class="quick-input" id="qGeldBetrag">
+614:                        </div>
+615:                        <div style="grid-column: span 2; padding: 10px; background: rgba(26, 115, 232, 0.1); border-radius: 8px; color: var(--accent-color); font-weight: 600; text-align: center;" id="geldVorschau">
+616:                            Ergebnis: -
+617:                        </div>
+618:                    `;
+619:                const updateGeldVorschau = () => {
+620:                    const startStr = qValue.value.replace(',', '.');
+621:                    const start = parseFloat(startStr) || 0;
+622:                    const betrag = parseFloat(document.getElementById('qGeldBetrag').value) || 0;
+623:                    const typ = document.getElementById('qGeldTyp').value;
+624:                    const ergebnis = typ === '+' ? start + betrag : start - betrag;
+625:                    document.getElementById('geldVorschau').textContent = `Ergebnis: ${ergebnis.toFixed(2)}€`;
+626:                };
+627:                qValue.addEventListener('input', updateGeldVorschau);
+628:                extraFields.querySelectorAll('input, select').forEach(i => i.addEventListener('input', updateGeldVorschau));
+629:                break;
+630:            case 'uebersicht':
+631:                dynamicLabel.textContent = 'Aktuelles Geld';
+632:                dynamicField.style.display = 'flex';
+633:                extraFields.style.display = 'block';
+634:                extraFields.innerHTML = `
+635:                        <div class="field-group">
+636:                            <label>Gesammelte Stempel (Städte)</label>
+637:                            <div class="city-grid">
+638:                                <label class="city-checkbox"><input type="checkbox" value="Köln"> Köln</label>
+639:                                <label class="city-checkbox"><input type="checkbox" value="Hamburg"> Hamburg</label>
+640:                                <label class="city-checkbox"><input type="checkbox" value="Berlin"> Berlin</label>
+641:                                <label class="city-checkbox"><input type="checkbox" value="Dresden"> Dresden</label>
+642:                                <label class="city-checkbox"><input type="checkbox" value="München"> München</label>
+643:                            </div>
+644:                        </div>
+645:                    `;
+646:                // Add click handler for visual feedback
+647:                extraFields.querySelectorAll('.city-checkbox').forEach(label => {
+648:                    label.addEventListener('change', () => {
+649:                        label.classList.toggle('active', label.querySelector('input').checked);
+650:                    });
+651:                });
+652:                break;
+653:            case 'textbox':
+654:                dynamicField.style.display = 'none';
+655:                extraFields.style.display = 'block';
+656:                extraFields.innerHTML = `
+657:                        <div class="field-group">
+658:                            <label>Text-Inhalt</label>
+659:                            <textarea class="quick-input" id="qTextContent" rows="3"></textarea>
+660:                        </div>
+661:                    `;
+662:                break;
+663:            case 'todo':
+664:                dynamicLabel.textContent = 'Aufgabe';
+665:                qValue.style.display = 'none';
+666:                dynamicLabel.style.display = 'none';
+667:                extraFields.style.display = 'block';
+668:                extraFields.innerHTML = `
+669:                        <div class="field-group">
+670:                            <label>To-Do Liste (Jeder Absatz bekommt ein •)</label>
+671:                            <textarea class="quick-input" id="qTodoContent" rows="5"></textarea>
+672:                        </div>
+673:                    `;
+674:                break;
+675:            default:
+676:                dynamicField.style.display = 'none';
+677:        }
+679:        // Auto-focus zum nächsten Feld
+680:        setTimeout(() => document.getElementById('qPerson').focus(), 10);
+681:    }
+683:    function addAnimation(event) {
+684:        event.preventDefault();
+686:        const type = document.getElementById('qType').value;
+687:        const person = document.getElementById('qPerson').value;
+689:        let animation = {
+690:            datum: new Date().toLocaleDateString('de-DE'),
+691:            show: document.getElementById('qShow').value,
+692:            sequenz: document.getElementById('qSequence').value,
+693:            type: type,
+694:            teilnehmer: person,
+695:            farbe: colorMap[person],
+696:            komposition: type,
+697:            temperatur: '',
+698:            zeit: '',
+699:            geldStart: '',
+700:            geldAenderung: '',
+701:            geldAktuell: '',
+702:            stempel: '',
+703:            textboxTitel: '',
+704:            textboxText: '',
+705:            todoItem: '',
+706:            schnittTimestamp: document.getElementById('qTimestamp').value,
+707:            cutterInfo: document.getElementById('qCutterInfo').value
+708:        };
+710:        const qValue = document.getElementById('qValue').value;
+712:        switch(type) {
+713:            case 'temperatur':
+714:                let temp = qValue.trim();
+715:                if (temp && !temp.includes('°')) {
+716:                    temp += '°C';
+717:                }
+718:                animation.temperatur = temp;
+719:                break;
+720:            case 'zeit':
+721:                animation.zeit = qValue;
+722:                break;
+723:            case 'geld':
+724:                animation.geldStart = qValue;
+725:                const geldTyp = document.getElementById('qGeldTyp').value;
+726:                const geldBetrag = document.getElementById('qGeldBetrag').value;
+727:                animation.geldAenderung = geldTyp + geldBetrag;
+728:                const startVal = parseFloat(qValue.replace(',', '.')) || 0;
+729:                const aenderBetrag = parseFloat(geldBetrag) || 0;
+730:                const result = geldTyp === '+'
+731:                    ? startVal + aenderBetrag
+732:                    : startVal - aenderBetrag;
+733:                animation.geldAktuell = result.toFixed(2);
+734:                break;
+735:            case 'uebersicht':
+736:                animation.geldAktuell = qValue;
+737:                const selectedCities = Array.from(document.querySelectorAll('.city-grid input:checked'))
+738:                    .map(cb => cb.value);
+739:                animation.stempel = selectedCities.join(', ');
+740:                break;
+741:            case 'textbox':
+742:                animation.textboxTitel = ''; // Removed title field
+743:                animation.textboxText = document.getElementById('qTextContent').value;
+744:                break;
+745:            case 'todo':
+746:                let todo = document.getElementById('qTodoContent').value.trim();
+747:                if (todo) {
+748:                    animation.todoItem = todo.split('\n')
+749:                        .filter(line => line.trim() !== '')
+750:                        .map(line => line.trim().startsWith('•') ? line.trim() : '• ' + line.trim())
+751:                        .join('\n');
+752:                } else {
+753:                    animation.todoItem = '';
+754:                }
+755:                break;
+756:        }
+758:        animations.push(animation);
+759:        saveAndRender();
+761:        // Reset
+762:        document.getElementById('qValue').value = '';
+763:        const extraFields = document.getElementById('extraFields');
+764:        if (extraFields.style.display !== 'none') {
+765:            const inputs = extraFields.querySelectorAll('input, textarea, select');
+766:            inputs.forEach(i => {
+767:                if (i.type === 'checkbox') i.checked = false;
+768:                else i.value = '';
+769:            });
+770:            extraFields.querySelectorAll('.city-checkbox').forEach(l => l.classList.remove('active'));
+771:        }
+772:
+773:        document.getElementById('qTimestamp').value = '';
+774:        document.getElementById('qCutterInfo').value = '';
+776:        // Hide form and reset selector
+777:        document.getElementById('quickForm').style.display = 'none';
+778:        document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
+780:        showNotification(`Animation hinzugefügt!`);
+781:    }
+783:    function renderTable() {
+784:        const tbody = document.getElementById('dataBody');
+786:        if (animations.length === 0) {
+787:            tbody.innerHTML = `
+788:                    <tr>
+789:                        <td colspan="17">
+790:                            <div class="empty-state">
+791:                                <div class="material-icons" style="font-size: 48px; margin-bottom: 10px;">post_add</div>
+792:                                <h3>Noch keine Animationen</h3>
+793:                                <p>Füge oben deine erste Animation hinzu</p>
+794:                            </div>
+795:                        </td>
+796:                    </tr>
+797:                `;
+798:            return;
+799:        }
+801:        tbody.innerHTML = animations.map((anim, index) => `
+802:                <tr ondblclick="editRow(${index})" data-index="${index}">
+803:                    <td>${anim.datum || '-'}</td>
+804:                    <td>${anim.show || '-'}</td>
+805:                    <td>${anim.sequenz || '-'}</td>
+806:                    <td>
+807:                        <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
+808:                            <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type]}</span>
+809:                            ${anim.type}
+810:                        </span>
+811:                    </td>
+812:                    <td><span class="person-badge ${badgeClass[anim.teilnehmer]}">${anim.teilnehmer}</span></td>
+813:                    <td>${anim.temperatur || '-'}</td>
+814:                    <td>${anim.zeit || '-'}</td>
+815:                    <td>${(anim.geldStart !== undefined && anim.geldStart !== '') ? anim.geldStart + '€' : '-'}</td>
+816:                    <td>${anim.geldAenderung || '-'}</td>
+817:                    <td>${(anim.geldAktuell !== undefined && anim.geldAktuell !== '') ? anim.geldAktuell + '€' : '-'}</td>
+818:                    <td>${anim.stempel || '-'}</td>
+819:                    <td>${anim.textboxTitel || '-'}</td>
+820:                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${anim.textboxText || '-'}</td>
+821:                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap;">${anim.todoItem || '-'}</td>
+822:                    <td>${anim.schnittTimestamp || '-'}</td>
+823:                    <td>${anim.cutterInfo || '-'}</td>
+824:                    <td>
+825:                        <div style="display: flex; gap: 4px;">
+826:                            <button class="action-btn" onclick="duplicateRow(${index})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">content_copy</span></button>
+827:                            <button class="action-btn" onclick="deleteRow(${index})" title="Löschen"><span class="material-icons" style="font-size: 18px;">delete</span></button>
+828:                        </div>
+829:                    </td>
+830:                </tr>
+831:            `).join('');
+832:    }
+834:    function editRow(index) {
+835:        const row = document.querySelector(`tr[data-index="${index}"]`);
+836:        const anim = animations[index];
+838:        row.classList.add('editing');
+839:        editingRow = index;
+841:        row.innerHTML = `
+842:                <td class="editable-cell"><input type="text" value="${anim.datum || ''}" data-field="datum"></td>
+843:                <td class="editable-cell">
+844:                    <select data-field="show">
+845:                        <option value="WCC" ${anim.show === 'WCC' ? 'selected' : ''}>WCC</option>
+846:                        <option value="TR3" ${anim.show === 'TR3' ? 'selected' : ''}>TR3</option>
+847:                    </select>
+848:                </td>
+849:                <td class="editable-cell"><input type="text" value="${anim.sequenz || ''}" data-field="sequenz"></td>
+850:                <td>
+851:                    <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
+852:                        <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type]}</span>
+853:                        ${anim.type}
+854:                    </span>
+855:                </td>
+856:                <td><span class="person-badge ${badgeClass[anim.teilnehmer]}">${anim.teilnehmer}</span></td>
+857:                <td class="editable-cell"><input type="text" value="${anim.temperatur || ''}" data-field="temperatur"></td>
+858:                <td class="editable-cell"><input type="text" value="${anim.zeit || ''}" data-field="zeit"></td>
+859:                <td class="editable-cell"><input type="text" value="${anim.geldStart || ''}" data-field="geldStart"></td>
+860:                <td class="editable-cell"><input type="text" value="${anim.geldAenderung || ''}" data-field="geldAenderung"></td>
+861:                <td class="editable-cell"><input type="text" value="${anim.geldAktuell || ''}" data-field="geldAktuell"></td>
+862:                <td class="editable-cell"><input type="text" value="${anim.stempel || ''}" data-field="stempel"></td>
+863:                <td class="editable-cell"><input type="text" value="${anim.textboxTitel || ''}" data-field="textboxTitel"></td>
+864:                <td class="editable-cell"><textarea data-field="textboxText">${anim.textboxText || ''}</textarea></td>
+865:                <td class="editable-cell"><textarea data-field="todoItem">${anim.todoItem || ''}</textarea></td>
+866:                <td class="editable-cell"><input type="text" value="${anim.schnittTimestamp || ''}" data-field="schnittTimestamp"></td>
+867:                <td class="editable-cell"><input type="text" value="${anim.cutterInfo || ''}" data-field="cutterInfo"></td>
+868:                <td>
+869:                    <div style="display: flex; gap: 4px;">
+870:                        <button class="action-btn" onclick="saveEdit(${index})" title="Speichern"><span class="material-icons" style="font-size: 18px;">save</span></button>
+871:                        <button class="action-btn" onclick="cancelEdit()" title="Abbrechen"><span class="material-icons" style="font-size: 18px;">close</span></button>
+872:                    </div>
+873:                </td>
+874:            `;
+876:        row.querySelector('input').focus();
+878:        // Enter zum Speichern, Esc zum Abbrechen
+879:        row.querySelectorAll('input, textarea').forEach(input => {
+880:            input.addEventListener('keydown', (e) => {
+881:                if (e.key === 'Enter' && !e.shiftKey) {
+882:                    e.preventDefault();
+883:                    saveEdit(index);
+884:                } else if (e.key === 'Escape') {
+885:                    cancelEdit();
+886:                }
+887:            });
+888:        });
+889:    }
+891:    function saveEdit(index) {
+892:        const row = document.querySelector(`tr[data-index="${index}"]`);
+893:        const inputs = row.querySelectorAll('[data-field]');
+895:        inputs.forEach(input => {
+896:            const field = input.getAttribute('data-field');
+897:            let value = input.value;
+899:            // Automatische Bullet-Points für To-Do
+900:            if (field === 'todoItem' && value.trim()) {
+901:                value = value.split('\n')
+902:                    .filter(line => line.trim() !== '')
+903:                    .map(line => line.trim().startsWith('•') ? line.trim() : '• ' + line.trim())
+904:                    .join('\n');
+905:            }
+907:            animations[index][field] = value;
+908:        });
+910:        editingRow = null;
+911:        saveAndRender();
+912:        showNotification('Änderungen gespeichert!');
+913:    }
+915:    function cancelEdit() {
+916:        editingRow = null;
+917:        renderTable();
+918:    }
+920:    function duplicateRow(index) {
+921:        const copy = JSON.parse(JSON.stringify(animations[index]));
+922:        animations.splice(index + 1, 0, copy);
+923:        saveAndRender();
+924:        showNotification('Animation dupliziert!');
+925:    }
+927:    function deleteRow(index) {
+928:        if (confirm('Diese Animation wirklich löschen?')) {
+929:            animations.splice(index, 1);
+930:            saveAndRender();
+931:            showNotification('Animation gelöscht!');
+932:        }
+933:    }
+935:    function saveAndRender() {
+936:        localStorage.setItem('raceAnimations', JSON.stringify(animations));
+937:        renderTable();
+938:    }
+940:    function exportData() {
+941:        if (animations.length === 0) {
+942:            alert('Keine Daten zum Exportieren!');
+943:            return;
+944:        }
+946:        const headers = ['Datum', 'Show', 'Sequenz', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Titel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
+948:        const tsvContent = [
+949:            headers.join('\t'),
+950:            ...animations.map(anim => [
+951:                anim.datum || '',
+952:                anim.show || '',
+953:                anim.sequenz || '',
+954:                anim.teilnehmer,
+955:                anim.farbe,
+956:                anim.komposition,
+957:                anim.temperatur || '',
+958:                anim.zeit || '',
+959:                anim.geldStart || '',
+960:                anim.geldAenderung || '',
+961:                anim.geldAktuell || '',
+962:                anim.stempel || '',
+963:                anim.textboxTitel || '',
+964:                anim.textboxText || '',
+965:                anim.todoItem || '',
+966:                anim.schnittTimestamp || '',
+967:                anim.cutterInfo || ''
+968:            ].join('\t'))
+969:        ].join('\n');
+971:        navigator.clipboard.writeText(tsvContent);
+973:        const csvContent = tsvContent.replace(/\t/g, ',');
+974:        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+975:        const link = document.createElement('a');
+976:        link.href = URL.createObjectURL(blob);
+977:        link.download = `the_race_${new Date().toISOString().split('T')[0]}.csv`;
+978:        link.click();
+980:        showNotification('Daten exportiert & kopiert! Jetzt per Mail senden oder in Google Sheets einfügen.', 4000);
+981:    }
+983:    // Event Listener
+984:    document.getElementById('quickForm').addEventListener('submit', addAnimation);
+986:    // Initialisierung
+987:    renderTable();
+988:</script>
+989:</body>
+990:</html>
