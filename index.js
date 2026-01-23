@@ -1,3 +1,238 @@
+// --- Google Sheets API Konfiguration ---
+// HINWEIS: Um Google Sheets zu nutzen, müssen hier gültige Anmeldedaten eingetragen werden.
+// Anleitung: https://developers.google.com/sheets/api/quickstart/js
+const CLIENT_ID = '744552869176-oen8v0cjvsd9259nlegj1qcuncormso7.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyBAYW1OKeOScxvamvciP4UBWUoBN56rIDY';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+
+let gapiInited = false;
+let gsieInited = false;
+let tokenClient;
+let spreadsheetId = localStorage.getItem('googleSpreadsheetId') || '';
+
+// --- Initialisierung ---
+
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+    await gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: [DISCOVERY_DOC],
+    });
+    gapiInited = true;
+    updateAuthStatus();
+}
+
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // wird später gesetzt
+    });
+    gsieInited = true;
+    updateAuthStatus();
+}
+
+// Skripte laden
+(function loadGoogleScripts() {
+    const scriptGapi = document.createElement('script');
+    scriptGapi.src = 'https://apis.google.com/js/api.js';
+    scriptGapi.onload = gapiLoaded;
+    document.head.appendChild(scriptGapi);
+
+    const scriptGis = document.createElement('script');
+    scriptGis.src = 'https://accounts.google.com/gsi/client';
+    scriptGis.onload = gisLoaded;
+    document.head.appendChild(scriptGis);
+})();
+
+function updateAuthStatus() {
+    const statusDiv = document.getElementById('authStatus');
+    const authBtn = document.getElementById('authBtn');
+    const actionsDiv = document.getElementById('sheetsActions');
+    if (!statusDiv || !authBtn || !actionsDiv) return;
+
+    const token = gapi.client.getToken();
+    if (token) {
+        statusDiv.innerHTML = `<span class="material-icons" style="color: #0f9d58;">check_circle</span> <span>Verbunden</span>`;
+        authBtn.innerHTML = `<span class="material-icons">logout</span> Abmelden`;
+        authBtn.onclick = handleSignoutClick;
+        actionsDiv.style.display = 'flex';
+    } else {
+        statusDiv.innerHTML = `<span class="material-icons" style="color: #ea4335;">error</span> <span>Nicht verbunden</span>`;
+        authBtn.innerHTML = `<span class="material-icons">login</span> Anmelden`;
+        authBtn.onclick = handleAuthClick;
+        actionsDiv.style.display = 'none';
+    }
+}
+
+function handleAuthClick() {
+    tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+            throw (resp);
+        }
+        updateAuthStatus();
+        showNotification('Erfolgreich angemeldet!');
+    };
+
+    if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        tokenClient.requestAccessToken({prompt: ''});
+    }
+}
+
+function handleSignoutClick() {
+    const token = gapi.client.getToken();
+    if (token !== null) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken('');
+        updateAuthStatus();
+        showNotification('Abgemeldet.');
+    }
+}
+
+function showSheetsModal() {
+    const modal = document.getElementById('sheetsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('spreadsheetIdInput').value = spreadsheetId;
+        updateAuthStatus();
+    }
+}
+
+function hideSheetsModal() {
+    const modal = document.getElementById('sheetsModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function saveSheetsSettings() {
+    const input = document.getElementById('spreadsheetIdInput');
+    spreadsheetId = input.value.trim();
+    
+    // Einfache Validierung: Wenn es ein Link ist, extrahiere die ID
+    if (spreadsheetId.includes('/d/')) {
+        const parts = spreadsheetId.split('/d/');
+        if (parts[1]) {
+            spreadsheetId = parts[1].split('/')[0];
+            input.value = spreadsheetId;
+        }
+    }
+
+    localStorage.setItem('googleSpreadsheetId', spreadsheetId);
+    showNotification('Einstellungen gespeichert!');
+}
+
+function saveToGoogleSheets() {
+    if (!spreadsheetId) {
+        showNotification('Bitte zuerst eine Spreadsheet ID festlegen!');
+        showSheetsModal();
+        return;
+    }
+
+    const token = gapi.client.getToken();
+    if (!token) {
+        showSheetsModal();
+        return;
+    }
+
+    pushToGoogleSheets();
+}
+
+async function pushToGoogleSheets() {
+    if (animations.length === 0) {
+        showNotification('Keine Daten zum Senden vorhanden!');
+        return;
+    }
+
+    try {
+        showNotification('Sende Daten zu Google Sheets...');
+        
+        // Header und Daten vorbereiten
+        const headers = ['Datum', 'Show', 'Sequenz', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
+        const values = [
+            headers,
+            ...animations.map(anim => [
+                anim.datum || '', anim.show || '', anim.sequenz || '', anim.teilnehmer || '', 
+                anim.farbe || '', anim.komposition || '', anim.temperatur || '', anim.zeit || '', 
+                anim.geldStart || '', anim.geldAenderung || '', anim.geldAktuell || '', 
+                anim.stempel || '', anim.textboxText || '', anim.todoItem || '', 
+                anim.schnittTimestamp || '', anim.cutterInfo || ''
+            ])
+        ];
+
+        // Zuerst das Blatt leeren oder einfach überschreiben? 
+        // Wir überschreiben das gesamte Blatt "Sheet1" ab A1
+        const range = 'Sheet1!A1';
+        
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: spreadsheetId,
+            range: range,
+            valueInputOption: 'RAW',
+            resource: { values: values }
+        });
+
+        showNotification('Erfolgreich in Google Sheets gespeichert!');
+        hideSheetsModal();
+    } catch (err) {
+        console.error(err);
+        showNotification('Fehler beim Senden: ' + (err.result?.error?.message || 'Unbekannter Fehler'));
+    }
+}
+
+async function pullFromGoogleSheets() {
+    try {
+        showNotification('Lade Daten aus Google Sheets...');
+        const range = 'Sheet1!A2:P'; // Überspringe Header
+
+        const response = await gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: spreadsheetId,
+            range: range,
+        });
+
+        const rows = response.result.values;
+        if (!rows || rows.length === 0) {
+            showNotification('Keine Daten gefunden.');
+            return;
+        }
+
+        // Map rows back to animation objects
+        const newAnimations = rows.map(row => ({
+            datum: row[0] || '',
+            show: row[1] || '',
+            sequenz: row[2] || '',
+            teilnehmer: row[3] || '',
+            farbe: row[4] || '',
+            komposition: row[5] || '',
+            temperatur: row[6] || '',
+            zeit: row[7] || '',
+            geldStart: row[8] || '',
+            geldAenderung: row[9] || '',
+            geldAktuell: row[10] || '',
+            stempel: row[11] || '',
+            textboxText: row[12] || '',
+            todoItem: row[13] || '',
+            schnittTimestamp: row[14] || '',
+            cutterInfo: row[15] || '',
+            type: row[5] || 'temperatur' // Fallback
+        }));
+
+        if (confirm(`${newAnimations.length} Animationen geladen. Bestehende Daten überschreiben?`)) {
+            animations = newAnimations;
+            saveAndRender();
+            showNotification('Daten erfolgreich synchronisiert!');
+            hideSheetsModal();
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('Fehler beim Laden: ' + (err.result?.error?.message || 'Unbekannter Fehler'));
+    }
+}
+
+
 const colorMap = {
     'Jerry': 'Blau',
     'Marc': 'Grün',
@@ -27,8 +262,10 @@ let animations = JSON.parse(localStorage.getItem('raceAnimations') || '[]');
 let editingRow = null;
 
 function selectType(type) {
+    const form = document.getElementById('quickForm');
     document.getElementById('qType').value = type;
-    document.getElementById('quickForm').style.display = 'block';
+    form.style.display = 'block';
+    form.style.animation = 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
     
     // Update active class in selector
     document.querySelectorAll('.type-item').forEach(item => {
@@ -40,16 +277,32 @@ function selectType(type) {
     });
 
     updateFields();
+    
+    // Smooth scroll to form
+    setTimeout(() => {
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
 }
 
 function showNotification(message, duration = 3000) {
     const notification = document.createElement('div');
     notification.className = 'notification';
-    notification.textContent = message;
+    
+    let icon = 'info';
+    const msg = message.toLowerCase();
+    if (msg.includes('gespeichert') || msg.includes('heruntergeladen') || msg.includes('dupliziert') || msg.includes('kopiert')) icon = 'check_circle';
+    if (msg.includes('gelöscht')) icon = 'delete_sweep';
+    if (msg.includes('keine daten') || msg.includes('fehler')) icon = 'warning';
+    if (msg.includes('geöffnet')) icon = 'mail';
+
+    notification.innerHTML = `
+        <span class="material-icons" style="font-size: 20px;">${icon}</span>
+        <span>${message}</span>
+    `;
     document.body.appendChild(notification);
 
     setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
+        notification.style.animation = 'slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         setTimeout(() => notification.remove(), 300);
     }, duration);
 }
@@ -67,9 +320,28 @@ function toggleGlobalFields() {
     if (fields) fields.classList.toggle('visible');
 }
 
-// Load saved theme
+function closeInfo() {
+    const card = document.getElementById('infoCard');
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-20px)';
+        card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+            card.style.display = 'none';
+            localStorage.setItem('infoClosed', 'true');
+        }, 300);
+    }
+}
+
+// Load saved theme and info state
 if (localStorage.getItem('theme') === 'dark') {
     document.body.setAttribute('data-theme', 'dark');
+}
+if (localStorage.getItem('infoClosed') === 'true') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const card = document.getElementById('infoCard');
+        if (card) card.style.display = 'none';
+    });
 }
 
 function updateFields() {
@@ -347,7 +619,7 @@ function renderTable() {
                 <td>${anim.cutterInfo || '-'}</td>
                 <td>
                     <div style="display: flex; gap: 4px;">
-                        <button class="action-btn" onclick="duplicateRow(${index})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">content_copy</span></button>
+                        <button class="action-btn" onclick="duplicateRow(${index})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">control_point_duplicate</span></button>
                         <button class="action-btn" onclick="deleteRow(${index})" title="Löschen"><span class="material-icons" style="font-size: 18px;">delete</span></button>
                     </div>
                 </td>
@@ -496,16 +768,6 @@ function generateCSV() {
     ].join('\n');
 }
 
-function showExportModal() {
-    const modal = document.getElementById('exportModal');
-    if (modal) modal.style.display = 'flex';
-}
-
-function hideExportModal() {
-    const modal = document.getElementById('exportModal');
-    if (modal) modal.style.display = 'none';
-}
-
 function handleDownload() {
     if (animations.length === 0) {
         showNotification('Keine Daten zum Exportieren!');
@@ -522,20 +784,204 @@ function handleDownload() {
     link.click();
 
     showNotification('CSV-Datei wurde heruntergeladen!');
-    hideExportModal();
 }
 
-function handleEmail() {
-    if (animations.length === 0) {
-        showNotification('Keine Daten zum Senden vorhanden!');
-        return;
-    }
+// Game Logic
+let isGameRunning = false;
+let currentGameId = 0;
+let gameScore = 0;
+let gameSpeed = 5;
+let obstacleTimer;
+let collisionTimer;
+let cloudTimer;
 
-    const subject = encodeURIComponent("33minutes Spreadsheet Export");
-    window.location.href = `mailto:?subject=${subject}`;
+function showGameModal() {
+    const modal = document.getElementById('gameModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        startGame();
+    }
+}
+
+function hideGameModal() {
+    const modal = document.getElementById('gameModal');
+    if (modal) {
+        modal.style.display = 'none';
+        stopGame();
+    }
+}
+
+function startGame() {
+    currentGameId++;
+    const gameId = currentGameId;
+    isGameRunning = true;
+    gameScore = 0;
+    gameSpeed = 6;
+    updateScore(0);
     
-    showNotification('E-Mail-Programm geöffnet!');
-    hideExportModal();
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
+    
+    const objective = document.getElementById('gameObjective');
+    if (objective) objective.innerHTML = '';
+    
+    const dino = document.getElementById('dino');
+    if (dino) {
+        dino.classList.remove('jump-anim');
+        // Sicherstellen, dass der Dino am Boden ist
+        dino.style.bottom = '10px';
+    }
+    
+    clearTimeout(obstacleTimer);
+    clearInterval(collisionTimer);
+    clearInterval(cloudTimer);
+
+    // Kleiner Delay vor dem ersten Obstacle für besseres Spielgefühl
+    obstacleTimer = setTimeout(() => {
+        if (isGameRunning && gameId === currentGameId) {
+            spawnObstacle();
+        }
+    }, 300);
+    
+    collisionTimer = setInterval(() => {
+        if (isGameRunning && gameId === currentGameId) checkCollision();
+    }, 10);
+
+    cloudTimer = setInterval(() => {
+        if (isGameRunning && gameId === currentGameId) createCloud();
+    }, 3000);
+}
+
+function stopGame() {
+    isGameRunning = false;
+    clearTimeout(obstacleTimer);
+    clearInterval(collisionTimer);
+    clearInterval(cloudTimer);
+    const objective = document.getElementById('gameObjective');
+    if (objective) objective.innerHTML = '';
+}
+
+function jump() {
+    const dino = document.getElementById('dino');
+    if (dino && !dino.classList.contains('jump-anim') && isGameRunning) {
+        dino.classList.add('jump-anim');
+        setTimeout(() => {
+            dino.classList.remove('jump-anim');
+        }, 600);
+    }
+}
+
+function spawnObstacle() {
+    if (!isGameRunning) return;
+    
+    createObstacle(currentGameId);
+    
+    const minDelay = Math.max(600, 1500 - (gameScore * 5));
+    const maxDelay = Math.max(1000, 3000 - (gameScore * 8));
+    const delay = Math.floor(Math.random() * (maxDelay - minDelay)) + minDelay;
+    
+    obstacleTimer = setTimeout(spawnObstacle, delay);
+}
+
+function createObstacle(gameId) {
+    const objective = document.getElementById('gameObjective');
+    if (!objective) return;
+    
+    const obstacle = document.createElement('div');
+    const types = ['cactus-small', 'cactus-large', 'bird'];
+    const availableTypes = gameScore > 30 ? types : ['cactus-small', 'cactus-large'];
+    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    
+    obstacle.className = `obstacle ${type}`;
+    
+    let icon = 'potted_plant';
+    if (type === 'bird') icon = 'flight';
+    else if (type === 'cactus-large') icon = 'park';
+    
+    obstacle.innerHTML = `<span class="material-icons">${icon}</span>`;
+    objective.appendChild(obstacle);
+
+    let position = -50;
+    const currentSpeed = gameSpeed;
+    const moveInterval = setInterval(() => {
+        if (!isGameRunning || gameId !== currentGameId) {
+            clearInterval(moveInterval);
+            obstacle.remove();
+            return;
+        }
+
+        position += currentSpeed;
+        obstacle.style.right = position + 'px';
+
+        if (position > 550) {
+            clearInterval(moveInterval);
+            obstacle.remove();
+            if (isGameRunning && gameId === currentGameId) {
+                gameScore++;
+                updateScore(gameScore);
+                if (gameScore % 5 === 0) gameSpeed += 0.15;
+            }
+        }
+    }, 20);
+}
+
+function createCloud() {
+    const objective = document.getElementById('gameObjective');
+    if (!objective) return;
+    
+    const cloud = document.createElement('div');
+    cloud.className = 'cloud';
+    const top = Math.floor(Math.random() * 70) + 10;
+    cloud.style.top = top + 'px';
+    cloud.innerHTML = '<span class="material-icons" style="font-size: 30px;">cloud</span>';
+    cloud.style.animation = `cloudMove ${Math.random() * 5 + 7}s linear forwards`;
+    objective.appendChild(cloud);
+    
+    setTimeout(() => {
+        if (cloud.parentElement) cloud.remove();
+    }, 12000);
+}
+
+function updateScore(score) {
+    const scoreElem = document.getElementById('gameScore');
+    if (scoreElem) scoreElem.textContent = score.toString().padStart(5, '0');
+}
+
+function checkCollision() {
+    const dino = document.getElementById('dino');
+    const obstacles = document.querySelectorAll('.obstacle');
+    if (!dino) return;
+
+    const dinoRect = dino.getBoundingClientRect();
+    
+    // Hitbox-Padding: Höhere Werte machen das Spiel einfacher (kleinere Hitboxen)
+    const dinoHitPadding = 8; 
+    const obsHitPadding = 10;
+
+    obstacles.forEach(obstacle => {
+        const obsRect = obstacle.getBoundingClientRect();
+        
+        // Kollisionsabfrage mit Padding-Berücksichtigung
+        if (
+            dinoRect.left + dinoHitPadding < obsRect.right - obsHitPadding &&
+            dinoRect.right - dinoHitPadding > obsRect.left + obsHitPadding &&
+            dinoRect.top + dinoHitPadding < obsRect.bottom - obsHitPadding &&
+            dinoRect.bottom - dinoHitPadding > obsRect.top + obsHitPadding
+        ) {
+            gameOver();
+        }
+    });
+}
+
+function gameOver() {
+    isGameRunning = false;
+    clearTimeout(obstacleTimer);
+    clearInterval(collisionTimer);
+    clearInterval(cloudTimer);
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScore = document.getElementById('finalScore');
+    if (gameOverScreen) gameOverScreen.style.display = 'flex';
+    if (finalScore) finalScore.textContent = `SCORE: ${gameScore.toString().padStart(5, '0')}`;
 }
 
 // Event Listeners
@@ -547,9 +993,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Close modal when clicking outside
     window.addEventListener('click', (event) => {
-        const modal = document.getElementById('exportModal');
-        if (event.target === modal) {
-            hideExportModal();
+        const sheetsModal = document.getElementById('sheetsModal');
+        const gameModal = document.getElementById('gameModal');
+        if (event.target === sheetsModal) {
+            hideSheetsModal();
+        }
+        if (event.target === gameModal) {
+            hideGameModal();
+        }
+    });
+
+    // Space to jump or restart
+    document.addEventListener('keydown', (e) => {
+        const gameModal = document.getElementById('gameModal');
+        if (e.code === 'Space' && gameModal && gameModal.style.display === 'flex') {
+            e.preventDefault();
+            
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            if (gameOverScreen && gameOverScreen.style.display === 'flex') {
+                startGame(); // Restart if game over
+            } else {
+                jump(); // Jump if game running
+            }
         }
     });
 
