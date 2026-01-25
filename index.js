@@ -709,6 +709,10 @@ async function handleAiSubmit(event) {
         renderAiSuggestions(suggestions, type);
     } catch (error) {
         aiResults.classList.remove('active');
+        const message = error.message && error.message.includes('Failed to fetch')
+            ? 'AI Server nicht erreichbar.'
+            : (error.message || 'AI konnte nicht geladen werden.');
+        showNotification(message);
         showNotification(error.message || 'AI konnte nicht geladen werden.');
     }
 }
@@ -1130,6 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const aiToggle = document.getElementById('aiToggleBtn');
     const aiClose = document.getElementById('aiCloseBtn');
+    const aiSubmitBtn = document.getElementById('aiSubmitBtn');
     const aiForm = document.getElementById('aiForm');
     if (aiToggle) {
         aiToggle.addEventListener('click', () => toggleAiPanel());
@@ -1137,6 +1142,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (aiClose) {
         aiClose.addEventListener('click', () => toggleAiPanel(false));
     }
+    if (aiSubmitBtn) {
+        aiSubmitBtn.addEventListener('click', handleAiSubmit);
     if (aiForm) {
         aiForm.addEventListener('submit', handleAiSubmit);
     }

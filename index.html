@@ -756,6 +756,12 @@
         }
 
         .ai-assistant {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             position: fixed;
             right: 24px;
             bottom: 24px;
@@ -770,6 +776,8 @@
             display: none;
             align-items: center;
             gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
             padding: 12px 16px;
             border-radius: 999px;
             border: none;
@@ -787,6 +795,9 @@
         }
 
         .ai-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 12px);
             width: 360px;
             max-width: calc(100vw - 40px);
             background: var(--container-bg);
@@ -798,6 +809,7 @@
             opacity: 0;
             pointer-events: none;
             transition: all 0.2s ease;
+            z-index: 5;
         }
 
         .ai-panel.open {
@@ -834,6 +846,10 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .ai-inline-spacer {
+            flex: 1;
         }
 
         .ai-label {
@@ -947,6 +963,30 @@
                     <div class="field-group" id="dynamicField">
                         <label id="dynamicLabel">Wert</label>
                         <input type="text" class="quick-input" id="qValue">
+                    </div>
+                    <div class="ai-assistant">
+                        <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
+                            <span class="material-icons">auto_awesome</span>
+                            <span>AI Ideen</span>
+                        </button>
+                        <div class="ai-panel" id="aiPanel" aria-hidden="true">
+                            <div class="ai-panel-header">
+                                <h3 id="aiTitle">AI Ideen</h3>
+                                <button class="ai-close" id="aiCloseBtn" title="Schließen">
+                                    <span class="material-icons">close</span>
+                                </button>
+                            </div>
+                            <div class="ai-panel-body">
+                                <div id="aiForm">
+                                    <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
+                                    <textarea class="ai-input" id="aiInput" required></textarea>
+                                    <button class="btn btn-primary ai-submit" id="aiSubmitBtn" type="button">
+                                        Vorschläge holen
+                                    </button>
+                                </div>
+                                <div class="ai-results" id="aiResults"></div>
+                            </div>
+                        </div>
                     </div>
                     <button type="submit" class="btn-add">
                         <span class="material-icons">add</span>
