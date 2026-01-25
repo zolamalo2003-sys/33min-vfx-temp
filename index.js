@@ -713,6 +713,7 @@ async function handleAiSubmit(event) {
             ? 'AI Server nicht erreichbar.'
             : (error.message || 'AI konnte nicht geladen werden.');
         showNotification(message);
+        showNotification(error.message || 'AI konnte nicht geladen werden.');
     }
 }
 
@@ -1134,6 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiToggle = document.getElementById('aiToggleBtn');
     const aiClose = document.getElementById('aiCloseBtn');
     const aiSubmitBtn = document.getElementById('aiSubmitBtn');
+    const aiForm = document.getElementById('aiForm');
     if (aiToggle) {
         aiToggle.addEventListener('click', () => toggleAiPanel());
     }
@@ -1142,6 +1144,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (aiSubmitBtn) {
         aiSubmitBtn.addEventListener('click', handleAiSubmit);
+    if (aiForm) {
+        aiForm.addEventListener('submit', handleAiSubmit);
     }
     
     // Close modal when clicking outside

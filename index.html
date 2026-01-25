@@ -762,6 +762,14 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
         }
 
         .ai-fab {
@@ -770,6 +778,8 @@
             gap: 8px;
             padding: 10px 14px;
             border-radius: 10px;
+            padding: 12px 16px;
+            border-radius: 999px;
             border: none;
             background: var(--accent-color);
             color: #ffffff;
@@ -1042,6 +1052,31 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<div class="ai-assistant">
+    <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
+        <span class="material-icons">auto_awesome</span>
+        <span>AI Ideen</span>
+    </button>
+    <div class="ai-panel" id="aiPanel" aria-hidden="true">
+        <div class="ai-panel-header">
+            <h3 id="aiTitle">AI Ideen</h3>
+            <button class="ai-close" id="aiCloseBtn" title="Schließen">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="ai-panel-body">
+            <form id="aiForm">
+                <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
+                <textarea class="ai-input" id="aiInput" required></textarea>
+                <button class="btn btn-primary ai-submit" type="submit">
+                    Vorschläge holen
+                </button>
+            </form>
+            <div class="ai-results" id="aiResults"></div>
         </div>
     </div>
 </div>
