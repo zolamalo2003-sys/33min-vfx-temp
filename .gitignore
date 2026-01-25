@@ -1,6 +1,8 @@
 .idea/
 node_modules/
 .DS_Store
+.env
+.env.local
 *.json
 !package.json
 !package-lock.json
