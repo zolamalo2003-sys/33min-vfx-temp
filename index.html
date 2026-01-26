@@ -315,18 +315,32 @@
         }
 
         .quick-input, .quick-select {
-            padding: 10px;
+            padding: 11px 12px;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 0.95em;
-            transition: all 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
             background: var(--field-bg);
             color: var(--text-color);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .quick-input:focus, .quick-select:focus {
             outline: none;
             border-color: var(--accent-color);
+            background: var(--container-bg);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
+
+        .quick-select {
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, var(--text-color) 50%),
+                linear-gradient(135deg, var(--text-color) 50%, transparent 50%);
+            background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding-right: 34px;
         }
 
         .btn-add {
@@ -524,11 +538,19 @@
 
         .editable-cell input, .editable-cell select, .editable-cell textarea {
             width: 100%;
-            padding: 6px;
-            border: 1px solid var(--accent-color);
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
             background: var(--field-bg);
             color: var(--text-color);
-            border-radius: 4px;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+        }
+
+        .editable-cell input:focus, .editable-cell select:focus, .editable-cell textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: var(--container-bg);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
         }
 
         /* Modal Styles */
@@ -755,144 +777,6 @@
             margin-top: 10px;
         }
 
-        .ai-assistant {
-            position: relative;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            position: fixed;
-            right: 24px;
-            bottom: 24px;
-            z-index: 12;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 12px;
-        }
-
-        .ai-fab {
-            display: none;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 10px;
-            padding: 12px 16px;
-            border-radius: 999px;
-            border: none;
-            background: var(--accent-color);
-            color: #ffffff;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 12px 20px rgba(26, 115, 232, 0.25);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .ai-fab:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 26px rgba(26, 115, 232, 0.3);
-        }
-
-        .ai-panel {
-            position: absolute;
-            right: 0;
-            top: calc(100% + 12px);
-            width: 360px;
-            max-width: calc(100vw - 40px);
-            background: var(--container-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            transform: translateY(10px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.2s ease;
-            z-index: 5;
-        }
-
-        .ai-panel.open {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .ai-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 18px;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--field-bg);
-        }
-
-        .ai-panel-header h3 {
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .ai-close {
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--text-color);
-            padding: 4px;
-            border-radius: 50%;
-        }
-
-        .ai-panel-body {
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .ai-inline-spacer {
-            flex: 1;
-        }
-
-        .ai-label {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .ai-input {
-            width: 100%;
-            min-height: 110px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            background: var(--field-bg);
-            padding: 12px;
-            resize: vertical;
-            font-family: var(--font-family), serif;
-            color: var(--text-color);
-        }
-
-        .ai-results {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 4px;
-        }
-
-        .ai-results.active {
-            display: flex;
-        }
-
-        .ai-suggestion {
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px 12px;
-            background: var(--field-bg);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .ai-suggestion button {
-            align-self: flex-start;
-        }
     </style>
 </head>
 <body>
@@ -950,8 +834,8 @@
                 <input type="hidden" id="qType">
                 <div class="quick-row">
                     <div class="field-group">
-                        <label>Person</label>
-                        <label for="qPerson"></label><select class="quick-select" id="qPerson" required>
+                        <label for="qPerson">Person</label>
+                        <select class="quick-select" id="qPerson" required>
                             <option value="">Wählen...</option>
                             <option value="Jerry">Jerry</option>
                             <option value="Marc">Marc</option>
@@ -963,30 +847,6 @@
                     <div class="field-group" id="dynamicField">
                         <label id="dynamicLabel">Wert</label>
                         <input type="text" class="quick-input" id="qValue">
-                    </div>
-                    <div class="ai-assistant">
-                        <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
-                            <span class="material-icons">auto_awesome</span>
-                            <span>AI Ideen</span>
-                        </button>
-                        <div class="ai-panel" id="aiPanel" aria-hidden="true">
-                            <div class="ai-panel-header">
-                                <h3 id="aiTitle">AI Ideen</h3>
-                                <button class="ai-close" id="aiCloseBtn" title="Schließen">
-                                    <span class="material-icons">close</span>
-                                </button>
-                            </div>
-                            <div class="ai-panel-body">
-                                <div id="aiForm">
-                                    <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
-                                    <textarea class="ai-input" id="aiInput" required></textarea>
-                                    <button class="btn btn-primary ai-submit" id="aiSubmitBtn" type="button">
-                                        Vorschläge holen
-                                    </button>
-                                </div>
-                                <div class="ai-results" id="aiResults"></div>
-                            </div>
-                        </div>
                     </div>
                     <button type="submit" class="btn-add">
                         <span class="material-icons">add</span>
@@ -1003,8 +863,8 @@
                         </select>
                     </div>
                     <div class="field-group">
-                        <label>Sequenz</label>
-                        <label for="qSequence"></label><input type="text" class="quick-input" id="qSequence">
+                        <label for="qSequence">Sequenz</label>
+                        <input type="text" class="quick-input" id="qSequence">
                     </div>
                     <div class="field-group">
                         <label>Schnitt Zeitstempel</label>
@@ -1052,31 +912,6 @@
                 </tr>
                 </tbody>
             </table>
-        </div>
-    </div>
-</div>
-
-<div class="ai-assistant">
-    <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
-        <span class="material-icons">auto_awesome</span>
-        <span>AI Ideen</span>
-    </button>
-    <div class="ai-panel" id="aiPanel" aria-hidden="true">
-        <div class="ai-panel-header">
-            <h3 id="aiTitle">AI Ideen</h3>
-            <button class="ai-close" id="aiCloseBtn" title="Schließen">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div class="ai-panel-body">
-            <form id="aiForm">
-                <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
-                <textarea class="ai-input" id="aiInput" required></textarea>
-                <button class="btn btn-primary ai-submit" type="submit">
-                    Vorschläge holen
-                </button>
-            </form>
-            <div class="ai-results" id="aiResults"></div>
         </div>
     </div>
 </div>

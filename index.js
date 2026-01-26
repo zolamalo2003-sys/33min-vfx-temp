@@ -277,7 +277,6 @@ function selectType(type) {
     });
 
     updateFields();
-    updateAiAssistVisibility(type);
     
     // Smooth scroll to form
     setTimeout(() => {
@@ -573,148 +572,7 @@ function addAnimation(event) {
     const quickForm = document.getElementById('quickForm');
     if (quickForm) quickForm.style.display = 'none';
     document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
-    updateAiAssistVisibility(null);
-
     showNotification(`Animation hinzugefügt!`);
-}
-
-const aiCopy = {
-    textbox: {
-        title: 'AI Ideen für TextBox',
-        label: 'Szene'
-    },
-    todo: {
-        title: 'AI Ideen für To-Do',
-        label: 'Aufgabe'
-    }
-};
-
-function updateAiAssistVisibility(type) {
-    const aiToggle = document.getElementById('aiToggleBtn');
-    const aiPanel = document.getElementById('aiPanel');
-    if (!aiToggle || !aiPanel) return;
-    const isSupported = type === 'textbox' || type === 'todo';
-    aiToggle.style.display = isSupported ? 'flex' : 'none';
-    if (!isSupported) {
-        aiPanel.classList.remove('open');
-        aiPanel.setAttribute('aria-hidden', 'true');
-    }
-    updateAiCopy(type);
-}
-
-function updateAiCopy(type) {
-    const copy = aiCopy[type];
-    const aiTitle = document.getElementById('aiTitle');
-    const aiInputLabel = document.getElementById('aiInputLabel');
-    const aiInput = document.getElementById('aiInput');
-    const aiResults = document.getElementById('aiResults');
-    if (!copy || !aiTitle || !aiInputLabel || !aiInput || !aiResults) return;
-    aiTitle.textContent = copy.title;
-    aiInputLabel.textContent = copy.label;
-    aiResults.classList.remove('active');
-    aiResults.innerHTML = '';
-}
-
-function toggleAiPanel(open) {
-    const aiPanel = document.getElementById('aiPanel');
-    if (!aiPanel) return;
-    const shouldOpen = typeof open === 'boolean' ? open : !aiPanel.classList.contains('open');
-    aiPanel.classList.toggle('open', shouldOpen);
-    aiPanel.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-}
-
-function renderAiSuggestions(list, type) {
-    const aiResults = document.getElementById('aiResults');
-    if (!aiResults) return;
-    aiResults.innerHTML = '';
-    aiResults.classList.add('active');
-
-    list.forEach((text, index) => {
-        const suggestion = document.createElement('div');
-        suggestion.className = 'ai-suggestion';
-        suggestion.innerHTML = `
-            <div><strong>Vorschlag ${index + 1}</strong></div>
-            <div>${text}</div>
-        `;
-        const useButton = document.createElement('button');
-        useButton.className = 'btn';
-        useButton.type = 'button';
-        useButton.innerHTML = '<span class="material-icons">content_paste</span> In Feld übernehmen';
-        useButton.addEventListener('click', () => applyAiSuggestion(text, type));
-        suggestion.appendChild(useButton);
-        aiResults.appendChild(suggestion);
-    });
-}
-
-function applyAiSuggestion(text, type) {
-    if (type === 'textbox') {
-        const field = document.getElementById('qTextContent');
-        if (field) field.value = text;
-    }
-    if (type === 'todo') {
-        const field = document.getElementById('qTodoContent');
-        if (field) {
-            const trimmed = text.trim();
-            const existing = field.value.trim();
-            field.value = existing ? `${existing}\n${trimmed}` : trimmed;
-        }
-    }
-}
-
-async function handleAiSubmit(event) {
-    event.preventDefault();
-    const type = document.getElementById('qType').value;
-    if (type !== 'textbox' && type !== 'todo') {
-        showNotification('AI ist nur für TextBox oder To-Do verfügbar.');
-        return;
-    }
-
-    const aiInput = document.getElementById('aiInput');
-    const aiResults = document.getElementById('aiResults');
-    if (!aiInput || !aiResults) return;
-    const userInput = aiInput.value.trim();
-    if (!userInput) {
-        showNotification('Bitte gib zuerst Infos ein.');
-        return;
-    }
-
-    aiResults.innerHTML = '<div class="ai-label">Lädt…</div>';
-    aiResults.classList.add('active');
-
-    try {
-        const response = await fetch('/api/ai', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                type,
-                input: userInput
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData?.error || 'AI Fehler beim Laden.');
-        }
-
-        const data = await response.json();
-        const suggestions = (data?.suggestions || '')
-            .split('\n')
-            .map(line => line.replace(/^\d+[\).\s-]*/g, '').trim())
-            .filter(Boolean);
-
-        if (!suggestions.length) {
-            throw new Error('Keine Vorschläge erhalten.');
-        }
-
-        renderAiSuggestions(suggestions, type);
-    } catch (error) {
-        aiResults.classList.remove('active');
-        const message = error.message && error.message.includes('Failed to fetch')
-            ? 'AI Server nicht erreichbar.'
-            : (error.message || 'AI konnte nicht geladen werden.');
-        showNotification(message);
-        showNotification(error.message || 'AI konnte nicht geladen werden.');
-    }
 }
 
 function renderTable() {
@@ -1132,22 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
         quickForm.addEventListener('submit', addAnimation);
     }
 
-    const aiToggle = document.getElementById('aiToggleBtn');
-    const aiClose = document.getElementById('aiCloseBtn');
-    const aiSubmitBtn = document.getElementById('aiSubmitBtn');
-    const aiForm = document.getElementById('aiForm');
-    if (aiToggle) {
-        aiToggle.addEventListener('click', () => toggleAiPanel());
-    }
-    if (aiClose) {
-        aiClose.addEventListener('click', () => toggleAiPanel(false));
-    }
-    if (aiSubmitBtn) {
-        aiSubmitBtn.addEventListener('click', handleAiSubmit);
-    if (aiForm) {
-        aiForm.addEventListener('submit', handleAiSubmit);
-    }
-    
     // Close modal when clicking outside
     window.addEventListener('click', (event) => {
         const sheetsModal = document.getElementById('sheetsModal');
@@ -1176,5 +1018,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     renderTable();
-    updateAiAssistVisibility(document.getElementById('qType')?.value);
 });
