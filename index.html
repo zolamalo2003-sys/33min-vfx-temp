@@ -470,7 +470,7 @@
             font-size: 0.75em;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             border-bottom: 2px solid var(--border-color);
             color: var(--accent-color);
             background: rgba(26, 115, 232, 0.02);
@@ -526,11 +526,10 @@
             font-weight: 600;
             font-size: 0.8em;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 1px;
         }
 
         .global-fields {
-            display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-top: 25px;
@@ -965,7 +964,7 @@
                         </select>
                     </div>
                     <div class="field-group" id="dynamicField">
-                        <label id="dynamicLabel">Wert</label>
+                        <label id="dynamicLabel" for="qValue">Wert</label>
                         <input type="text" class="quick-input" id="qValue">
                     </div>
                     <button type="submit" class="btn-add">
