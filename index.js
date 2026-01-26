@@ -657,28 +657,9 @@ function toggleGlobalFields() {
     if (fields) fields.classList.toggle('visible');
 }
 
-function closeInfo() {
-    const card = document.getElementById('infoCard');
-    if (card) {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(-20px)';
-        card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        setTimeout(() => {
-            card.style.display = 'none';
-            localStorage.setItem('infoClosed', 'true');
-        }, 300);
-    }
-}
-
-// Load saved theme and info state
+// Load saved theme state
 if (localStorage.getItem('theme') === 'dark') {
     document.body.setAttribute('data-theme', 'dark');
-}
-if (localStorage.getItem('infoClosed') === 'true') {
-    document.addEventListener('DOMContentLoaded', () => {
-        const card = document.getElementById('infoCard');
-        if (card) card.style.display = 'none';
-    });
 }
 
 function updateFields() {
