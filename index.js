@@ -1,4 +1,3 @@
-/* global gapi, google */
 // --- Google Sheets API Konfiguration ---
 // HINWEIS: Um Google Sheets zu nutzen, müssen hier gültige Anmeldedaten eingetragen werden.
 // Anleitung: https://developers.google.com/sheets/api/quickstart/js
@@ -6,14 +5,9 @@ const CLIENT_ID = '744552869176-oen8v0cjvsd9259nlegj1qcuncormso7.apps.googleuser
 const API_KEY = 'AIzaSyBAYW1OKeOScxvamvciP4UBWUoBN56rIDY';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
-const STORAGE_KEY = 'raceAnimations';
-const STORAGE_ID_KEY = 'raceAnimationsNextId';
-const CLOUD_ENDPOINT = '/api/animations';
 
-let cloudAvailable = false;
-let nextLocalId = parseInt(localStorage.getItem(STORAGE_ID_KEY) || '1', 10);
-let sortState = { key: null, direction: 'asc' };
-
+let gapiInited = false;
+let gsieInited = false;
 let tokenClient;
 let spreadsheetId = localStorage.getItem('googleSpreadsheetId') || '';
 
@@ -28,6 +22,7 @@ async function initializeGapiClient() {
         apiKey: API_KEY,
         discoveryDocs: [DISCOVERY_DOC],
     });
+    gapiInited = true;
     updateAuthStatus();
 }
 
@@ -37,6 +32,7 @@ function gisLoaded() {
         scope: SCOPES,
         callback: '', // wird später gesetzt
     });
+    gsieInited = true;
     updateAuthStatus();
 }
 
@@ -156,27 +152,15 @@ async function pushToGoogleSheets() {
         showNotification('Sende Daten zu Google Sheets...');
         
         // Header und Daten vorbereiten
-        const headers = ['ID', 'Datum', 'Show', 'Folge', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
+        const headers = ['Datum', 'Show', 'Sequenz', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
         const values = [
             headers,
             ...animations.map(anim => [
-                anim.id || '',
-                anim.datum || '',
-                anim.show || '',
-                anim.folge || anim.sequenz || '',
-                anim.teilnehmer || '',
-                anim.farbe || '',
-                anim.komposition || '',
-                anim.temperatur || '',
-                anim.zeit || '',
-                anim.geldStart || '',
-                anim.geldAenderung || '',
-                anim.geldAktuell || '',
-                anim.stempel || '',
-                anim.textboxText || '',
-                anim.todoItem || '',
-                anim.schnittTimestamp || '',
-                anim.cutterInfo || ''
+                anim.datum || '', anim.show || '', anim.sequenz || '', anim.teilnehmer || '', 
+                anim.farbe || '', anim.komposition || '', anim.temperatur || '', anim.zeit || '', 
+                anim.geldStart || '', anim.geldAenderung || '', anim.geldAktuell || '', 
+                anim.stempel || '', anim.textboxText || '', anim.todoItem || '', 
+                anim.schnittTimestamp || '', anim.cutterInfo || ''
             ])
         ];
 
@@ -202,7 +186,7 @@ async function pushToGoogleSheets() {
 async function pullFromGoogleSheets() {
     try {
         showNotification('Lade Daten aus Google Sheets...');
-        const range = 'Sheet1!A2:Q'; // Überspringe Header
+        const range = 'Sheet1!A2:P'; // Überspringe Header
 
         const response = await gapi.client.sheets.spreadsheets.values.get({
             spreadsheetId: spreadsheetId,
@@ -216,37 +200,28 @@ async function pullFromGoogleSheets() {
         }
 
         // Map rows back to animation objects
-        const newAnimations = rows.map(row => {
-            const hasId = row.length >= 17 && row[0] !== '';
-            const offset = hasId ? 1 : 0;
-            const idValue = hasId ? Number(row[0]) || row[0] : generateLocalId();
-            return {
-                id: idValue,
-                datum: row[offset + 0] || '',
-                show: row[offset + 1] || '',
-                folge: row[offset + 2] || '',
-                teilnehmer: row[offset + 3] || '',
-                farbe: row[offset + 4] || '',
-                komposition: row[offset + 5] || '',
-                temperatur: row[offset + 6] || '',
-                zeit: row[offset + 7] || '',
-                geldStart: row[offset + 8] || '',
-                geldAenderung: row[offset + 9] || '',
-                geldAktuell: row[offset + 10] || '',
-                stempel: row[offset + 11] || '',
-                textboxText: row[offset + 12] || '',
-                todoItem: row[offset + 13] || '',
-                schnittTimestamp: row[offset + 14] || '',
-                cutterInfo: row[offset + 15] || '',
-                type: row[offset + 5] || 'temperatur'
-            };
-        });
+        const newAnimations = rows.map(row => ({
+            datum: row[0] || '',
+            show: row[1] || '',
+            sequenz: row[2] || '',
+            teilnehmer: row[3] || '',
+            farbe: row[4] || '',
+            komposition: row[5] || '',
+            temperatur: row[6] || '',
+            zeit: row[7] || '',
+            geldStart: row[8] || '',
+            geldAenderung: row[9] || '',
+            geldAktuell: row[10] || '',
+            stempel: row[11] || '',
+            textboxText: row[12] || '',
+            todoItem: row[13] || '',
+            schnittTimestamp: row[14] || '',
+            cutterInfo: row[15] || '',
+            type: row[5] || 'temperatur' // Fallback
+        }));
 
         if (confirm(`${newAnimations.length} Animationen geladen. Bestehende Daten überschreiben?`)) {
-            const normalized = normalizeAnimations(newAnimations);
-            animations = normalized.list;
-            const maxId = getMaxId(animations);
-            nextLocalId = Math.max(nextLocalId, maxId + 1);
+            animations = newAnimations;
             saveAndRender();
             showNotification('Daten erfolgreich synchronisiert!');
             hideSheetsModal();
@@ -280,323 +255,11 @@ const typeIcon = {
     'geld': 'payments',
     'uebersicht': 'assessment',
     'textbox': 'chat_bubble',
-    'todo': 'check_circle',
-    'ticket': 'confirmation_number',
-    'samsung': 'smartphone'
+    'todo': 'check_circle'
 };
 
-const typeLabels = {
-    temperatur: 'Temperatur',
-    zeit: 'Zeit',
-    geld: 'Geld',
-    uebersicht: 'Übersicht',
-    textbox: 'TextBox',
-    todo: 'To-Do',
-    ticket: 'Ticket',
-    samsung: 'Samsung Template'
-};
-
-let animations = [];
-
-function normalizeAnimation(raw) {
-    const anim = { ...raw };
-    if (anim.folge === undefined && anim.sequenz !== undefined) {
-        anim.folge = anim.sequenz;
-        delete anim.sequenz;
-    }
-    if (!anim.type && anim.komposition) {
-        anim.type = anim.komposition;
-    }
-    if (anim.id !== undefined && anim.id !== null && anim.id !== '') {
-        const parsed = Number(anim.id);
-        if (!Number.isNaN(parsed)) anim.id = parsed;
-    }
-    return anim;
-}
-
-function normalizeAnimations(list) {
-    const normalized = [];
-    let hadMissingId = false;
-    list.forEach((item) => {
-        const anim = normalizeAnimation(item);
-        if (anim.id === undefined || anim.id === null || anim.id === '') {
-            anim.id = generateLocalId();
-            hadMissingId = true;
-        }
-        normalized.push(anim);
-    });
-    return { list: normalized, hadMissingId };
-}
-
-function getMaxId(list) {
-    return list.reduce((max, anim) => {
-        const value = Number(anim.id);
-        return Number.isNaN(value) ? max : Math.max(max, value);
-    }, 0);
-}
-
-function saveLocalAnimations() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(animations));
-    localStorage.setItem(STORAGE_ID_KEY, String(nextLocalId));
-}
-
-function generateLocalId() {
-    const id = nextLocalId;
-    nextLocalId += 1;
-    return id;
-}
-
-function getAnimationById(id) {
-    return animations.find(anim => String(anim.id) === String(id));
-}
-
-async function fetchJson(url, options = {}) {
-    const response = await fetch(url, {
-        headers: {'Content-Type': 'application/json'},
-        ...options
-    });
-    if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || `Request failed: ${response.status}`);
-    }
-    return response.json();
-}
-
-async function loadFromCloud() {
-    try {
-        const data = await fetchJson(CLOUD_ENDPOINT);
-        if (!data || !Array.isArray(data.animations)) return false;
-        const normalized = normalizeAnimations(data.animations);
-        animations = normalized.list;
-        const maxId = getMaxId(animations);
-        nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-        cloudAvailable = true;
-        saveLocalAnimations();
-        renderTable();
-        if (normalized.hadMissingId) {
-            await syncAllToCloud(animations);
-        }
-        return true;
-    } catch (error) {
-        cloudAvailable = false;
-        return false;
-    }
-}
-
-async function syncAllToCloud(list) {
-    if (!cloudAvailable) return;
-    try {
-        const data = await fetchJson(`${CLOUD_ENDPOINT}/replace`, {
-            method: 'POST',
-            body: JSON.stringify({ animations: list })
-        });
-        if (data && Array.isArray(data.animations)) {
-            const normalized = normalizeAnimations(data.animations);
-            animations = normalized.list;
-            const maxId = getMaxId(animations);
-            nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-            saveLocalAnimations();
-            renderTable();
-        }
-    } catch (error) {
-        cloudAvailable = false;
-    }
-}
-
-async function addAnimationToStore(animation) {
-    if (cloudAvailable) {
-        try {
-            const data = await fetchJson(`${CLOUD_ENDPOINT}/add`, {
-                method: 'POST',
-                body: JSON.stringify({ animation })
-            });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
-        } catch (error) {
-            cloudAvailable = false;
-        }
-    }
-
-    animation.id = generateLocalId();
-    animations.push(animation);
-    saveLocalAnimations();
-    renderTable();
-}
-
-async function updateAnimationInStore(animation) {
-    if (cloudAvailable) {
-        try {
-            const data = await fetchJson(`${CLOUD_ENDPOINT}/update`, {
-                method: 'POST',
-                body: JSON.stringify({ animation })
-            });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
-        } catch (error) {
-            cloudAvailable = false;
-        }
-    }
-
-    const index = animations.findIndex(anim => String(anim.id) === String(animation.id));
-    if (index !== -1) {
-        animations[index] = animation;
-        saveLocalAnimations();
-        renderTable();
-    }
-}
-
-async function deleteAnimationFromStore(id) {
-    if (cloudAvailable) {
-        try {
-            const data = await fetchJson(`${CLOUD_ENDPOINT}/delete`, {
-                method: 'POST',
-                body: JSON.stringify({ id })
-            });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
-        } catch (error) {
-            cloudAvailable = false;
-        }
-    }
-
-    animations = animations.filter(anim => String(anim.id) !== String(id));
-    saveLocalAnimations();
-    renderTable();
-}
-
-function parseMoney(value) {
-    if (value === undefined || value === null) return null;
-    const parsed = parseFloat(String(value).replace(',', '.').replace('€', '').trim());
-    return Number.isNaN(parsed) ? null : parsed;
-}
-
-function parseDateValue(value) {
-    if (!value) return null;
-    const text = String(value).trim();
-    const parts = text.split('.');
-    if (parts.length === 3) {
-        const [day, month, year] = parts;
-        const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-        const time = Date.parse(iso);
-        return Number.isNaN(time) ? null : time;
-    }
-    const parsed = Date.parse(text);
-    return Number.isNaN(parsed) ? null : parsed;
-}
-
-function getSortValue(anim, key) {
-    switch (key) {
-        case 'id':
-            return Number(anim.id) || 0;
-        case 'datum':
-            return parseDateValue(anim.datum);
-        case 'show':
-            return anim.show || '';
-        case 'folge':
-            return anim.folge || anim.sequenz || '';
-        case 'type':
-            return typeLabels[anim.type] || anim.type || '';
-        case 'teilnehmer':
-            return anim.teilnehmer || '';
-        case 'temperatur':
-            return parseMoney(anim.temperatur);
-        case 'zeit':
-            return anim.zeit || '';
-        case 'geldStart':
-            return parseMoney(anim.geldStart);
-        case 'geldAenderung':
-            return anim.geldAenderung || '';
-        case 'geldAktuell':
-            return parseMoney(anim.geldAktuell);
-        case 'stempel':
-            return anim.stempel || '';
-        case 'textboxText':
-            return anim.textboxText || '';
-        case 'todoItem':
-            return anim.todoItem || '';
-        case 'schnittTimestamp':
-            return anim.schnittTimestamp || '';
-        case 'cutterInfo':
-            return anim.cutterInfo || '';
-        default:
-            return '';
-    }
-}
-
-function getSortedAnimations() {
-    if (!sortState.key) return [...animations];
-    const key = sortState.key;
-    const direction = sortState.direction === 'desc' ? -1 : 1;
-    return [...animations].sort((a, b) => {
-        const valueA = getSortValue(a, key);
-        const valueB = getSortValue(b, key);
-        if (valueA === null && valueB === null) return 0;
-        if (valueA === null) return 1 * direction;
-        if (valueB === null) return -1 * direction;
-        if (typeof valueA === 'number' && typeof valueB === 'number') {
-            return (valueA - valueB) * direction;
-        }
-        return String(valueA).localeCompare(String(valueB), 'de', { numeric: true }) * direction;
-    });
-}
-
-function updateSortIndicators() {
-    document.querySelectorAll('th[data-sort]').forEach(th => {
-        const key = th.getAttribute('data-sort');
-        if (key === sortState.key) {
-            th.setAttribute('data-sort-direction', sortState.direction);
-        } else {
-            th.removeAttribute('data-sort-direction');
-        }
-    });
-}
-
-function toggleSort(key) {
-    if (sortState.key === key) {
-        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        sortState.key = key;
-        sortState.direction = 'asc';
-    }
-    updateSortIndicators();
-    renderTable();
-}
-
-function sanitizeFilePart(value, fallback) {
-    const cleaned = String(value || '').trim().replace(/\s+/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
-    return cleaned || fallback;
-}
-
-function getExportFileName() {
-    const first = animations[0] || {};
-    const showFallback = document.getElementById('qShow')?.value || '';
-    const folgeFallback = document.getElementById('qSequence')?.value || '';
-    const show = sanitizeFilePart((first.show || showFallback).toUpperCase(), 'SHOW');
-    const folge = sanitizeFilePart(first.folge || first.sequenz || folgeFallback, 'FOLGE');
-    const dateStamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    return `${show}_${folge}_${dateStamp}.csv`;
-}
+let animations = JSON.parse(localStorage.getItem('raceAnimations') || '[]');
+let editingRow = null;
 
 function selectType(type) {
     const form = document.getElementById('quickForm');
@@ -614,6 +277,7 @@ function selectType(type) {
     });
 
     updateFields();
+    updateAiAssistVisibility(type);
     
     // Smooth scroll to form
     setTimeout(() => {
@@ -687,12 +351,8 @@ function updateFields() {
     const dynamicLabel = document.getElementById('dynamicLabel');
     const dynamicField = document.getElementById('dynamicField');
     const qValue = document.getElementById('qValue');
-    const personGroup = document.getElementById('personFieldGroup');
-    const personSelect = document.getElementById('qPerson');
-    const quickRow = document.querySelector('.quick-row');
-    const globalFields = document.getElementById('globalFields');
 
-    if (!extraFields || !dynamicLabel || !dynamicField || !qValue || !personGroup || !personSelect) return;
+    if (!extraFields || !dynamicLabel || !dynamicField || !qValue) return;
 
     extraFields.innerHTML = '';
     extraFields.style.display = 'none';
@@ -701,9 +361,6 @@ function updateFields() {
     qValue.style.display = 'block';
     dynamicLabel.style.display = 'block';
     dynamicField.style.display = 'flex';
-    personGroup.style.display = 'flex';
-    personSelect.required = true;
-    if (quickRow) quickRow.classList.remove('compact');
 
     switch(type) {
         case 'temperatur':
@@ -726,110 +383,35 @@ function updateFields() {
             extraFields.style.gridTemplateColumns = '1fr 1fr';
             extraFields.style.gap = '10px';
             extraFields.innerHTML = `
-                    <div class="field-group" style="grid-column: span 2;">
+                    <div class="field-group">
                         <label>Was passiert?</label>
-                        <div class="geld-list" id="geldList"></div>
-                        <button class="btn geld-add" type="button" id="geldAddBtn">
-                            <span class="material-icons">add</span> Änderung hinzufügen
-                        </button>
+                        <select class="quick-select" id="qGeldTyp">
+                            <option value="+">Geld dazu</option>
+                            <option value="-">Geld weg</option>
+                        </select>
                     </div>
-                    <div class="geld-preview" id="geldVorschau">Ergebnis: -</div>
+                    <div class="field-group">
+                        <label>Betrag</label>
+                        <input type="number" step="any" class="quick-input" id="qGeldBetrag">
+                    </div>
+                    <div style="grid-column: span 2; padding: 10px; background: rgba(26, 115, 232, 0.1); border-radius: 8px; color: var(--accent-color); font-weight: 600; text-align: center;" id="geldVorschau">
+                        Ergebnis: -
+                    </div>
                 `;
-            const geldList = document.getElementById('geldList');
-            const geldAddBtn = document.getElementById('geldAddBtn');
-            const vorschau = document.getElementById('geldVorschau');
-
-            const updateRowState = (row) => {
-                const typeSelect = row.querySelector('.geld-type');
-                const amountInput = row.querySelector('.geld-amount');
-                if (!typeSelect || !amountInput) return;
-                const isStatus = typeSelect.value === 'status';
-                amountInput.disabled = isStatus;
-                amountInput.placeholder = isStatus ? '—' : 'Betrag';
-                if (isStatus) amountInput.value = '';
-            };
-
             const updateGeldVorschau = () => {
                 const startStr = qValue.value.replace(',', '.');
                 const start = parseFloat(startStr) || 0;
-                let totalChange = 0;
-                if (!geldList || !vorschau) return;
-                geldList.querySelectorAll('.geld-row').forEach(row => {
-                    const typeSelect = row.querySelector('.geld-type');
-                    const amountInput = row.querySelector('.geld-amount');
-                    if (!typeSelect || !amountInput) return;
-                    const typeValue = typeSelect.value;
-                    if (typeValue === 'status') return;
-                    const amount = parseFloat(amountInput.value.replace(',', '.'));
-                    if (Number.isNaN(amount)) return;
-                    totalChange += typeValue === '+' ? amount : -amount;
-                });
-                const ergebnis = start + totalChange;
+                const betragElem = document.getElementById('qGeldBetrag');
+                const typElem = document.getElementById('qGeldTyp');
+                const vorschau = document.getElementById('geldVorschau');
+                if (!betragElem || !typElem || !vorschau) return;
+                const betrag = parseFloat(betragElem.value) || 0;
+                const typ = typElem.value;
+                const ergebnis = typ === '+' ? start + betrag : start - betrag;
                 vorschau.textContent = `Ergebnis: ${ergebnis.toFixed(2)}€`;
             };
-
-            const updateRemoveVisibility = () => {
-                if (!geldList) return;
-                const rows = geldList.querySelectorAll('.geld-row');
-                rows.forEach(row => {
-                    const removeBtn = row.querySelector('.geld-remove');
-                    if (removeBtn) {
-                        removeBtn.style.visibility = rows.length > 1 ? 'visible' : 'hidden';
-                    }
-                });
-            };
-
-            const createGeldRow = () => {
-                const row = document.createElement('div');
-                row.className = 'geld-row';
-                row.innerHTML = `
-                        <select class="quick-select geld-type">
-                            <option value="+">Geld dazu</option>
-                            <option value="-">Geld weg</option>
-                            <option value="status">Geld Status</option>
-                        </select>
-                        <input type="number" step="any" class="quick-input geld-amount" placeholder="Betrag">
-                        <button class="action-btn geld-remove" type="button" title="Entfernen">
-                            <span class="material-icons" style="font-size: 18px;">close</span>
-                        </button>
-                    `;
-                const typeSelect = row.querySelector('.geld-type');
-                const amountInput = row.querySelector('.geld-amount');
-                const removeBtn = row.querySelector('.geld-remove');
-                if (typeSelect) {
-                    typeSelect.addEventListener('change', () => {
-                        updateRowState(row);
-                        updateGeldVorschau();
-                    });
-                }
-                if (amountInput) {
-                    amountInput.addEventListener('input', updateGeldVorschau);
-                }
-                if (removeBtn) {
-                    removeBtn.addEventListener('click', () => {
-                        row.remove();
-                        updateRemoveVisibility();
-                        updateGeldVorschau();
-                    });
-                }
-                updateRowState(row);
-                return row;
-            };
-
-            if (geldList) {
-                geldList.appendChild(createGeldRow());
-                updateRemoveVisibility();
-                updateGeldVorschau();
-            }
-            if (geldAddBtn) {
-                geldAddBtn.addEventListener('click', () => {
-                    if (!geldList) return;
-                    geldList.appendChild(createGeldRow());
-                    updateRemoveVisibility();
-                    updateGeldVorschau();
-                });
-            }
             qValue.oninput = updateGeldVorschau;
+            extraFields.querySelectorAll('input, select').forEach(i => i.oninput = updateGeldVorschau);
             break;
         case 'uebersicht':
             dynamicLabel.textContent = 'Aktuelles Geld';
@@ -866,16 +448,6 @@ function updateFields() {
                     </div>
                 `;
             break;
-        case 'ticket':
-            dynamicField.style.display = 'none';
-            extraFields.style.display = 'block';
-            extraFields.innerHTML = `
-                    <div class="field-group">
-                        <label>Ticket Inhalt</label>
-                        <textarea class="quick-input" id="qTicketContent" rows="3"></textarea>
-                    </div>
-                `;
-            break;
         case 'todo':
             dynamicLabel.textContent = 'Aufgabe';
             qValue.style.display = 'none';
@@ -888,14 +460,6 @@ function updateFields() {
                     </div>
                 `;
             break;
-        case 'samsung':
-            personGroup.style.display = 'none';
-            personSelect.required = false;
-            dynamicField.style.display = 'none';
-            extraFields.style.display = 'none';
-            if (globalFields) globalFields.classList.add('visible');
-            if (quickRow) quickRow.classList.add('compact');
-            break;
         default:
             dynamicField.style.display = 'none';
     }
@@ -903,47 +467,23 @@ function updateFields() {
     // Auto-focus zum nächsten Feld
     setTimeout(() => {
         const personSelect = document.getElementById('qPerson');
-        if (personSelect && personSelect.offsetParent !== null) personSelect.focus();
+        if (personSelect) personSelect.focus();
     }, 10);
 }
 
-function getGeldChangeData() {
-    const rows = document.querySelectorAll('.geld-row');
-    const changes = [];
-    let totalChange = 0;
-    rows.forEach(row => {
-        const typeSelect = row.querySelector('.geld-type');
-        const amountInput = row.querySelector('.geld-amount');
-        if (!typeSelect || !amountInput) return;
-        const typeValue = typeSelect.value;
-        if (typeValue === 'status') {
-            changes.push('Status');
-            return;
-        }
-        const amount = parseFloat(amountInput.value.replace(',', '.'));
-        if (Number.isNaN(amount)) return;
-        totalChange += typeValue === '+' ? amount : -amount;
-        changes.push(`${typeValue}${amount}`);
-    });
-    return { changes, totalChange };
-}
-
-async function addAnimation(event) {
+function addAnimation(event) {
     if (event) event.preventDefault();
 
     const type = document.getElementById('qType').value;
-    const personSelect = document.getElementById('qPerson');
-    const person = personSelect ? personSelect.value : '';
-    const showValue = document.getElementById('qShow')?.value || '';
-    const folgeValue = document.getElementById('qSequence')?.value || '';
+    const person = document.getElementById('qPerson').value;
 
     let animation = {
         datum: new Date().toLocaleDateString('de-DE'),
-        show: showValue,
-        folge: folgeValue,
+        show: document.getElementById('qShow').value,
+        sequenz: document.getElementById('qSequence').value,
         type: type,
         teilnehmer: person,
-        farbe: colorMap[person] || '',
+        farbe: colorMap[person],
         komposition: type,
         temperatur: '',
         zeit: '',
@@ -953,52 +493,51 @@ async function addAnimation(event) {
         stempel: '',
         textboxText: '',
         todoItem: '',
-        schnittTimestamp: document.getElementById('qTimestamp')?.value || '',
-        cutterInfo: document.getElementById('qCutterInfo')?.value || ''
+        schnittTimestamp: document.getElementById('qTimestamp').value,
+        cutterInfo: document.getElementById('qCutterInfo').value
     };
 
     const qValueElem = document.getElementById('qValue');
     const qValue = qValueElem ? qValueElem.value : '';
 
     switch(type) {
-        case 'temperatur': {
+        case 'temperatur':
             let temp = qValue.trim();
             if (temp && !temp.includes('°')) {
                 temp += '°C';
             }
             animation.temperatur = temp;
             break;
-        }
         case 'zeit':
             animation.zeit = qValue;
             break;
-        case 'geld': {
+        case 'geld':
             animation.geldStart = qValue;
-            const startVal = parseFloat(qValue.replace(',', '.')) || 0;
-            const changeData = getGeldChangeData();
-            animation.geldAenderung = changeData.changes.join(' | ');
-            const result = startVal + changeData.totalChange;
-            animation.geldAktuell = result.toFixed(2);
+            const geldTypElem = document.getElementById('qGeldTyp');
+            const geldBetragElem = document.getElementById('qGeldBetrag');
+            if (geldTypElem && geldBetragElem) {
+                const geldTyp = geldTypElem.value;
+                const geldBetrag = geldBetragElem.value;
+                animation.geldAenderung = geldTyp + geldBetrag;
+                const startVal = parseFloat(qValue.replace(',', '.')) || 0;
+                const aenderBetrag = parseFloat(geldBetrag) || 0;
+                const result = geldTyp === '+'
+                    ? startVal + aenderBetrag
+                    : startVal - aenderBetrag;
+                animation.geldAktuell = result.toFixed(2);
+            }
             break;
-        }
-        case 'uebersicht': {
+        case 'uebersicht':
             animation.geldAktuell = qValue;
             const selectedCities = Array.from(document.querySelectorAll('.city-grid input:checked'))
                 .map(cb => cb.value);
             animation.stempel = selectedCities.join(', ');
             break;
-        }
-        case 'textbox': {
+        case 'textbox':
             const textContent = document.getElementById('qTextContent');
             animation.textboxText = textContent ? textContent.value : '';
             break;
-        }
-        case 'ticket': {
-            const ticketContent = document.getElementById('qTicketContent');
-            animation.textboxText = ticketContent ? ticketContent.value : '';
-            break;
-        }
-        case 'todo': {
+        case 'todo':
             const todoContent = document.getElementById('qTodoContent');
             let todo = todoContent ? todoContent.value.trim() : '';
             if (todo) {
@@ -1008,14 +547,10 @@ async function addAnimation(event) {
                     .join('\n');
             }
             break;
-        }
-        case 'samsung':
-            animation.teilnehmer = '';
-            animation.farbe = '';
-            break;
     }
 
-    await addAnimationToStore(animation);
+    animations.push(animation);
+    saveAndRender();
 
     // Reset
     if (qValueElem) qValueElem.value = '';
@@ -1038,7 +573,148 @@ async function addAnimation(event) {
     const quickForm = document.getElementById('quickForm');
     if (quickForm) quickForm.style.display = 'none';
     document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
+    updateAiAssistVisibility(null);
+
     showNotification(`Animation hinzugefügt!`);
+}
+
+const aiCopy = {
+    textbox: {
+        title: 'AI Ideen für TextBox',
+        label: 'Szene'
+    },
+    todo: {
+        title: 'AI Ideen für To-Do',
+        label: 'Aufgabe'
+    }
+};
+
+function updateAiAssistVisibility(type) {
+    const aiToggle = document.getElementById('aiToggleBtn');
+    const aiPanel = document.getElementById('aiPanel');
+    if (!aiToggle || !aiPanel) return;
+    const isSupported = type === 'textbox' || type === 'todo';
+    aiToggle.style.display = isSupported ? 'flex' : 'none';
+    if (!isSupported) {
+        aiPanel.classList.remove('open');
+        aiPanel.setAttribute('aria-hidden', 'true');
+    }
+    updateAiCopy(type);
+}
+
+function updateAiCopy(type) {
+    const copy = aiCopy[type];
+    const aiTitle = document.getElementById('aiTitle');
+    const aiInputLabel = document.getElementById('aiInputLabel');
+    const aiInput = document.getElementById('aiInput');
+    const aiResults = document.getElementById('aiResults');
+    if (!copy || !aiTitle || !aiInputLabel || !aiInput || !aiResults) return;
+    aiTitle.textContent = copy.title;
+    aiInputLabel.textContent = copy.label;
+    aiResults.classList.remove('active');
+    aiResults.innerHTML = '';
+}
+
+function toggleAiPanel(open) {
+    const aiPanel = document.getElementById('aiPanel');
+    if (!aiPanel) return;
+    const shouldOpen = typeof open === 'boolean' ? open : !aiPanel.classList.contains('open');
+    aiPanel.classList.toggle('open', shouldOpen);
+    aiPanel.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+}
+
+function renderAiSuggestions(list, type) {
+    const aiResults = document.getElementById('aiResults');
+    if (!aiResults) return;
+    aiResults.innerHTML = '';
+    aiResults.classList.add('active');
+
+    list.forEach((text, index) => {
+        const suggestion = document.createElement('div');
+        suggestion.className = 'ai-suggestion';
+        suggestion.innerHTML = `
+            <div><strong>Vorschlag ${index + 1}</strong></div>
+            <div>${text}</div>
+        `;
+        const useButton = document.createElement('button');
+        useButton.className = 'btn';
+        useButton.type = 'button';
+        useButton.innerHTML = '<span class="material-icons">content_paste</span> In Feld übernehmen';
+        useButton.addEventListener('click', () => applyAiSuggestion(text, type));
+        suggestion.appendChild(useButton);
+        aiResults.appendChild(suggestion);
+    });
+}
+
+function applyAiSuggestion(text, type) {
+    if (type === 'textbox') {
+        const field = document.getElementById('qTextContent');
+        if (field) field.value = text;
+    }
+    if (type === 'todo') {
+        const field = document.getElementById('qTodoContent');
+        if (field) {
+            const trimmed = text.trim();
+            const existing = field.value.trim();
+            field.value = existing ? `${existing}\n${trimmed}` : trimmed;
+        }
+    }
+}
+
+async function handleAiSubmit(event) {
+    event.preventDefault();
+    const type = document.getElementById('qType').value;
+    if (type !== 'textbox' && type !== 'todo') {
+        showNotification('AI ist nur für TextBox oder To-Do verfügbar.');
+        return;
+    }
+
+    const aiInput = document.getElementById('aiInput');
+    const aiResults = document.getElementById('aiResults');
+    if (!aiInput || !aiResults) return;
+    const userInput = aiInput.value.trim();
+    if (!userInput) {
+        showNotification('Bitte gib zuerst Infos ein.');
+        return;
+    }
+
+    aiResults.innerHTML = '<div class="ai-label">Lädt…</div>';
+    aiResults.classList.add('active');
+
+    try {
+        const response = await fetch('/api/ai', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type,
+                input: userInput
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData?.error || 'AI Fehler beim Laden.');
+        }
+
+        const data = await response.json();
+        const suggestions = (data?.suggestions || '')
+            .split('\n')
+            .map(line => line.replace(/^\d+[\).\s-]*/g, '').trim())
+            .filter(Boolean);
+
+        if (!suggestions.length) {
+            throw new Error('Keine Vorschläge erhalten.');
+        }
+
+        renderAiSuggestions(suggestions, type);
+    } catch (error) {
+        aiResults.classList.remove('active');
+        const message = error.message && error.message.includes('Failed to fetch')
+            ? 'AI Server nicht erreichbar.'
+            : (error.message || 'AI konnte nicht geladen werden.');
+        showNotification(message);
+        showNotification(error.message || 'AI konnte nicht geladen werden.');
+    }
 }
 
 function renderTable() {
@@ -1048,7 +724,7 @@ function renderTable() {
     if (animations.length === 0) {
         tbody.innerHTML = `
                 <tr>
-                    <td colspan="17">
+                    <td colspan="16">
                         <div class="empty-state">
                             <div class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">post_add</div>
                             <h3>Noch keine Animationen</h3>
@@ -1060,20 +736,18 @@ function renderTable() {
         return;
     }
 
-    const rows = getSortedAnimations();
-    tbody.innerHTML = rows.map((anim) => `
-            <tr ondblclick="editRow(${anim.id})" data-id="${anim.id}">
-                <td>${anim.id ?? '-'}</td>
+    tbody.innerHTML = animations.map((anim, index) => `
+            <tr ondblclick="editRow(${index})" data-index="${index}">
                 <td>${anim.datum || '-'}</td>
                 <td>${anim.show || '-'}</td>
-                <td>${anim.folge || anim.sequenz || '-'}</td>
+                <td>${anim.sequenz || '-'}</td>
                 <td>
                     <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
-                        ${typeLabels[anim.type] || anim.type}
+                        <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type]}</span>
+                        ${anim.type}
                     </span>
                 </td>
-                <td>${anim.teilnehmer ? `<span class="person-badge ${badgeClass[anim.teilnehmer] || ''}">${anim.teilnehmer}</span>` : '-'}</td>
+                <td><span class="person-badge ${badgeClass[anim.teilnehmer]}">${anim.teilnehmer}</span></td>
                 <td>${anim.temperatur || '-'}</td>
                 <td>${anim.zeit || '-'}</td>
                 <td>${(anim.geldStart !== undefined && anim.geldStart !== '') ? anim.geldStart + '€' : '-'}</td>
@@ -1086,28 +760,23 @@ function renderTable() {
                 <td>${anim.cutterInfo || '-'}</td>
                 <td>
                     <div style="display: flex; gap: 4px;">
-                        <button class="action-btn" onclick="duplicateRow(${anim.id})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">control_point_duplicate</span></button>
-                        <button class="action-btn" onclick="deleteRow(${anim.id})" title="Löschen"><span class="material-icons" style="font-size: 18px;">delete</span></button>
+                        <button class="action-btn" onclick="duplicateRow(${index})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">control_point_duplicate</span></button>
+                        <button class="action-btn" onclick="deleteRow(${index})" title="Löschen"><span class="material-icons" style="font-size: 18px;">delete</span></button>
                     </div>
                 </td>
             </tr>
         `).join('');
-    updateSortIndicators();
 }
 
-function editRow(id) {
-    const row = document.querySelector(`tr[data-id="${id}"]`);
+function editRow(index) {
+    const row = document.querySelector(`tr[data-index="${index}"]`);
     if (!row) return;
-    const anim = getAnimationById(id);
-    if (!anim) return;
+    const anim = animations[index];
 
     row.classList.add('editing');
-    const personOptions = ['Jerry', 'Marc', 'Kodiak', 'Taube', 'Käthe']
-        .map(name => `<option value="${name}" ${anim.teilnehmer === name ? 'selected' : ''}>${name}</option>`)
-        .join('');
+    editingRow = index;
 
     row.innerHTML = `
-            <td>${anim.id ?? '-'}</td>
             <td class="editable-cell"><input type="text" value="${anim.datum || ''}" data-field="datum"></td>
             <td class="editable-cell">
                 <select data-field="show">
@@ -1115,19 +784,14 @@ function editRow(id) {
                     <option value="TR3" ${anim.show === 'TR3' ? 'selected' : ''}>TR3</option>
                 </select>
             </td>
-            <td class="editable-cell"><input type="text" value="${anim.folge || anim.sequenz || ''}" data-field="folge"></td>
+            <td class="editable-cell"><input type="text" value="${anim.sequenz || ''}" data-field="sequenz"></td>
             <td>
                 <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
-                    <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
-                    ${typeLabels[anim.type] || anim.type}
+                    <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type]}</span>
+                    ${anim.type}
                 </span>
             </td>
-            <td class="editable-cell">
-                <select data-field="teilnehmer" ${anim.type === 'samsung' ? 'disabled' : ''}>
-                    <option value="">-</option>
-                    ${personOptions}
-                </select>
-            </td>
+            <td><span class="person-badge ${badgeClass[anim.teilnehmer]}">${anim.teilnehmer}</span></td>
             <td class="editable-cell"><input type="text" value="${anim.temperatur || ''}" data-field="temperatur"></td>
             <td class="editable-cell"><input type="text" value="${anim.zeit || ''}" data-field="zeit"></td>
             <td class="editable-cell"><input type="text" value="${anim.geldStart || ''}" data-field="geldStart"></td>
@@ -1140,7 +804,7 @@ function editRow(id) {
             <td class="editable-cell"><input type="text" value="${anim.cutterInfo || ''}" data-field="cutterInfo"></td>
             <td>
                 <div style="display: flex; gap: 4px;">
-                    <button class="action-btn" onclick="saveEdit(${anim.id})" title="Speichern"><span class="material-icons" style="font-size: 18px;">save</span></button>
+                    <button class="action-btn" onclick="saveEdit(${index})" title="Speichern"><span class="material-icons" style="font-size: 18px;">save</span></button>
                     <button class="action-btn" onclick="cancelEdit()" title="Abbrechen"><span class="material-icons" style="font-size: 18px;">close</span></button>
                 </div>
             </td>
@@ -1153,7 +817,7 @@ function editRow(id) {
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
-                saveEdit(id);
+                saveEdit(index);
             } else if (e.key === 'Escape') {
                 cancelEdit();
             }
@@ -1161,11 +825,9 @@ function editRow(id) {
     });
 }
 
-async function saveEdit(id) {
-    const row = document.querySelector(`tr[data-id="${id}"]`);
+function saveEdit(index) {
+    const row = document.querySelector(`tr[data-index="${index}"]`);
     if (!row) return;
-    const anim = getAnimationById(id);
-    if (!anim) return;
     const inputs = row.querySelectorAll('[data-field]');
 
     inputs.forEach(input => {
@@ -1179,55 +841,41 @@ async function saveEdit(id) {
                 .join('\n');
         }
 
-        anim[field] = value;
+        animations[index][field] = value;
     });
 
-    if (anim.folge !== undefined) {
-        delete anim.sequenz;
-    }
-
-    if (anim.teilnehmer) {
-        anim.farbe = colorMap[anim.teilnehmer] || '';
-    } else {
-        anim.farbe = '';
-    }
-
-    await updateAnimationInStore(anim);
+    editingRow = null;
+    saveAndRender();
     showNotification('Änderungen gespeichert!');
 }
 
 function cancelEdit() {
+    editingRow = null;
     renderTable();
 }
 
-async function duplicateRow(id) {
-    const original = getAnimationById(id);
-    if (!original) return;
-    const copy = JSON.parse(JSON.stringify(original));
-    delete copy.id;
-    await addAnimationToStore(copy);
+function duplicateRow(index) {
+    const copy = JSON.parse(JSON.stringify(animations[index]));
+    animations.splice(index + 1, 0, copy);
+    saveAndRender();
     showNotification('Animation dupliziert!');
 }
 
-async function deleteRow(id) {
+function deleteRow(index) {
     if (confirm('Diese Animation wirklich löschen?')) {
-        await deleteAnimationFromStore(id);
+        animations.splice(index, 1);
+        saveAndRender();
         showNotification('Animation gelöscht!');
     }
 }
 
 function saveAndRender() {
-    const maxId = getMaxId(animations);
-    nextLocalId = Math.max(nextLocalId, maxId + 1);
-    saveLocalAnimations();
+    localStorage.setItem('raceAnimations', JSON.stringify(animations));
     renderTable();
-    if (cloudAvailable) {
-        void syncAllToCloud(animations);
-    }
 }
 
 function generateCSV() {
-    const headers = ['ID', 'Datum', 'Show', 'Folge', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
+    const headers = ['Datum', 'Show', 'Sequenz', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
 
     const escapeCSV = (text) => {
         if (text === null || text === undefined) return '';
@@ -1241,10 +889,9 @@ function generateCSV() {
     return [
         headers.join(','),
         ...animations.map(anim => [
-            anim.id || '',
             anim.datum || '',
             anim.show || '',
-            anim.folge || anim.sequenz || '',
+            anim.sequenz || '',
             anim.teilnehmer || '',
             anim.farbe || '',
             anim.komposition || '',
@@ -1269,7 +916,7 @@ function handleDownload() {
     }
 
     const csvContent = generateCSV();
-    const fileName = getExportFileName();
+    const fileName = `the_race_${new Date().toISOString().split('T')[0]}.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -1479,12 +1126,28 @@ function gameOver() {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     const quickForm = document.getElementById('quickForm');
     if (quickForm) {
         quickForm.addEventListener('submit', addAnimation);
     }
 
+    const aiToggle = document.getElementById('aiToggleBtn');
+    const aiClose = document.getElementById('aiCloseBtn');
+    const aiSubmitBtn = document.getElementById('aiSubmitBtn');
+    const aiForm = document.getElementById('aiForm');
+    if (aiToggle) {
+        aiToggle.addEventListener('click', () => toggleAiPanel());
+    }
+    if (aiClose) {
+        aiClose.addEventListener('click', () => toggleAiPanel(false));
+    }
+    if (aiSubmitBtn) {
+        aiSubmitBtn.addEventListener('click', handleAiSubmit);
+    if (aiForm) {
+        aiForm.addEventListener('submit', handleAiSubmit);
+    }
+    
     // Close modal when clicking outside
     window.addEventListener('click', (event) => {
         const sheetsModal = document.getElementById('sheetsModal');
@@ -1512,20 +1175,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const normalized = normalizeAnimations(stored);
-    animations = normalized.list;
-    const maxId = getMaxId(animations);
-    nextLocalId = Math.max(nextLocalId, maxId + 1);
-    if (normalized.hadMissingId) {
-        saveLocalAnimations();
-    }
-
-    document.querySelectorAll('th[data-sort]').forEach(th => {
-        th.addEventListener('click', () => toggleSort(th.getAttribute('data-sort')));
-    });
-
     renderTable();
-    updateSortIndicators();
-    await loadFromCloud();
+    updateAiAssistVisibility(document.getElementById('qType')?.value);
 });

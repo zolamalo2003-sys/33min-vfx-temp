@@ -21,9 +21,6 @@
             --btn-primary-hover: #1765cc;
             --shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
             --font-family: 'DM Sans', sans-serif;
-            --notice-bg: #fff4d6;
-            --notice-border: #f5d28a;
-            --notice-text: #8a5a00;
         }
 
         [data-theme="dark"] {
@@ -37,9 +34,6 @@
             --btn-primary: #8ab4f8;
             --btn-primary-hover: #93baf9;
             --shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
-            --notice-bg: #3b2d16;
-            --notice-border: #6f4d1e;
-            --notice-text: #f6d7a1;
         }
 
         * {
@@ -110,8 +104,6 @@
             display: flex;
             gap: 12px;
             align-items: center;
-            flex-wrap: wrap;
-            justify-content: flex-end;
         }
 
         .btn {
@@ -135,14 +127,6 @@
             transform: translateY(-1px);
         }
 
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-            pointer-events: none;
-        }
-
         .btn-primary {
             background: var(--btn-primary);
             color: #ffffff;
@@ -153,29 +137,6 @@
         .btn-primary:hover {
             background: var(--btn-primary-hover);
             box-shadow: 0 4px 6px rgba(0,0,0,0.12);
-        }
-
-        .btn-primary:disabled {
-            background: var(--border-color);
-            color: var(--text-color);
-        }
-
-        .maintenance-note {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--notice-border);
-            background: var(--notice-bg);
-            color: var(--notice-text);
-            font-size: 0.78em;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .maintenance-note .material-icons {
-            font-size: 16px;
         }
 
         .theme-toggle {
@@ -340,10 +301,6 @@
             align-items: end;
         }
 
-        .quick-row.compact {
-            grid-template-columns: 1fr 60px;
-        }
-
         .field-group {
             display: flex;
             flex-direction: column;
@@ -358,79 +315,18 @@
         }
 
         .quick-input, .quick-select {
-            padding: 11px 12px;
+            padding: 10px;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 6px;
             font-size: 0.95em;
-            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            transition: all 0.2s;
             background: var(--field-bg);
             color: var(--text-color);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 1px 2px rgba(0,0,0,0.05);
-            line-height: 1.2;
         }
 
         .quick-input:focus, .quick-select:focus {
             outline: none;
             border-color: var(--accent-color);
-            background: var(--container-bg);
-            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
-        }
-
-        .quick-select {
-            appearance: none;
-            background-image:
-                linear-gradient(45deg, transparent 50%, var(--text-color) 50%),
-                linear-gradient(135deg, var(--text-color) 50%, transparent 50%);
-            background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
-            background-size: 6px 6px, 6px 6px;
-            background-repeat: no-repeat;
-            padding-right: 34px;
-        }
-
-        input.quick-input, select.quick-select {
-            min-height: 42px;
-        }
-
-        textarea.quick-input {
-            min-height: 90px;
-            resize: vertical;
-        }
-
-        .geld-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .geld-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .geld-row .action-btn {
-            width: 38px;
-            height: 38px;
-        }
-
-        .geld-row .quick-input:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .geld-preview {
-            grid-column: span 2;
-            padding: 10px;
-            background: rgba(26, 115, 232, 0.1);
-            border-radius: 8px;
-            color: var(--accent-color);
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .geld-add {
-            align-self: flex-start;
         }
 
         .btn-add {
@@ -479,30 +375,6 @@
 
         [data-theme="dark"] .data-grid th {
             background: rgba(138, 180, 248, 0.02);
-        }
-
-        .data-grid th.sortable {
-            cursor: pointer;
-            padding-right: 26px;
-            position: relative;
-        }
-
-        .data-grid th.sortable::after {
-            content: '↕';
-            position: absolute;
-            right: 8px;
-            opacity: 0.25;
-            font-size: 0.9em;
-        }
-
-        .data-grid th.sortable[data-sort-direction="asc"]::after {
-            content: '↑';
-            opacity: 0.7;
-        }
-
-        .data-grid th.sortable[data-sort-direction="desc"]::after {
-            content: '↓';
-            opacity: 0.7;
         }
 
         .data-grid td {
@@ -652,19 +524,11 @@
 
         .editable-cell input, .editable-cell select, .editable-cell textarea {
             width: 100%;
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
+            padding: 6px;
+            border: 1px solid var(--accent-color);
             background: var(--field-bg);
             color: var(--text-color);
-            border-radius: 8px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
-        }
-
-        .editable-cell input:focus, .editable-cell select:focus, .editable-cell textarea:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            background: var(--container-bg);
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            border-radius: 4px;
         }
 
         /* Modal Styles */
@@ -891,6 +755,144 @@
             margin-top: 10px;
         }
 
+        .ai-assistant {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .ai-fab {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            padding: 12px 16px;
+            border-radius: 999px;
+            border: none;
+            background: var(--accent-color);
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 12px 20px rgba(26, 115, 232, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .ai-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 26px rgba(26, 115, 232, 0.3);
+        }
+
+        .ai-panel {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 12px);
+            width: 360px;
+            max-width: calc(100vw - 40px);
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transform: translateY(10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+
+        .ai-panel.open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .ai-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--field-bg);
+        }
+
+        .ai-panel-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .ai-close {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color);
+            padding: 4px;
+            border-radius: 50%;
+        }
+
+        .ai-panel-body {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ai-inline-spacer {
+            flex: 1;
+        }
+
+        .ai-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .ai-input {
+            width: 100%;
+            min-height: 110px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--field-bg);
+            padding: 12px;
+            resize: vertical;
+            font-family: var(--font-family), serif;
+            color: var(--text-color);
+        }
+
+        .ai-results {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .ai-results.active {
+            display: flex;
+        }
+
+        .ai-suggestion {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: var(--field-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ai-suggestion button {
+            align-self: flex-start;
+        }
     </style>
 </head>
 <body>
@@ -907,13 +909,9 @@
             <button class="btn" onclick="handleDownload()" title="Als CSV herunterladen">
                 <span class="material-icons">download</span> Download
             </button>
-            <button class="btn btn-primary" id="googleSheetsBtn" style="padding-left: 25px; padding-right: 25px;" title="Vorübergehend deaktiviert" disabled aria-disabled="true">
+            <button class="btn btn-primary" id="googleSheetsBtn" onclick="saveToGoogleSheets()" style="padding-left: 25px; padding-right: 25px;" title="In Google Sheets speichern">
                 <span class="material-icons">description</span> In Google Sheets speichern
             </button>
-            <div class="maintenance-note">
-                <span class="material-icons">build</span>
-                <span>Google Sheets wird gerade gefixt und ist vorübergehend nicht verfügbar.</span>
-            </div>
         </div>
     </div>
 
@@ -946,16 +944,14 @@
                 <div class="type-item" onclick="selectType('uebersicht')"><span class="material-icons">assessment</span> <span>Übersicht</span> <span class="material-icons" style="font-size: 14px; opacity: 0.5;">add</span></div>
                 <div class="type-item" onclick="selectType('textbox')"><span class="material-icons">chat_bubble</span> <span>TextBox</span> <span class="material-icons" style="font-size: 14px; opacity: 0.5;">add</span></div>
                 <div class="type-item" onclick="selectType('todo')"><span class="material-icons">check_circle</span> <span>To-Do</span> <span class="material-icons" style="font-size: 14px; opacity: 0.5;">add</span></div>
-                <div class="type-item" onclick="selectType('ticket')"><span class="material-icons">confirmation_number</span> <span>Ticket</span> <span class="material-icons" style="font-size: 14px; opacity: 0.5;">add</span></div>
-                <div class="type-item" onclick="selectType('samsung')"><span class="material-icons">smartphone</span> <span>Samsung Template</span> <span class="material-icons" style="font-size: 14px; opacity: 0.5;">add</span></div>
             </div>
 
             <form id="quickForm" style="display: none;">
                 <input type="hidden" id="qType">
                 <div class="quick-row">
-                    <div class="field-group" id="personFieldGroup">
-                        <label for="qPerson">Person</label>
-                        <select class="quick-select" id="qPerson" required>
+                    <div class="field-group">
+                        <label>Person</label>
+                        <label for="qPerson"></label><select class="quick-select" id="qPerson" required>
                             <option value="">Wählen...</option>
                             <option value="Jerry">Jerry</option>
                             <option value="Marc">Marc</option>
@@ -968,6 +964,30 @@
                         <label id="dynamicLabel">Wert</label>
                         <input type="text" class="quick-input" id="qValue">
                     </div>
+                    <div class="ai-assistant">
+                        <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
+                            <span class="material-icons">auto_awesome</span>
+                            <span>AI Ideen</span>
+                        </button>
+                        <div class="ai-panel" id="aiPanel" aria-hidden="true">
+                            <div class="ai-panel-header">
+                                <h3 id="aiTitle">AI Ideen</h3>
+                                <button class="ai-close" id="aiCloseBtn" title="Schließen">
+                                    <span class="material-icons">close</span>
+                                </button>
+                            </div>
+                            <div class="ai-panel-body">
+                                <div id="aiForm">
+                                    <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
+                                    <textarea class="ai-input" id="aiInput" required></textarea>
+                                    <button class="btn btn-primary ai-submit" id="aiSubmitBtn" type="button">
+                                        Vorschläge holen
+                                    </button>
+                                </div>
+                                <div class="ai-results" id="aiResults"></div>
+                            </div>
+                        </div>
+                    </div>
                     <button type="submit" class="btn-add">
                         <span class="material-icons">add</span>
                     </button>
@@ -976,22 +996,22 @@
                 
                 <div class="global-fields" id="globalFields">
                     <div class="field-group">
-                        <label for="qShow">Show</label>
+                        <label>Show</label>
                         <select class="quick-select" id="qShow">
                             <option value="WCC">WCC</option>
                             <option value="TR3">TR3</option>
                         </select>
                     </div>
                     <div class="field-group">
-                        <label for="qSequence">Folge</label>
-                        <input type="text" class="quick-input" id="qSequence">
+                        <label>Sequenz</label>
+                        <label for="qSequence"></label><input type="text" class="quick-input" id="qSequence">
                     </div>
                     <div class="field-group">
-                        <label for="qTimestamp">Schnitt Zeitstempel</label>
+                        <label>Schnitt Zeitstempel</label>
                         <input type="text" class="quick-input" id="qTimestamp">
                     </div>
                     <div class="field-group">
-                        <label for="qCutterInfo">Cutter Info</label>
+                        <label>Cutter Info</label>
                         <input type="text" class="quick-input" id="qCutterInfo">
                     </div>
                 </div>
@@ -1002,28 +1022,27 @@
             <table class="data-grid">
                 <thead>
                 <tr>
-                    <th class="sortable" data-sort="id" style="width: 70px;">ID</th>
-                    <th class="sortable" data-sort="datum" style="width: 90px;">Datum</th>
-                    <th class="sortable" data-sort="show" style="width: 70px;">Show</th>
-                    <th class="sortable" data-sort="folge" style="width: 100px;">Folge</th>
-                    <th class="sortable" data-sort="type" style="width: 110px;">Typ</th>
-                    <th class="sortable" data-sort="teilnehmer" style="width: 120px;">Person</th>
-                    <th class="sortable" data-sort="temperatur" style="width: 80px;">Temp</th>
-                    <th class="sortable" data-sort="zeit" style="width: 80px;">Zeit</th>
-                    <th class="sortable" data-sort="geldStart" style="width: 90px;">Start</th>
-                    <th class="sortable" data-sort="geldAenderung" style="width: 90px;">+/-</th>
-                    <th class="sortable" data-sort="geldAktuell" style="width: 90px;">Aktuell</th>
-                    <th class="sortable" data-sort="stempel" style="width: 120px;">Stempel</th>
-                    <th class="sortable" data-sort="textboxText" style="width: 250px;">Text</th>
-                    <th class="sortable" data-sort="todoItem" style="width: 200px;">To-Do</th>
-                    <th class="sortable" data-sort="schnittTimestamp" style="width: 120px;">Schnitt-TS</th>
-                    <th class="sortable" data-sort="cutterInfo" style="width: 150px;">Cutter Info</th>
+                    <th style="width: 90px;">Datum</th>
+                    <th style="width: 70px;">Show</th>
+                    <th style="width: 100px;">Sequenz</th>
+                    <th style="width: 100px;">Typ</th>
+                    <th style="width: 120px;">Person</th>
+                    <th style="width: 80px;">Temp</th>
+                    <th style="width: 80px;">Zeit</th>
+                    <th style="width: 90px;">Start</th>
+                    <th style="width: 80px;">+/-</th>
+                    <th style="width: 90px;">Aktuell</th>
+                    <th style="width: 120px;">Stempel</th>
+                    <th style="width: 250px;">Text</th>
+                    <th style="width: 200px;">To-Do</th>
+                    <th style="width: 120px;">Schnitt-TS</th>
+                    <th style="width: 150px;">Cutter Info</th>
                     <th style="width: 80px;">Aktionen</th>
                 </tr>
                 </thead>
                 <tbody id="dataBody">
                 <tr>
-                    <td colspan="17">
+                    <td colspan="16">
                         <div class="empty-state">
                             <div class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">post_add</div>
                             <h3>Noch keine Animationen</h3>
@@ -1033,6 +1052,31 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<div class="ai-assistant">
+    <button class="ai-fab" id="aiToggleBtn" type="button" title="AI Vorschläge öffnen">
+        <span class="material-icons">auto_awesome</span>
+        <span>AI Ideen</span>
+    </button>
+    <div class="ai-panel" id="aiPanel" aria-hidden="true">
+        <div class="ai-panel-header">
+            <h3 id="aiTitle">AI Ideen</h3>
+            <button class="ai-close" id="aiCloseBtn" title="Schließen">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="ai-panel-body">
+            <form id="aiForm">
+                <label class="ai-label" id="aiInputLabel" for="aiInput">Szene</label>
+                <textarea class="ai-input" id="aiInput" required></textarea>
+                <button class="btn btn-primary ai-submit" type="submit">
+                    Vorschläge holen
+                </button>
+            </form>
+            <div class="ai-results" id="aiResults"></div>
         </div>
     </div>
 </div>
@@ -1082,7 +1126,7 @@
             </div>
             
             <div class="field-group">
-                <label for="spreadsheetIdInput">Spreadsheet ID</label>
+                <label>Spreadsheet ID</label>
                 <input type="text" id="spreadsheetIdInput" class="quick-input" placeholder="ID aus der URL kopieren">
                 <p style="font-size: 0.75em; opacity: 0.6; margin-top: 5px;">
                     Beispiel: https://docs.google.com/spreadsheets/d/<b>SpreadsheetID</b>/edit
