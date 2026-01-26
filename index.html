@@ -767,16 +767,6 @@
 
         .obstacle.cactus-small { width: 30px; height: 35px; }
         .obstacle.cactus-large { width: 45px; height: 50px; }
-        .obstacle.bird { bottom: 60px; width: 40px; height: 30px; }
-
-        .cloud {
-            position: absolute;
-            background: none;
-            color: var(--text-color);
-            opacity: 0.15;
-            z-index: 0;
-            pointer-events: none;
-        }
 
         .game-score {
             position: absolute;
@@ -801,10 +791,6 @@
             100% { bottom: 10px; }
         }
 
-        @keyframes cloudMove {
-            from { right: -60px; }
-            to { right: 110%; }
-        }
 
         .game-over-screen {
             position: absolute;
@@ -821,13 +807,6 @@
             color: white;
             z-index: 10;
             text-align: center;
-        }
-
-        .game-info-text {
-            font-size: 0.85em;
-            text-align: center;
-            opacity: 0.7;
-            margin-top: 10px;
         }
 
     </style>
@@ -964,7 +943,6 @@
 <div id="gameModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>dinosaurier raaaa</h3>
             <button class="close-btn" onclick="hideGameModal()">
                 <span class="material-icons">close</span>
             </button>
@@ -984,10 +962,6 @@
                 </button>
             </div>
         </div>
-        <p class="game-info-text">
-            klick oder drück <b>leertaste</b> zum springen<br>
-            manchmal kommen solche dinger da musst du nicht drüber springen sondern drauf springen wow wie abwechslungsreich und kreativ
-        </p>
     </div>
 </div>
 

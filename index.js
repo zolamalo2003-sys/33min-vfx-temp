@@ -1268,7 +1268,6 @@ let gameScore = 0;
 let gameSpeed = 5;
 let obstacleTimer;
 let collisionTimer;
-let cloudTimer;
 
 function showGameModal() {
     const modal = document.getElementById('gameModal');
@@ -1309,7 +1308,6 @@ function startGame() {
     
     clearTimeout(obstacleTimer);
     clearInterval(collisionTimer);
-    clearInterval(cloudTimer);
 
     // Kleiner Delay vor dem ersten Obstacle für besseres Spielgefühl
     obstacleTimer = setTimeout(() => {
@@ -1322,16 +1320,12 @@ function startGame() {
         if (isGameRunning && gameId === currentGameId) checkCollision();
     }, 10);
 
-    cloudTimer = setInterval(() => {
-        if (isGameRunning && gameId === currentGameId) createCloud();
-    }, 3000);
 }
 
 function stopGame() {
     isGameRunning = false;
     clearTimeout(obstacleTimer);
     clearInterval(collisionTimer);
-    clearInterval(cloudTimer);
     const objective = document.getElementById('gameObjective');
     if (objective) objective.innerHTML = '';
 }
@@ -1363,15 +1357,13 @@ function createObstacle(gameId) {
     if (!objective) return;
     
     const obstacle = document.createElement('div');
-    const types = ['cactus-small', 'cactus-large', 'bird'];
-    const availableTypes = gameScore > 30 ? types : ['cactus-small', 'cactus-large'];
-    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    const types = ['cactus-small', 'cactus-large'];
+    const type = types[Math.floor(Math.random() * types.length)];
     
     obstacle.className = `obstacle ${type}`;
     
     let icon = 'potted_plant';
-    if (type === 'bird') icon = 'flight';
-    else if (type === 'cactus-large') icon = 'park';
+    if (type === 'cactus-large') icon = 'park';
     
     obstacle.innerHTML = `<span class="material-icons">${icon}</span>`;
     objective.appendChild(obstacle);
@@ -1398,23 +1390,6 @@ function createObstacle(gameId) {
             }
         }
     }, 20);
-}
-
-function createCloud() {
-    const objective = document.getElementById('gameObjective');
-    if (!objective) return;
-    
-    const cloud = document.createElement('div');
-    cloud.className = 'cloud';
-    const top = Math.floor(Math.random() * 70) + 10;
-    cloud.style.top = top + 'px';
-    cloud.innerHTML = '<span class="material-icons" style="font-size: 30px;">cloud</span>';
-    cloud.style.animation = `cloudMove ${Math.random() * 5 + 7}s linear forwards`;
-    objective.appendChild(cloud);
-    
-    setTimeout(() => {
-        if (cloud.parentElement) cloud.remove();
-    }, 12000);
 }
 
 function updateScore(score) {
