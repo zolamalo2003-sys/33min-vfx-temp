@@ -1,4 +1,41 @@
-/* global gapi, google */
+declare interface Document {
+    getElementById(elementId: string): any;
+    querySelector(selectors: string): any;
+    querySelectorAll(selectors: string): any;
+}
+
+declare interface Element {
+    querySelector(selectors: string): any;
+    querySelectorAll(selectors: string): any;
+}
+
+let gapi: any;
+let google: any;
+
+type AnimationEntry = {
+    id?: number;
+    datum?: string;
+    show?: string;
+    folge?: string;
+    sequenz?: string;
+    type?: string;
+    teilnehmer?: string;
+    farbe?: string;
+    komposition?: string;
+    temperatur?: string;
+    zeit?: string;
+    geldStart?: string;
+    geldAenderung?: string;
+    geldAktuell?: string;
+    stempel?: string;
+    textboxText?: string;
+    todoItem?: string;
+    schnittTimestamp?: string;
+    cutterInfo?: string;
+    status?: string;
+};
+
+type ObstacleEl = HTMLDivElement & { _flapTimer?: ReturnType<typeof setInterval> };
 // --- Google Sheets API Konfiguration ---
 // HINWEIS: Um Google Sheets zu nutzen, müssen hier gültige Anmeldedaten eingetragen werden.
 // Anleitung: https://developers.google.com/sheets/api/quickstart/js
@@ -9,29 +46,46 @@ const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4'
 const STORAGE_KEY = 'raceAnimations';
 const STORAGE_ID_KEY = 'raceAnimationsNextId';
 const CLOUD_ENDPOINT = '/api/animations';
+const PERSON_KAETHE = 'K\u00e4the';
+const PERSON_NAMES = ['Jerry', 'Marc', 'Kodiak', 'Taube', PERSON_KAETHE];
 
 let cloudAvailable = false;
-let nextLocalId = parseInt(localStorage.getItem(STORAGE_ID_KEY) || '1', 10);
+let nextLocalId = Number.parseInt(localStorage.getItem(STORAGE_ID_KEY) || '1', 10);
 let sortState = { key: null, direction: 'asc' };
+const filterState = {
+    query: '',
+    showOnly: false,
+    typeOnly: false,
+    todoOnly: false,
+    samsungOnly: false
+};
 
-let tokenClient;
+let tokenClient: any;
 let spreadsheetId = localStorage.getItem('googleSpreadsheetId') || '';
 
 // --- Initialisierung ---
 
 function gapiLoaded() {
+    gapi = (window as any).gapi;
     gapi.load('client', initializeGapiClient);
 }
 
-async function initializeGapiClient() {
-    await gapi.client.init({
+function initializeGapiClient() {
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction,JSVoidFunctionReturnValueUsed
+    const initResult = gapi.client.init({
         apiKey: API_KEY,
         discoveryDocs: [DISCOVERY_DOC],
     });
+    if (initResult && typeof initResult.then === 'function') {
+        initResult.then(updateAuthStatus).catch(() => updateAuthStatus());
+        return;
+    }
     updateAuthStatus();
 }
 
 function gisLoaded() {
+    google = (window as any).google;
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
@@ -59,6 +113,7 @@ function updateAuthStatus() {
     const actionsDiv = document.getElementById('sheetsActions');
     if (!statusDiv || !authBtn || !actionsDiv) return;
 
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction
     const token = gapi.client.getToken();
     if (token) {
         statusDiv.innerHTML = `<span class="material-icons" style="color: #0f9d58;">check_circle</span> <span>Verbunden</span>`;
@@ -82,17 +137,23 @@ function handleAuthClick() {
         showNotification('Erfolgreich angemeldet!');
     };
 
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction
     if (gapi.client.getToken() === null) {
+        //noinspection JSUnresolvedFunction
         tokenClient.requestAccessToken({prompt: 'consent'});
     } else {
+        //noinspection JSUnresolvedFunction
         tokenClient.requestAccessToken({prompt: ''});
     }
 }
 
 function handleSignoutClick() {
+    //noinspection JSUnresolvedVariable,JSUnresolvedFunction
     const token = gapi.client.getToken();
     if (token !== null) {
+        //noinspection JSUnresolvedVariable,JSUnresolvedFunction,JSValidateTypes,JSCheckFunctionSignatures
         google.accounts.oauth2.revoke(token.access_token);
+        //noinspection JSUnresolvedVariable,JSUnresolvedFunction
         gapi.client.setToken('');
         updateAuthStatus();
         showNotification('Abgemeldet.');
@@ -116,8 +177,7 @@ function hideSheetsModal() {
 function saveSheetsSettings() {
     const input = document.getElementById('spreadsheetIdInput');
     spreadsheetId = input.value.trim();
-    
-    // Einfache Validierung: Wenn es ein Link ist, extrahiere die ID
+
     if (spreadsheetId.includes('/d/')) {
         const parts = spreadsheetId.split('/d/');
         if (parts[1]) {
@@ -130,22 +190,6 @@ function saveSheetsSettings() {
     showNotification('Einstellungen gespeichert!');
 }
 
-function saveToGoogleSheets() {
-    if (!spreadsheetId) {
-        showNotification('Bitte zuerst eine Spreadsheet ID festlegen!');
-        showSheetsModal();
-        return;
-    }
-
-    const token = gapi.client.getToken();
-    if (!token) {
-        showSheetsModal();
-        return;
-    }
-
-    pushToGoogleSheets();
-}
-
 async function pushToGoogleSheets() {
     if (animations.length === 0) {
         showNotification('Keine Daten zum Senden vorhanden!');
@@ -156,39 +200,18 @@ async function pushToGoogleSheets() {
         showNotification('Sende Daten zu Google Sheets...');
         
         // Header und Daten vorbereiten
-        const headers = ['ID', 'Datum', 'Show', 'Folge', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
-        const values = [
-            headers,
-            ...animations.map(anim => [
-                anim.id || '',
-                anim.datum || '',
-                anim.show || '',
-                anim.folge || anim.sequenz || '',
-                anim.teilnehmer || '',
-                anim.farbe || '',
-                anim.komposition || '',
-                anim.temperatur || '',
-                anim.zeit || '',
-                anim.geldStart || '',
-                anim.geldAenderung || '',
-                anim.geldAktuell || '',
-                anim.stempel || '',
-                anim.textboxText || '',
-                anim.todoItem || '',
-                anim.schnittTimestamp || '',
-                anim.cutterInfo || ''
-            ])
-        ];
+        const values = [SHEET_HEADERS, ...buildAnimationRows(animations)];
 
         // Zuerst das Blatt leeren oder einfach überschreiben? 
         // Wir überschreiben das gesamte Blatt "Sheet1" ab A1
         const range = 'Sheet1!A1';
         
+        //noinspection JSUnresolvedVariable,JSUnresolvedFunction
         await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: spreadsheetId,
-            range: range,
+            spreadsheetId,
+            range,
             valueInputOption: 'RAW',
-            resource: { values: values }
+            resource: { values }
         });
 
         showNotification('Erfolgreich in Google Sheets gespeichert!');
@@ -204,6 +227,7 @@ async function pullFromGoogleSheets() {
         showNotification('Lade Daten aus Google Sheets...');
         const range = 'Sheet1!A2:Q'; // Überspringe Header
 
+        //noinspection JSUnresolvedVariable,JSUnresolvedFunction
         const response = await gapi.client.sheets.spreadsheets.values.get({
             spreadsheetId: spreadsheetId,
             range: range,
@@ -217,9 +241,11 @@ async function pullFromGoogleSheets() {
 
         // Map rows back to animation objects
         const newAnimations = rows.map(row => {
-            const hasId = row.length >= 17 && row[0] !== '';
+            const rawId = row[0];
+            const parsedId = rawId === '' || rawId === undefined ? Number.NaN : Number(rawId);
+            const hasId = Number.isFinite(parsedId);
             const offset = hasId ? 1 : 0;
-            const idValue = hasId ? Number(row[0]) || row[0] : generateLocalId();
+            const idValue = hasId ? parsedId : generateLocalId();
             return {
                 id: idValue,
                 datum: row[offset + 0] || '',
@@ -263,7 +289,7 @@ const colorMap = {
     'Marc': 'Grün',
     'Kodiak': 'Lila',
     'Taube': 'Rot',
-    'Käthe': 'Orange'
+    [PERSON_KAETHE]: 'Orange'
 };
 
 const badgeClass = {
@@ -271,7 +297,7 @@ const badgeClass = {
     'Marc': 'badge-marc',
     'Kodiak': 'badge-kodiak',
     'Taube': 'badge-taube',
-    'Käthe': 'badge-käthe'
+    [PERSON_KAETHE]: 'badge-kaethe'
 };
 
 const typeIcon = {
@@ -296,7 +322,48 @@ const typeLabels = {
     samsung: 'Samsung Template'
 };
 
-let animations = [];
+const statusLabels = {
+    none: 'Kein Status',
+    draft: 'Entwurf',
+    ready: 'Export bereit',
+    exported: 'Exportiert',
+    error: 'Fehler',
+    edited: 'Bearbeitet'
+};
+
+const SHEET_HEADERS = ['ID', 'Datum', 'Show', 'Folge', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
+const SHEET_FIELDS: string[] = ['id', 'datum', 'show', 'folge', 'teilnehmer', 'farbe', 'komposition', 'temperatur', 'zeit', 'geldStart', 'geldAenderung', 'geldAktuell', 'stempel', 'textboxText', 'todoItem', 'schnittTimestamp', 'cutterInfo'];
+
+function getFolgeValue(anim: AnimationEntry): string {
+    return anim.folge || anim.sequenz || '';
+}
+
+function getAnimationFieldValue(anim: AnimationEntry, field: string): string {
+    if (field === 'folge') return getFolgeValue(anim);
+    const value = (anim as any)[field];
+    return value === undefined || value === null ? '' : String(value);
+}
+
+function getStatusKey(anim: AnimationEntry): string {
+    const raw = anim.status || 'none';
+    return statusLabels[raw] ? raw : 'none';
+}
+
+function getStatusLabel(anim: AnimationEntry): string {
+    const key = getStatusKey(anim);
+    return statusLabels[key] || statusLabels.none;
+}
+
+function buildAnimationRows(list: AnimationEntry[]): string[][] {
+    return list.map(anim => SHEET_FIELDS.map(field => getAnimationFieldValue(anim, field)));
+}
+
+let animations: AnimationEntry[] = [];
+const selectedIds = new Set<number>();
+let statusMenuId: number | null = null;
+let chatHistory: { role: 'user' | 'assistant'; content: string }[] = [];
+let chatBusy = false;
+const CHAT_STORAGE_KEY = 'chat_history';
 
 function normalizeAnimation(raw) {
     const anim = { ...raw };
@@ -307,9 +374,13 @@ function normalizeAnimation(raw) {
     if (!anim.type && anim.komposition) {
         anim.type = anim.komposition;
     }
-    if (anim.id !== undefined && anim.id !== null && anim.id !== '') {
+    if (anim.id !== undefined && anim.id !== null) {
         const parsed = Number(anim.id);
-        if (!Number.isNaN(parsed)) anim.id = parsed;
+        if (Number.isFinite(parsed)) {
+            anim.id = parsed;
+        } else {
+            delete anim.id;
+        }
     }
     return anim;
 }
@@ -319,7 +390,7 @@ function normalizeAnimations(list) {
     let hadMissingId = false;
     list.forEach((item) => {
         const anim = normalizeAnimation(item);
-        if (anim.id === undefined || anim.id === null || anim.id === '') {
+        if (anim.id === undefined || anim.id === null) {
             anim.id = generateLocalId();
             hadMissingId = true;
         }
@@ -362,17 +433,23 @@ async function fetchJson(url, options = {}) {
     return response.json();
 }
 
+function applyStorePayload(data) {
+    if (!data || !Array.isArray(data.animations)) return null;
+    const normalized = normalizeAnimations(data.animations);
+    animations = normalized.list;
+    const maxId = getMaxId(animations);
+    nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
+    saveLocalAnimations();
+    renderTable();
+    return normalized;
+}
+
 async function loadFromCloud() {
     try {
         const data = await fetchJson(CLOUD_ENDPOINT);
-        if (!data || !Array.isArray(data.animations)) return false;
-        const normalized = normalizeAnimations(data.animations);
-        animations = normalized.list;
-        const maxId = getMaxId(animations);
-        nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
+        const normalized = applyStorePayload(data);
+        if (!normalized) return false;
         cloudAvailable = true;
-        saveLocalAnimations();
-        renderTable();
         if (normalized.hadMissingId) {
             await syncAllToCloud(animations);
         }
@@ -390,14 +467,7 @@ async function syncAllToCloud(list) {
             method: 'POST',
             body: JSON.stringify({ animations: list })
         });
-        if (data && Array.isArray(data.animations)) {
-            const normalized = normalizeAnimations(data.animations);
-            animations = normalized.list;
-            const maxId = getMaxId(animations);
-            nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-            saveLocalAnimations();
-            renderTable();
-        }
+        applyStorePayload(data);
     } catch (error) {
         cloudAvailable = false;
     }
@@ -410,15 +480,7 @@ async function addAnimationToStore(animation) {
                 method: 'POST',
                 body: JSON.stringify({ animation })
             });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
+            if (applyStorePayload(data)) return;
         } catch (error) {
             cloudAvailable = false;
         }
@@ -426,8 +488,12 @@ async function addAnimationToStore(animation) {
 
     animation.id = generateLocalId();
     animations.push(animation);
-    saveLocalAnimations();
     renderTable();
+    if (typeof window !== 'undefined' && typeof (window as any).saveEntry === 'function') {
+        await (window as any).saveEntry(animation);
+    } else {
+        saveLocalAnimations();
+    }
 }
 
 async function updateAnimationInStore(animation) {
@@ -437,15 +503,7 @@ async function updateAnimationInStore(animation) {
                 method: 'POST',
                 body: JSON.stringify({ animation })
             });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
+            if (applyStorePayload(data)) return;
         } catch (error) {
             cloudAvailable = false;
         }
@@ -466,15 +524,7 @@ async function deleteAnimationFromStore(id) {
                 method: 'POST',
                 body: JSON.stringify({ id })
             });
-            if (data && Array.isArray(data.animations)) {
-                const normalized = normalizeAnimations(data.animations);
-                animations = normalized.list;
-                const maxId = getMaxId(animations);
-                nextLocalId = Math.max(Number(data.nextId) || 1, maxId + 1);
-                saveLocalAnimations();
-                renderTable();
-                return;
-            }
+            if (applyStorePayload(data)) return;
         } catch (error) {
             cloudAvailable = false;
         }
@@ -514,7 +564,7 @@ function getSortValue(anim, key) {
         case 'show':
             return anim.show || '';
         case 'folge':
-            return anim.folge || anim.sequenz || '';
+            return getFolgeValue(anim);
         case 'type':
             return typeLabels[anim.type] || anim.type || '';
         case 'teilnehmer':
@@ -544,11 +594,70 @@ function getSortValue(anim, key) {
     }
 }
 
-function getSortedAnimations() {
-    if (!sortState.key) return [...animations];
+function getFilteredAnimations() {
+    let list = [...animations];
+    const query = filterState.query.trim().toLowerCase();
+    if (query) {
+        list = list.filter(anim => {
+            const fields = [
+                anim.id,
+                anim.datum,
+                anim.show,
+                anim.folge,
+                anim.sequenz,
+                anim.type,
+                typeLabels[anim.type],
+                getStatusLabel(anim),
+                anim.teilnehmer,
+                anim.temperatur,
+                anim.zeit,
+                anim.geldStart,
+                anim.geldAenderung,
+                anim.geldAktuell,
+                anim.stempel,
+                anim.textboxText,
+                anim.todoItem,
+                anim.schnittTimestamp,
+                anim.cutterInfo
+            ];
+            const haystack = fields
+                .filter(value => value !== undefined && value !== null)
+                .map(value => String(value).toLowerCase())
+                .join(' ');
+            return haystack.includes(query);
+        });
+    }
+
+    if (filterState.showOnly) {
+        const showValue = document.getElementById('qShow')?.value || '';
+        if (showValue) {
+            list = list.filter(anim => String(anim.show || '').toLowerCase() === showValue.toLowerCase());
+        }
+    }
+
+    if (filterState.typeOnly) {
+        const typeValue = document.getElementById('qType')?.value || '';
+        if (typeValue) {
+            list = list.filter(anim => anim.type === typeValue);
+        }
+    }
+
+    if (filterState.todoOnly) {
+        list = list.filter(anim => Boolean(anim.todoItem && String(anim.todoItem).trim()));
+    }
+
+    if (filterState.samsungOnly) {
+        list = list.filter(anim => anim.type === 'samsung');
+    }
+
+    return list;
+}
+
+function getSortedAnimations(list = animations) {
+    if (!sortState.key) return [...list];
     const key = sortState.key;
     const direction = sortState.direction === 'desc' ? -1 : 1;
-    return [...animations].sort((a, b) => {
+    return [...list].sort((a, b) => {
         const valueA = getSortValue(a, key);
         const valueB = getSortValue(b, key);
         if (valueA === null && valueB === null) return 0;
@@ -583,17 +692,52 @@ function toggleSort(key) {
     renderTable();
 }
 
+function updateFilterChips() {
+    const chips = document.querySelectorAll('.chip');
+    const showValue = document.getElementById('qShow')?.value || '';
+    const typeValue = document.getElementById('qType')?.value || '';
+    const typeLabel = typeLabels[typeValue] || typeValue;
+
+    chips.forEach(chip => {
+        const filter = chip.dataset?.filter;
+        const baseLabel = chip.dataset?.label || chip.textContent || '';
+
+        if (filter === 'show') {
+            chip.classList.toggle('active', filterState.showOnly);
+            chip.textContent = filterState.showOnly && showValue ? `${baseLabel}: ${showValue}` : baseLabel;
+            return;
+        }
+
+        if (filter === 'type') {
+            chip.classList.toggle('active', filterState.typeOnly);
+            chip.textContent = filterState.typeOnly && typeLabel ? `${baseLabel}: ${typeLabel}` : baseLabel;
+            return;
+        }
+
+        if (filter === 'todo') {
+            chip.classList.toggle('active', filterState.todoOnly);
+            chip.textContent = baseLabel;
+            return;
+        }
+
+        if (filter === 'samsung') {
+            chip.classList.toggle('active', filterState.samsungOnly);
+            chip.textContent = baseLabel;
+        }
+    });
+}
+
 function sanitizeFilePart(value, fallback) {
     const cleaned = String(value || '').trim().replace(/\s+/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
     return cleaned || fallback;
 }
 
 function getExportFileName() {
-    const first = animations[0] || {};
+    const first = animations[0] || ({} as AnimationEntry);
     const showFallback = document.getElementById('qShow')?.value || '';
     const folgeFallback = document.getElementById('qSequence')?.value || '';
     const show = sanitizeFilePart((first.show || showFallback).toUpperCase(), 'SHOW');
-    const folge = sanitizeFilePart(first.folge || first.sequenz || folgeFallback, 'FOLGE');
+    const folge = sanitizeFilePart(getFolgeValue(first) || folgeFallback, 'FOLGE');
     const dateStamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
     return `${show}_${folge}_${dateStamp}.csv`;
 }
@@ -601,12 +745,15 @@ function getExportFileName() {
 function selectType(type) {
     const form = document.getElementById('quickForm');
     document.getElementById('qType').value = type;
+    const typeSelect = document.getElementById('typeSelect');
+    if (typeSelect) typeSelect.value = type;
     form.style.display = 'block';
     form.style.animation = 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
     
     // Update active class in selector
     document.querySelectorAll('.type-item').forEach(item => {
-        if (item.getAttribute('onclick').includes(`'${type}'`)) {
+        const onclickValue = item.getAttribute('onclick') || '';
+        if (onclickValue.includes(`'${type}'`)) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
@@ -652,9 +799,112 @@ function toggleTheme() {
     localStorage.setItem('theme', newTheme);
 }
 
+function scrollToEntries() {
+    const entriesPanel = document.getElementById('entriesPanel');
+    if (entriesPanel) {
+        entriesPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function setActiveNav(target) {
+    const buttons = document.querySelectorAll('.nav-btn[data-nav]');
+    buttons.forEach(button => {
+        const key = button.getAttribute('data-nav');
+        button.classList.toggle('active', key === target);
+    });
+}
+
+function setAppView(view) {
+    document.body.setAttribute('data-view', view);
+    setActiveNav(view);
+}
+
+function showPreview(target) {
+    const modal = document.getElementById('previewModal');
+    const title = document.getElementById('previewTitle');
+    const hint = document.getElementById('previewHint');
+    const body = document.getElementById('previewBody');
+    if (!modal || !title || !hint || !body) return;
+
+    setActiveNav(target);
+
+    if (target === 'login') {
+        title.textContent = 'Login · Eigene Einträge';
+        hint.textContent = 'Dieser Bereich wird gerade eingerichtet.';
+        body.innerHTML = `
+            <div class="preview-header">
+                <div class="panel-label">MEIN BEREICH</div>
+                <span class="badge-count">Eigene Logs</span>
+            </div>
+            <div class="preview-row"></div>
+            <div class="preview-row"></div>
+            <div class="preview-row"></div>
+        `;
+    } else if (target === 'cloud') {
+        title.textContent = 'Cloud · Alle Einträge';
+        hint.textContent = 'Dieser Bereich wird gerade eingerichtet.';
+        body.innerHTML = `
+            <div class="preview-header">
+                <div class="panel-label">TEAM CLOUD</div>
+                <span class="badge-count">Community</span>
+            </div>
+            <div class="preview-row"></div>
+            <div class="preview-row"></div>
+            <div class="preview-row"></div>
+            <div class="preview-row"></div>
+        `;
+    } else if (target === 'chatgpt') {
+        title.textContent = 'ChatGPT · Assistenz';
+        hint.textContent = '';
+        body.classList.remove('preview-dim');
+        body.innerHTML = `
+            <div class="chat-shell">
+                <div class="chat-actions">
+                    <div class="panel-label">ASSISTENZ</div>
+                    <button class="btn btn-sm" id="chatClearBtn">Clear Chat</button>
+                </div>
+                <div class="chat-list" id="chatList"></div>
+                <div class="chat-error" id="chatError"></div>
+                <div class="chat-input">
+                    <textarea class="quick-input" id="chatInput" placeholder="Nachricht schreiben..."></textarea>
+                    <button class="btn btn-primary" id="chatSendBtn">
+                        <span class="material-icons">send</span>
+                        Senden
+                    </button>
+                </div>
+            </div>
+        `;
+        initChatPanel();
+    } else {
+        title.textContent = 'Bereich';
+        hint.textContent = 'Dieser Bereich wird gerade eingerichtet.';
+        body.innerHTML = `<div class="preview-row"></div>`;
+    }
+
+    modal.style.display = 'flex';
+}
+
+function hidePreview() {
+    const modal = document.getElementById('previewModal');
+    if (modal) modal.style.display = 'none';
+    setActiveNav('home');
+}
+
+function showNotReady(label) {
+    showNotification(`${label} ist noch nicht eingerichtet`);
+}
+
 function toggleGlobalFields() {
     const fields = document.getElementById('globalFields');
     if (fields) fields.classList.toggle('visible');
+    syncGlobalFieldsToggle();
+}
+
+function syncGlobalFieldsToggle() {
+    const fields = document.getElementById('globalFields');
+    const toggleBtn = document.getElementById('globalFieldsToggle');
+    if (!fields || !toggleBtn) return;
+    toggleBtn.classList.toggle('active', fields.classList.contains('visible'));
 }
 
 // Load saved theme state
@@ -667,11 +917,14 @@ function updateFields() {
     const extraFields = document.getElementById('extraFields');
     const dynamicLabel = document.getElementById('dynamicLabel');
     const dynamicField = document.getElementById('dynamicField');
+    const dynamicIcon = document.getElementById('dynamicIcon');
     const qValue = document.getElementById('qValue');
     const personGroup = document.getElementById('personFieldGroup');
     const personSelect = document.getElementById('qPerson');
     const quickRow = document.querySelector('.quick-row');
     const globalFields = document.getElementById('globalFields');
+    const notesPanel = document.getElementById('notesPanel');
+    const notesSummary = notesPanel ? notesPanel.querySelector('summary') : null;
 
     if (!extraFields || !dynamicLabel || !dynamicField || !qValue || !personGroup || !personSelect) return;
 
@@ -685,13 +938,35 @@ function updateFields() {
     personGroup.style.display = 'flex';
     personSelect.required = true;
     if (quickRow) quickRow.classList.remove('compact');
+    if (dynamicIcon) dynamicIcon.textContent = 'timer';
+
+    const setNotesPanel = (visible, label, plain = false) => {
+        if (!notesPanel) return;
+        notesPanel.style.display = visible ? 'block' : 'none';
+        notesPanel.classList.toggle('notes-plain', plain);
+        if (notesSummary) notesSummary.textContent = label || '';
+        if (visible) notesPanel.open = true;
+    };
+
+    const formatTimeInput = (value) => {
+        const digits = String(value).replace(/\D/g, '').slice(0, 4);
+        if (digits.length <= 2) return digits;
+        if (digits.length === 3) {
+            return `${digits.slice(0, 1)}:${digits.slice(1)}`;
+        }
+        return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+    };
+
+    setNotesPanel(false, '');
 
     switch(type) {
         case 'temperatur':
             dynamicLabel.textContent = 'Temperatur';
             dynamicField.style.display = 'flex';
+            if (dynamicIcon) dynamicIcon.textContent = 'thermostat';
             qValue.onblur = () => {
-                if (qValue.value && !isNaN(qValue.value.replace(',', '.')) && !qValue.value.includes('°')) {
+                const parsed = Number(qValue.value.replace(',', '.'));
+                if (qValue.value && !Number.isNaN(parsed) && !qValue.value.includes('°')) {
                     qValue.value += '°C';
                 }
             };
@@ -699,26 +974,41 @@ function updateFields() {
         case 'zeit':
             dynamicLabel.textContent = 'Zeit';
             dynamicField.style.display = 'flex';
+            if (dynamicIcon) dynamicIcon.textContent = 'schedule';
+            qValue.oninput = () => {
+                qValue.value = formatTimeInput(qValue.value);
+            };
             break;
         case 'geld':
             dynamicLabel.textContent = 'Start-Betrag';
-            dynamicField.style.display = 'flex';
+            dynamicField.style.display = 'none';
+            if (dynamicIcon) dynamicIcon.textContent = 'payments';
             extraFields.style.display = 'grid';
-            extraFields.style.gridTemplateColumns = '1fr 1fr';
-            extraFields.style.gap = '10px';
+            extraFields.style.gridTemplateColumns = '1fr';
+            extraFields.style.gap = '12px';
+            setNotesPanel(true, 'Geld-Änderungen');
             extraFields.innerHTML = `
-                    <div class="field-group" style="grid-column: span 2;">
-                        <label>Was passiert?</label>
+                    <div class="geld-summary">
+                    <div class="field-group">
+                        <div class="input-wrap">
+                            <span class="material-icons" style="font-size: 18px;">payments</span>
+                            <input type="text" class="quick-input" id="geldStartInput" placeholder="Startbetrag z.B. 120,00">
+                        </div>
+                    </div>
+                        <div class="geld-preview" id="geldVorschau">Ergebnis: -</div>
+                    </div>
+                    <div class="field-group">
                         <div class="geld-list" id="geldList"></div>
                         <button class="btn geld-add" type="button" id="geldAddBtn">
                             <span class="material-icons">add</span> Änderung hinzufügen
                         </button>
                     </div>
-                    <div class="geld-preview" id="geldVorschau">Ergebnis: -</div>
                 `;
             const geldList = document.getElementById('geldList');
             const geldAddBtn = document.getElementById('geldAddBtn');
             const vorschau = document.getElementById('geldVorschau');
+            const startInput = document.getElementById('geldStartInput') as HTMLInputElement | null;
+            if (startInput) startInput.value = qValue.value;
 
             const updateRowState = (row) => {
                 const typeSelect = row.querySelector('.geld-type');
@@ -731,7 +1021,7 @@ function updateFields() {
             };
 
             const updateGeldVorschau = () => {
-                const startStr = qValue.value.replace(',', '.');
+                const startStr = (startInput ? startInput.value : qValue.value).replace(',', '.');
                 const start = parseFloat(startStr) || 0;
                 let totalChange = 0;
                 if (!geldList || !vorschau) return;
@@ -755,7 +1045,10 @@ function updateFields() {
                 rows.forEach(row => {
                     const removeBtn = row.querySelector('.geld-remove');
                     if (removeBtn) {
-                        removeBtn.style.visibility = rows.length > 1 ? 'visible' : 'hidden';
+                        const canRemove = rows.length > 1;
+                        removeBtn.disabled = !canRemove;
+                        removeBtn.style.opacity = canRemove ? '1' : '0.35';
+                        removeBtn.style.pointerEvents = canRemove ? 'auto' : 'none';
                     }
                 });
             };
@@ -810,12 +1103,20 @@ function updateFields() {
                     updateGeldVorschau();
                 });
             }
+            if (startInput) {
+                startInput.addEventListener('input', () => {
+                    qValue.value = startInput.value;
+                    updateGeldVorschau();
+                });
+            }
             qValue.oninput = updateGeldVorschau;
             break;
         case 'uebersicht':
             dynamicLabel.textContent = 'Aktuelles Geld';
             dynamicField.style.display = 'flex';
+            if (dynamicIcon) dynamicIcon.textContent = 'account_balance_wallet';
             extraFields.style.display = 'block';
+            setNotesPanel(true, 'Stempel-Auswahl');
             extraFields.innerHTML = `
                     <div class="field-group">
                         <label>Gesammelte Stempel (Städte)</label>
@@ -840,41 +1141,66 @@ function updateFields() {
         case 'textbox':
             dynamicField.style.display = 'none';
             extraFields.style.display = 'block';
+            setNotesPanel(true, '', true);
             extraFields.innerHTML = `
-                    <div class="field-group">
-                        <label>Text-Inhalt</label>
-                        <textarea class="quick-input" id="qTextContent" rows="3"></textarea>
-                    </div>
+                    <textarea class="quick-input" id="qTextContent" rows="4" placeholder="Text eingeben..."></textarea>
                 `;
             break;
         case 'ticket':
             dynamicField.style.display = 'none';
             extraFields.style.display = 'block';
+            setNotesPanel(true, 'Ticket-Details');
             extraFields.innerHTML = `
-                    <div class="field-group">
-                        <label>Ticket Inhalt</label>
-                        <textarea class="quick-input" id="qTicketContent" rows="3"></textarea>
+                    <div class="ticket-grid">
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label>Status</label>
+                            <label class="city-checkbox ticket-row" style="width: fit-content;">
+                                <input type="checkbox" id="qTicketRedeem"> Ticket eingelöst
+                            </label>
+                        </div>
+                        <div class="field-group">
+                            <label>Ticketpreis</label>
+                            <input type="text" class="quick-input" id="qTicketPrice" placeholder="z.B. 19,90">
+                        </div>
+                        <div class="field-group">
+                            <label>Stadt</label>
+                            <input type="text" class="quick-input" id="qTicketCity" placeholder="z.B. Berlin">
+                        </div>
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label>Transport</label>
+                            <select class="quick-select" id="qTicketTransport">
+                                <option value="">Bitte wählen...</option>
+                                <option value="Bus">Bus</option>
+                                <option value="Zug">Zug</option>
+                                <option value="ICE">ICE</option>
+                                <option value="Tram">Tram</option>
+                                <option value="U-Bahn">U-Bahn</option>
+                                <option value="S-Bahn">S-Bahn</option>
+                                <option value="Sonstiges">Sonstiges</option>
+                            </select>
+                        </div>
                     </div>
                 `;
             break;
         case 'todo':
-            dynamicLabel.textContent = 'Aufgabe';
-            qValue.style.display = 'none';
-            dynamicLabel.style.display = 'none';
+            dynamicField.style.display = 'none';
             extraFields.style.display = 'block';
+            setNotesPanel(true, '', true);
             extraFields.innerHTML = `
-                    <div class="field-group">
-                        <label>To-Do Liste (Jeder Absatz bekommt ein •)</label>
-                        <textarea class="quick-input" id="qTodoContent" rows="5"></textarea>
-                    </div>
+                    <textarea class="quick-input" id="qTodoContent" rows="5" placeholder="To-Do Eintrag..."></textarea>
                 `;
             break;
         case 'samsung':
             personGroup.style.display = 'none';
             personSelect.required = false;
             dynamicField.style.display = 'none';
-            extraFields.style.display = 'none';
+            extraFields.style.display = 'block';
+            setNotesPanel(true, 'Samsung-Details');
+            extraFields.innerHTML = `
+                    <textarea class="quick-input" id="qSamsungDetail" rows="3" placeholder="Samsung-Animation beschreiben..."></textarea>
+                `;
             if (globalFields) globalFields.classList.add('visible');
+            syncGlobalFieldsToggle();
             if (quickRow) quickRow.classList.add('compact');
             break;
         default:
@@ -934,6 +1260,7 @@ async function addAnimation(event) {
         stempel: '',
         textboxText: '',
         todoItem: '',
+        status: document.getElementById('qStatus')?.value || 'none',
         schnittTimestamp: document.getElementById('qTimestamp')?.value || '',
         cutterInfo: document.getElementById('qCutterInfo')?.value || ''
     };
@@ -954,8 +1281,10 @@ async function addAnimation(event) {
             animation.zeit = qValue;
             break;
         case 'geld': {
-            animation.geldStart = qValue;
-            const startVal = parseFloat(qValue.replace(',', '.')) || 0;
+            const startInput = document.getElementById('geldStartInput') as HTMLInputElement | null;
+            const startValue = startInput ? startInput.value.trim() : qValue;
+            animation.geldStart = startValue;
+            const startVal = parseFloat(startValue.replace(',', '.')) || 0;
             const changeData = getGeldChangeData();
             animation.geldAenderung = changeData.changes.join(' | ');
             const result = startVal + changeData.totalChange;
@@ -964,7 +1293,7 @@ async function addAnimation(event) {
         }
         case 'uebersicht': {
             animation.geldAktuell = qValue;
-            const selectedCities = Array.from(document.querySelectorAll('.city-grid input:checked'))
+            const selectedCities = Array.from(document.querySelectorAll('.city-grid input:checked') as NodeListOf<HTMLInputElement>)
                 .map(cb => cb.value);
             animation.stempel = selectedCities.join(', ');
             break;
@@ -975,8 +1304,28 @@ async function addAnimation(event) {
             break;
         }
         case 'ticket': {
-            const ticketContent = document.getElementById('qTicketContent');
-            animation.textboxText = ticketContent ? ticketContent.value : '';
+            const ticketRedeem = document.getElementById('qTicketRedeem') as HTMLInputElement | null;
+            const ticketPrice = document.getElementById('qTicketPrice') as HTMLInputElement | null;
+            const ticketCity = document.getElementById('qTicketCity') as HTMLInputElement | null;
+            const ticketTransport = document.getElementById('qTicketTransport') as HTMLSelectElement | null;
+
+            const parts: string[] = [];
+            const status = ticketRedeem && ticketRedeem.checked ? 'Eingelöst' : 'Gekauft';
+            parts.push(`Status: ${status}`);
+
+            const rawPrice = ticketPrice ? ticketPrice.value.trim() : '';
+            if (rawPrice) {
+                const priceText = rawPrice.includes('€') ? rawPrice : `${rawPrice}€`;
+                parts.push(`Preis: ${priceText}`);
+            }
+
+            const cityText = ticketCity ? ticketCity.value.trim() : '';
+            if (cityText) parts.push(`Stadt: ${cityText}`);
+
+            const transportText = ticketTransport ? ticketTransport.value.trim() : '';
+            if (transportText) parts.push(`Transport: ${transportText}`);
+
+            animation.textboxText = parts.join(' · ');
             break;
         }
         case 'todo': {
@@ -991,6 +1340,8 @@ async function addAnimation(event) {
             break;
         }
         case 'samsung':
+            const samsungDetail = document.getElementById('qSamsungDetail') as HTMLTextAreaElement | null;
+            animation.textboxText = samsungDetail ? samsungDetail.value.trim() : '';
             animation.teilnehmer = '';
             animation.farbe = '';
             break;
@@ -998,27 +1349,34 @@ async function addAnimation(event) {
 
     await addAnimationToStore(animation);
 
-    // Reset
-    if (qValueElem) qValueElem.value = '';
-    const extraFields = document.getElementById('extraFields');
-    if (extraFields && extraFields.style.display !== 'none') {
-        const inputs = extraFields.querySelectorAll('input, textarea, select');
-        inputs.forEach(i => {
-            if (i.type === 'checkbox') i.checked = false;
-            else i.value = '';
-        });
-        extraFields.querySelectorAll('.city-checkbox').forEach(l => l.classList.remove('active'));
-    }
-    
-    const qTimestamp = document.getElementById('qTimestamp');
-    const qCutterInfo = document.getElementById('qCutterInfo');
-    if (qTimestamp) qTimestamp.value = '';
-    if (qCutterInfo) qCutterInfo.value = '';
+    const keepValuesToggle = document.getElementById('keepValuesToggle');
+    const keepValues = Boolean(keepValuesToggle && keepValuesToggle.checked);
 
-    // Hide form and reset selector
-    const quickForm = document.getElementById('quickForm');
-    if (quickForm) quickForm.style.display = 'none';
-    document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
+    if (!keepValues) {
+        // Reset
+        if (qValueElem) qValueElem.value = '';
+        const extraFields = document.getElementById('extraFields');
+        if (extraFields && extraFields.style.display !== 'none') {
+            const inputs = extraFields.querySelectorAll('input, textarea, select');
+            inputs.forEach(i => {
+                if (i.type === 'checkbox') i.checked = false;
+                else i.value = '';
+            });
+            extraFields.querySelectorAll('.city-checkbox').forEach(l => l.classList.remove('active'));
+        }
+        
+        const qTimestamp = document.getElementById('qTimestamp');
+        const qCutterInfo = document.getElementById('qCutterInfo');
+        if (qTimestamp) qTimestamp.value = '';
+        if (qCutterInfo) qCutterInfo.value = '';
+
+        // Hide form and reset selector
+        const quickForm = document.getElementById('quickForm');
+        if (quickForm) quickForm.style.display = 'none';
+        document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
+        const typeSelect = document.getElementById('typeSelect');
+        if (typeSelect) typeSelect.value = '';
+    }
     showNotification(`Animation hinzugefügt!`);
 }
 
@@ -1026,10 +1384,12 @@ function renderTable() {
     const tbody = document.getElementById('dataBody');
     if (!tbody) return;
 
+    const filtered = getFilteredAnimations();
+
     if (animations.length === 0) {
         tbody.innerHTML = `
                 <tr>
-                    <td colspan="17">
+                    <td colspan="18">
                         <div class="empty-state">
                             <div class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">post_add</div>
                             <h3>Noch keine Animationen</h3>
@@ -1041,18 +1401,41 @@ function renderTable() {
         return;
     }
 
-    const rows = getSortedAnimations();
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+                <tr>
+                    <td colspan="18">
+                        <div class="empty-state">
+                            <div class="material-icons" style="font-size: 44px; margin-bottom: 10px; opacity: 0.3;">search_off</div>
+                            <h3>Keine Treffer</h3>
+                            <p>Filter oder Suche anpassen.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        const entryCount = document.getElementById('entryCount');
+        if (entryCount) entryCount.textContent = '0';
+        return;
+    }
+
+    const rows = getSortedAnimations(filtered);
     tbody.innerHTML = rows.map((anim) => `
             <tr ondblclick="editRow(${anim.id})" data-id="${anim.id}">
+                <td>
+                    <input type="checkbox" class="row-select" data-id="${anim.id}" ${selectedIds.has(Number(anim.id)) ? 'checked' : ''}>
+                </td>
                 <td>${anim.id ?? '-'}</td>
                 <td>${anim.datum || '-'}</td>
                 <td>${anim.show || '-'}</td>
-                <td>${anim.folge || anim.sequenz || '-'}</td>
+                <td>${getFolgeValue(anim) || '-'}</td>
                 <td>
                     <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
                         <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
                         ${typeLabels[anim.type] || anim.type}
                     </span>
+                    <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
+                        ${getStatusLabel(anim)}
+                    </button>
                 </td>
                 <td>${anim.teilnehmer ? `<span class="person-badge ${badgeClass[anim.teilnehmer] || ''}">${anim.teilnehmer}</span>` : '-'}</td>
                 <td>${anim.temperatur || '-'}</td>
@@ -1073,7 +1456,196 @@ function renderTable() {
                 </td>
             </tr>
         `).join('');
+    tbody.querySelectorAll('.row-select').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+            const idValue = Number(checkbox.getAttribute('data-id'));
+            if (!Number.isNaN(idValue)) {
+                if ((checkbox as HTMLInputElement).checked) selectedIds.add(idValue);
+                else selectedIds.delete(idValue);
+                updateDeleteActions();
+            }
+        });
+    });
     updateSortIndicators();
+    const entryCount = document.getElementById('entryCount');
+    if (entryCount) entryCount.textContent = String(rows.length);
+    updateDeleteActions();
+}
+
+function updateDeleteActions() {
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.style.display = selectedIds.size > 0 ? 'inline-flex' : 'none';
+    }
+    if (deleteAllBtn) {
+        deleteAllBtn.style.display = animations.length > 0 ? 'inline-flex' : 'none';
+    }
+}
+
+function deleteSelectedEntries() {
+    if (selectedIds.size === 0) return;
+    const confirmed = confirm('Sicher, dass du die ausgewählten Einträge löschen willst?');
+    if (!confirmed) return;
+    animations = animations.filter(anim => !selectedIds.has(Number(anim.id)));
+    selectedIds.clear();
+    saveLocalAnimations();
+    renderTable();
+    showNotification('Ausgewählte Einträge gelöscht');
+}
+
+function deleteAllEntries() {
+    if (animations.length === 0) return;
+    const confirmed = confirm('Sicher, dass du alle Einträge löschen willst?');
+    if (!confirmed) return;
+    animations = [];
+    selectedIds.clear();
+    saveLocalAnimations();
+    renderTable();
+    showNotification('Alle Einträge gelöscht');
+}
+
+function openStatusMenu(event, id) {
+    event.stopPropagation();
+    const menu = document.getElementById('statusMenu');
+    if (!menu) return;
+    statusMenuId = id;
+    const rect = event.currentTarget.getBoundingClientRect();
+    menu.style.display = 'block';
+    menu.style.top = `${rect.bottom + 8 + window.scrollY}px`;
+    menu.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - menu.offsetWidth - 16)}px`;
+
+    menu.querySelectorAll('[data-status]').forEach(btn => {
+        const statusValue = btn.getAttribute('data-status');
+        btn.classList.toggle('active', statusValue === getStatusKey(getAnimationById(id) || {}));
+    });
+}
+
+function closeStatusMenu() {
+    const menu = document.getElementById('statusMenu');
+    if (menu) menu.style.display = 'none';
+    statusMenuId = null;
+}
+
+function setStatusForEntry(status) {
+    if (!statusMenuId) return;
+    const anim = getAnimationById(statusMenuId);
+    if (!anim) return;
+    anim.status = status;
+    saveLocalAnimations();
+    renderTable();
+    closeStatusMenu();
+}
+
+function loadChatHistory() {
+    try {
+        const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+        chatHistory = stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        chatHistory = [];
+    }
+}
+
+function saveChatHistory() {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatHistory));
+}
+
+function renderChatMessages() {
+    const list = document.getElementById('chatList');
+    if (!list) return;
+    list.innerHTML = chatHistory.map(msg => `
+        <div class="chat-bubble ${msg.role}">${msg.content}</div>
+    `).join('');
+    list.scrollTop = list.scrollHeight;
+}
+
+function setChatError(message) {
+    const errorEl = document.getElementById('chatError');
+    if (errorEl) errorEl.textContent = message || '';
+}
+
+function setChatLoading(loading) {
+    const sendBtn = document.getElementById('chatSendBtn') as HTMLButtonElement | null;
+    const input = document.getElementById('chatInput') as HTMLTextAreaElement | null;
+    if (sendBtn) sendBtn.disabled = loading;
+    if (input) input.disabled = loading;
+    chatBusy = loading;
+}
+
+async function sendChatMessage() {
+    if (chatBusy) return;
+    const input = document.getElementById('chatInput') as HTMLTextAreaElement | null;
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    setChatError('');
+    chatHistory.push({ role: 'user', content: text });
+    saveChatHistory();
+    renderChatMessages();
+    input.value = '';
+
+    const typingMessage = { role: 'assistant' as const, content: 'tippt…' };
+    chatHistory.push(typingMessage);
+    renderChatMessages();
+    setChatLoading(true);
+
+    try {
+        const response = await fetch('/.netlify/functions/ai_chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: chatHistory.filter(msg => msg.content !== 'tippt…') })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data?.error || 'Unbekannter Fehler');
+        }
+
+        chatHistory = chatHistory.filter(msg => msg.content !== 'tippt…');
+        chatHistory.push({ role: 'assistant', content: data.reply || '' });
+        saveChatHistory();
+        renderChatMessages();
+    } catch (error) {
+        chatHistory = chatHistory.filter(msg => msg.content !== 'tippt…');
+        renderChatMessages();
+        setChatError(`Fehler: ${error.message || error}`);
+    } finally {
+        setChatLoading(false);
+    }
+}
+
+function initChatPanel() {
+    loadChatHistory();
+    renderChatMessages();
+
+    const input = document.getElementById('chatInput') as HTMLTextAreaElement | null;
+    const sendBtn = document.getElementById('chatSendBtn');
+    const clearBtn = document.getElementById('chatClearBtn');
+
+    if (sendBtn) {
+        sendBtn.addEventListener('click', () => {
+            void sendChatMessage();
+        });
+    }
+
+    if (input) {
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void sendChatMessage();
+            }
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            chatHistory = [];
+            saveChatHistory();
+            renderChatMessages();
+            setChatError('');
+        });
+    }
 }
 
 function editRow(id) {
@@ -1083,7 +1655,7 @@ function editRow(id) {
     if (!anim) return;
 
     row.classList.add('editing');
-    const personOptions = ['Jerry', 'Marc', 'Kodiak', 'Taube', 'Käthe']
+    const personOptions = PERSON_NAMES
         .map(name => `<option value="${name}" ${anim.teilnehmer === name ? 'selected' : ''}>${name}</option>`)
         .join('');
 
@@ -1096,12 +1668,15 @@ function editRow(id) {
                     <option value="TR3" ${anim.show === 'TR3' ? 'selected' : ''}>TR3</option>
                 </select>
             </td>
-            <td class="editable-cell"><input type="text" value="${anim.folge || anim.sequenz || ''}" data-field="folge"></td>
+            <td class="editable-cell"><input type="text" value="${getFolgeValue(anim)}" data-field="folge"></td>
             <td>
                 <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
                     <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
                     ${typeLabels[anim.type] || anim.type}
                 </span>
+                <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
+                    ${getStatusLabel(anim)}
+                </button>
             </td>
             <td class="editable-cell">
                 <select data-field="teilnehmer" ${anim.type === 'samsung' ? 'disabled' : ''}>
@@ -1134,7 +1709,7 @@ function editRow(id) {
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
-                saveEdit(id);
+                void saveEdit(id);
             } else if (e.key === 'Escape') {
                 cancelEdit();
             }
@@ -1193,6 +1768,7 @@ async function duplicateRow(id) {
 async function deleteRow(id) {
     if (confirm('Diese Animation wirklich löschen?')) {
         await deleteAnimationFromStore(id);
+        selectedIds.delete(Number(id));
         showNotification('Animation gelöscht!');
     }
 }
@@ -1208,8 +1784,6 @@ function saveAndRender() {
 }
 
 function generateCSV() {
-    const headers = ['ID', 'Datum', 'Show', 'Folge', 'Teilnehmer', 'Farbe', 'Komposition', 'Temperatur', 'Zeit', 'Geld_Start', 'Geld_Änderung', 'Geld_Aktuell', 'Stempel', 'TextBox_Text', 'ToDo_Item', 'Schnitt_Zeitstempel', 'Cutter_Info'];
-
     const escapeCSV = (text) => {
         if (text === null || text === undefined) return '';
         const stringValue = String(text);
@@ -1220,54 +1794,128 @@ function generateCSV() {
     };
 
     return [
-        headers.join(','),
-        ...animations.map(anim => [
-            anim.id || '',
-            anim.datum || '',
-            anim.show || '',
-            anim.folge || anim.sequenz || '',
-            anim.teilnehmer || '',
-            anim.farbe || '',
-            anim.komposition || '',
-            anim.temperatur || '',
-            anim.zeit || '',
-            anim.geldStart || '',
-            anim.geldAenderung || '',
-            anim.geldAktuell || '',
-            anim.stempel || '',
-            anim.textboxText || '',
-            anim.todoItem || '',
-            anim.schnittTimestamp || '',
-            anim.cutterInfo || ''
-        ].map(escapeCSV).join(','))
+        SHEET_HEADERS.join(','),
+        ...buildAnimationRows(animations).map(row => row.map(escapeCSV).join(','))
     ].join('\n');
 }
 
-function handleDownload() {
+function generateTSV() {
+    const escapeTSV = (text) => {
+        if (text === null || text === undefined) return '';
+        return String(text).replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
+    };
+
+    return [
+        SHEET_HEADERS.join('\t'),
+        ...buildAnimationRows(animations).map(row => row.map(escapeTSV).join('\t'))
+    ].join('\n');
+}
+
+function generateJSON() {
+    return JSON.stringify(animations, null, 2);
+}
+
+function showExportModal() {
+    const modal = document.getElementById('exportModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideExportModal() {
+    const modal = document.getElementById('exportModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleExport(format) {
     if (animations.length === 0) {
         showNotification('Keine Daten zum Exportieren!');
         return;
     }
 
-    const csvContent = generateCSV();
-    const fileName = getExportFileName();
+    let content = '';
+    let mime = 'text/plain;charset=utf-8;';
+    let extension = format;
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    if (format === 'tsv') {
+        content = generateTSV();
+        mime = 'text/tab-separated-values;charset=utf-8;';
+        extension = 'tsv';
+    } else if (format === 'json') {
+        content = generateJSON();
+        mime = 'application/json;charset=utf-8;';
+        extension = 'json';
+    } else {
+        content = generateCSV();
+        mime = 'text/csv;charset=utf-8;';
+        extension = 'csv';
+    }
+
+    const baseName = getExportFileName().replace(/\.[^.]+$/, '');
+    const fileName = `${baseName}.${extension}`;
+
+    const blob = new Blob([content], { type: mime });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = fileName;
     link.click();
 
-    showNotification('CSV-Datei wurde heruntergeladen!');
+    showNotification(`${extension.toUpperCase()}-Datei wurde heruntergeladen!`);
+    hideExportModal();
 }
 
 // Game Logic
 let isGameRunning = false;
 let currentGameId = 0;
-let gameScore = 0;
-let gameSpeed = 5;
+let gameScore;
+let gameSpeed;
 let obstacleTimer;
 let collisionTimer;
+let dinoRunTimer;
+
+const DINO_ASSETS = {
+    run: [
+        'assets/dino/DinoRun1.png',
+        'assets/dino/DinoRun2.png'
+    ],
+    jump: 'assets/dino/DinoJump.png',
+    dead: 'assets/dino/DinoDead.png'
+};
+
+const BIRD_FRAMES = [
+    'assets/bird/Bird1.png',
+    'assets/bird/Bird2.png'
+];
+
+const CACTUS_SMALL = [
+    'assets/cactus/SmallCactus1.png',
+    'assets/cactus/SmallCactus2.png',
+    'assets/cactus/SmallCactus3.png'
+];
+
+const CACTUS_LARGE = [
+    'assets/cactus/LargeCactus1.png',
+    'assets/cactus/LargeCactus2.png',
+    'assets/cactus/LargeCactus3.png'
+];
+
+function setDinoImage(src) {
+    const dinoImg = document.getElementById('dinoImg');
+    if (dinoImg) dinoImg.src = src;
+}
+
+function startRunAnimation() {
+    clearInterval(dinoRunTimer);
+    let frame = 0;
+    setDinoImage(DINO_ASSETS.run[frame]);
+    dinoRunTimer = setInterval(() => {
+        if (!isGameRunning) return;
+        frame = (frame + 1) % DINO_ASSETS.run.length;
+        setDinoImage(DINO_ASSETS.run[frame]);
+    }, 140);
+}
+
+function stopRunAnimation() {
+    clearInterval(dinoRunTimer);
+}
 
 function showGameModal() {
     const modal = document.getElementById('gameModal');
@@ -1292,6 +1940,7 @@ function startGame() {
     gameScore = 0;
     gameSpeed = 6;
     updateScore(0);
+    startRunAnimation();
     
     const gameOverScreen = document.getElementById('gameOverScreen');
     if (gameOverScreen) gameOverScreen.style.display = 'none';
@@ -1324,6 +1973,7 @@ function startGame() {
 
 function stopGame() {
     isGameRunning = false;
+    stopRunAnimation();
     clearTimeout(obstacleTimer);
     clearInterval(collisionTimer);
     const objective = document.getElementById('gameObjective');
@@ -1333,9 +1983,12 @@ function stopGame() {
 function jump() {
     const dino = document.getElementById('dino');
     if (dino && !dino.classList.contains('jump-anim') && isGameRunning) {
+        stopRunAnimation();
+        setDinoImage(DINO_ASSETS.jump);
         dino.classList.add('jump-anim');
         setTimeout(() => {
             dino.classList.remove('jump-anim');
+            if (isGameRunning) startRunAnimation();
         }, 600);
     }
 }
@@ -1356,16 +2009,35 @@ function createObstacle(gameId) {
     const objective = document.getElementById('gameObjective');
     if (!objective) return;
     
-    const obstacle = document.createElement('div');
-    const types = ['cactus-small', 'cactus-large'];
-    const type = types[Math.floor(Math.random() * types.length)];
+    const obstacle = document.createElement('div') as ObstacleEl;
+    const isBird = Math.random() < 0.2;
+    let type;
+    if (isBird) {
+        type = 'bird';
+    } else {
+        const cactusTypes = ['cactus-small', 'cactus-large'];
+        type = cactusTypes[Math.floor(Math.random() * cactusTypes.length)];
+    }
     
     obstacle.className = `obstacle ${type}`;
-    
-    let icon = 'potted_plant';
-    if (type === 'cactus-large') icon = 'park';
-    
-    obstacle.innerHTML = `<span class="material-icons">${icon}</span>`;
+    const img = document.createElement('img');
+    img.alt = type === 'bird' ? 'Bird' : 'Cactus';
+    if (type === 'bird') {
+        const birdHeights = [45, 70];
+        const height = birdHeights[Math.floor(Math.random() * birdHeights.length)];
+        obstacle.style.bottom = `${height}px`;
+        let frame = 0;
+        img.src = BIRD_FRAMES[frame];
+        obstacle._flapTimer = setInterval(() => {
+            frame = (frame + 1) % BIRD_FRAMES.length;
+            img.src = BIRD_FRAMES[frame];
+        }, 200);
+    } else if (type === 'cactus-large') {
+        img.src = CACTUS_LARGE[Math.floor(Math.random() * CACTUS_LARGE.length)];
+    } else {
+        img.src = CACTUS_SMALL[Math.floor(Math.random() * CACTUS_SMALL.length)];
+    }
+    obstacle.appendChild(img);
     objective.appendChild(obstacle);
 
     let position = -50;
@@ -1373,6 +2045,7 @@ function createObstacle(gameId) {
     const moveInterval = setInterval(() => {
         if (!isGameRunning || gameId !== currentGameId) {
             clearInterval(moveInterval);
+            if (obstacle._flapTimer) clearInterval(obstacle._flapTimer);
             obstacle.remove();
             return;
         }
@@ -1382,6 +2055,7 @@ function createObstacle(gameId) {
 
         if (position > 550) {
             clearInterval(moveInterval);
+            if (obstacle._flapTimer) clearInterval(obstacle._flapTimer);
             obstacle.remove();
             if (isGameRunning && gameId === currentGameId) {
                 gameScore++;
@@ -1403,20 +2077,15 @@ function checkCollision() {
     if (!dino) return;
 
     const dinoRect = dino.getBoundingClientRect();
-    
-    // Hitbox-Padding: Höhere Werte machen das Spiel einfacher (kleinere Hitboxen)
-    const dinoHitPadding = 8; 
-    const obsHitPadding = 10;
 
     obstacles.forEach(obstacle => {
         const obsRect = obstacle.getBoundingClientRect();
         
-        // Kollisionsabfrage mit Padding-Berücksichtigung
         if (
-            dinoRect.left + dinoHitPadding < obsRect.right - obsHitPadding &&
-            dinoRect.right - dinoHitPadding > obsRect.left + obsHitPadding &&
-            dinoRect.top + dinoHitPadding < obsRect.bottom - obsHitPadding &&
-            dinoRect.bottom - dinoHitPadding > obsRect.top + obsHitPadding
+            dinoRect.left < obsRect.right &&
+            dinoRect.right > obsRect.left &&
+            dinoRect.top < obsRect.bottom &&
+            dinoRect.bottom > obsRect.top
         ) {
             gameOver();
         }
@@ -1425,14 +2094,50 @@ function checkCollision() {
 
 function gameOver() {
     isGameRunning = false;
+    stopRunAnimation();
+    setDinoImage(DINO_ASSETS.dead);
     clearTimeout(obstacleTimer);
     clearInterval(collisionTimer);
-    clearInterval(cloudTimer);
     const gameOverScreen = document.getElementById('gameOverScreen');
     const finalScore = document.getElementById('finalScore');
     if (gameOverScreen) gameOverScreen.style.display = 'flex';
     if (finalScore) finalScore.textContent = `SCORE: ${gameScore.toString().padStart(5, '0')}`;
 }
+
+// Export functions used by inline HTML handlers.
+//noinspection JSUnusedGlobalSymbols
+Object.assign(window, {
+    setAppView,
+    showPreview,
+    hidePreview,
+    showNotReady,
+    showExportModal,
+    hideExportModal,
+    handleExport,
+    deleteSelectedEntries,
+    deleteAllEntries,
+    openStatusMenu,
+    setStatusForEntry,
+    scrollToEntries,
+    toggleTheme,
+    showGameModal,
+    hideGameModal,
+    selectType,
+    toggleGlobalFields,
+    showSheetsModal,
+    hideSheetsModal,
+    handleAuthClick,
+    handleSignoutClick,
+    saveSheetsSettings,
+    pushToGoogleSheets,
+    pullFromGoogleSheets,
+    startGame,
+    jump,
+    saveEdit,
+    cancelEdit,
+    duplicateRow,
+    deleteRow
+});
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1445,11 +2150,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('click', (event) => {
         const sheetsModal = document.getElementById('sheetsModal');
         const gameModal = document.getElementById('gameModal');
+        const previewModal = document.getElementById('previewModal');
+        const exportModal = document.getElementById('exportModal');
         if (event.target === sheetsModal) {
             hideSheetsModal();
         }
         if (event.target === gameModal) {
             hideGameModal();
+        }
+        if (event.target === previewModal) {
+            hidePreview();
+        }
+        if (event.target === exportModal) {
+            hideExportModal();
+        }
+        const targetEl = event.target as HTMLElement | null;
+        if (targetEl && !targetEl.closest('#statusMenu') && !targetEl.closest('.status-badge')) {
+            closeStatusMenu();
         }
     });
 
@@ -1478,10 +2195,179 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     document.querySelectorAll('th[data-sort]').forEach(th => {
-        th.addEventListener('click', () => toggleSort(th.getAttribute('data-sort')));
+        const sortKey = th.getAttribute('data-sort');
+        if (sortKey) {
+            th.addEventListener('click', () => toggleSort(sortKey));
+        }
     });
 
     renderTable();
     updateSortIndicators();
     await loadFromCloud();
 });
+// UI-only enhancements for the v2 experiment.
+(() => {
+    const entryCount = document.getElementById('entryCount');
+    const dataBody = document.getElementById('dataBody');
+    const autoDate = document.getElementById('autoDate');
+    const composerHint = document.getElementById('composerHint');
+    const quickForm = document.getElementById('quickForm');
+    const notesPanel = document.getElementById('notesPanel');
+    const extraFields = document.getElementById('extraFields');
+    const consoleSearchInput = document.getElementById('consoleSearchInput');
+    const filterChips = document.querySelectorAll('.chip');
+    const showSelect = document.getElementById('qShow');
+    const typeSelect = document.getElementById('typeSelect');
+    const sequenceInput = document.getElementById('qSequence');
+    const statusButtons = document.querySelectorAll('[data-status-select]');
+    const statusInput = document.getElementById('qStatus');
+
+    if (autoDate) {
+        const today = new Date();
+        autoDate.value = today.toLocaleDateString('de-DE');
+    }
+
+    syncGlobalFieldsToggle();
+    setAppView('home');
+
+    const updateCount = () => {
+        if (!entryCount || !dataBody) return;
+        const rows = dataBody.querySelectorAll('tr[data-id]');
+        entryCount.textContent = rows.length ? String(rows.length) : '0';
+    };
+
+    if (dataBody) {
+        updateCount();
+        const observer = new MutationObserver(updateCount);
+        observer.observe(dataBody, { childList: true });
+    }
+
+    if (quickForm && composerHint) {
+        const syncHint = () => {
+            if (quickForm.style.display === 'block') {
+                composerHint.style.display = 'none';
+            } else {
+                composerHint.style.display = '';
+            }
+        };
+        syncHint();
+        const formObserver = new MutationObserver(syncHint);
+        formObserver.observe(quickForm, { attributes: true, attributeFilter: ['style'] });
+    }
+
+    const syncSearchInputs = (value) => {
+        filterState.query = value;
+        if (consoleSearchInput) consoleSearchInput.value = value;
+        renderTable();
+    };
+
+    if (consoleSearchInput) {
+        consoleSearchInput.addEventListener('input', (event) => {
+            syncSearchInputs(event.target.value);
+        });
+    }
+
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            const filter = chip.dataset?.filter;
+
+            if (filter === 'show') {
+                const showValue = showSelect?.value || '';
+                if (!showValue) {
+                    showNotification('Bitte zuerst eine Show auswählen.');
+                    return;
+                }
+                filterState.showOnly = !filterState.showOnly;
+            }
+
+            if (filter === 'type') {
+                const typeValue = document.getElementById('qType')?.value || '';
+                if (!typeValue) {
+                    showNotification('Bitte zuerst einen Typ auswählen.');
+                    return;
+                }
+                filterState.typeOnly = !filterState.typeOnly;
+            }
+
+            if (filter === 'todo') {
+                filterState.todoOnly = !filterState.todoOnly;
+            }
+
+            if (filter === 'samsung') {
+                filterState.samsungOnly = !filterState.samsungOnly;
+            }
+
+            updateFilterChips();
+            renderTable();
+        });
+    });
+
+    if (showSelect) {
+        showSelect.addEventListener('change', () => {
+            updateFilterChips();
+            if (filterState.showOnly) renderTable();
+        });
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            updateFilterChips();
+            if (filterState.typeOnly) renderTable();
+        });
+    }
+
+    if (notesPanel && extraFields) {
+        const syncNotesPanel = () => {
+            const hasContent = extraFields.children.length > 0;
+            const isVisible = extraFields.style.display && extraFields.style.display !== 'none';
+            if ((hasContent || isVisible) && !notesPanel.open) {
+                notesPanel.open = true;
+            }
+        };
+
+        const notesObserver = new MutationObserver(syncNotesPanel);
+        notesObserver.observe(extraFields, { childList: true, attributes: true, attributeFilter: ['style'] });
+    }
+
+    if (sequenceInput) {
+        const normalizeEpisode = (value) => {
+            const trimmed = String(value).trim();
+            if (!trimmed) return '';
+            const upper = trimmed.toUpperCase();
+            if (upper.startsWith('EP')) {
+                return upper;
+            }
+            return trimmed;
+        };
+
+        const formatEpisode = (value) => {
+            const digits = String(value).replace(/\D/g, '').slice(0, 2);
+            if (!digits) return '';
+            return `EP${digits.padStart(2, '0')}`;
+        };
+
+        sequenceInput.addEventListener('input', () => {
+            sequenceInput.value = normalizeEpisode(sequenceInput.value);
+        });
+
+        sequenceInput.addEventListener('blur', () => {
+            if (/^\d+$/.test(sequenceInput.value.trim())) {
+                sequenceInput.value = formatEpisode(sequenceInput.value);
+            }
+        });
+    }
+
+    if (statusButtons.length && statusInput) {
+        statusButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const statusValue = btn.getAttribute('data-status-select');
+                if (!statusValue) return;
+                statusInput.value = statusValue;
+                statusButtons.forEach(item => item.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    updateFilterChips();
+})();

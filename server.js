@@ -20,6 +20,11 @@ const contentTypes = {
     '.ico': 'image/x-icon'
 };
 
+/**
+ * @param {import('http').ServerResponse} res
+ * @param {number} status
+ * @param {unknown} payload
+ */
 function sendJson(res, status, payload) {
     res.writeHead(status, {'Content-Type': 'application/json'});
     res.end(JSON.stringify(payload));
@@ -65,7 +70,10 @@ function readJsonBody(req) {
     });
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(
+    /** @param {import('http').IncomingMessage} req
+     *  @param {import('http').ServerResponse} res */
+    (req, res) => {
     if (req.url === '/api/animations' && req.method === 'GET') {
         const store = readStore();
         sendJson(res, 200, store);
