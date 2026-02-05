@@ -1762,6 +1762,13 @@
             text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
             border-color: rgba(16, 185, 129, 0.3);
         }
+
+        .modal-content.fullscreen {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 0;
+            max-height: none !important;
+        }
     </style>
     <link rel="stylesheet" href="experiments/ui-v2/assets/chatgpt-btn.css">
 </head>
@@ -2113,9 +2120,15 @@
                     <div class="panel-label">Cloud</div>
                     <div class="panel-title">Alle Einträge</div>
                 </div>
-                <button class="icon-btn close-btn" id="cloudCloseBtn">
-                    <span class="material-icons">close</span>
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="icon-btn" id="cloudFullscreenBtn" title="Vollbild"
+                        style="background: var(--bg-secondary);">
+                        <span class="material-icons">fullscreen</span>
+                    </button>
+                    <button class="icon-btn close-btn" id="cloudCloseBtn">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
             </div>
             <div class="cloud-shell">
                 <div class="cloud-controls">
@@ -2145,8 +2158,6 @@
                             <select id="cloudSort">
                                 <option value="created_desc">Neueste zuerst</option>
                                 <option value="created_asc">Älteste zuerst</option>
-                                <option value="datum_desc">Datum (neu → alt)</option>
-                                <option value="datum_asc">Datum (alt → neu)</option>
                             </select>
                         </div>
                     </div>
@@ -2321,7 +2332,7 @@
                 <div
                     style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
                     ChatGPT ist momentan noch nicht direkt mit dieser Seite verknüpft, da die API-Kosten pro Anfrage
-                    sehr hoch sein können. Wir arbeiten an einer kosteneffizienten Lösung.<br><br>
+                    sehr hoch sein können. Ich arbeite an einer kosteneffizienten Lösung.<br><br>
                     Bis dahin kannst du ChatGPT direkt über den Button unten in einem neuen Tab öffnen.
                 </div>
 

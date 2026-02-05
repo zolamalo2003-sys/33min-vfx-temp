@@ -424,12 +424,13 @@ function applyCloudFilters(list) {
             const bVal = new Date(b.created_at || 0).getTime();
             return sortValue === "created_asc" ? aVal - bVal : bVal - aVal;
         }
-        const aVal = new Date(a.datum || 0).getTime();
-        const bVal = new Date(b.datum || 0).getTime();
-        return sortValue === "datum_asc" ? aVal - bVal : bVal - aVal;
+        // Fallback or explicit other sorts if needed
+        return 0;
     });
     return filtered;
 }
+
+let activeEditId = null; // Track which row is being edited
 
 function renderCloudTable() {
     const body = document.getElementById("cloudTableBody");
@@ -448,11 +449,21 @@ function renderCloudTable() {
 
     const currentUserId = session?.user?.id;
     body.innerHTML = list.map((row) => {
+        // --- STANDARD ROW ---
         const canEdit = currentUserId && row.user_id === currentUserId;
+        // User Name Display Logic: Use display_name if available in row (requires backend update to fetch it) OR code
+        // For now, sticking to email code but checking if we can get a precise name from metadata relative to user ID?
+        // Since row.created_by_email is all we have, we use that + hash color.
+
+        // Check if we have a robust display name override (not currently in row format, maybe add later).
         const userCode = emailCode(row.created_by_email);
         const userColor = hashToColor(row.user_id || "");
-        return `
-            <tr data-cloud-id="${row.id}">
+
+        const isEditing = activeEditId === row.id;
+        const rowClass = isEditing ? "cloud-row editing" : "cloud-row";
+
+        const standardRow = `
+            <tr data-cloud-id="${row.id}" class="${rowClass}">
                 <td>
                     <span class="user-badge" style="background:${userColor}" title="User: ${userCode}">${userCode}</span>
                 </td>
@@ -482,11 +493,56 @@ function renderCloudTable() {
                 <td>
                     <div class="cloud-row-actions">
                         <button class="action-btn" data-edit="${row.id}" ${canEdit ? "" : "disabled"} title="Bearbeiten">
-                            <span class="material-icons" style="font-size: 18px;">edit</span>
+                            <span class="material-icons" style="font-size: 18px;">${isEditing ? 'close' : 'edit'}</span>
                         </button>
                         <button class="action-btn" data-delete="${row.id}" ${canEdit ? "" : "disabled"} title="Löschen">
                             <span class="material-icons" style="font-size: 18px;">delete</span>
                         </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        if (!isEditing) return standardRow;
+
+        // --- EDIT DRAWER (Expanded Row) ---
+        // This row spans all columns and contains the form
+        return standardRow + `
+            <tr class="edit-row-container" style="background: var(--bg-secondary);">
+                <td colspan="21" style="padding: 0;">
+                    <div class="edit-drawer" style="padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; border-bottom: 2px solid var(--accent-primary);">
+                        ${renderEditField(row, "datum", "Datum", "date")}
+                        ${renderEditField(row, "show", "Show")}
+                        ${renderEditField(row, "folge", "Folge (EPxx)")}
+                        ${renderEditField(row, "type", "Typ")}
+                        ${renderEditField(row, "teilnehmer", "Teilnehmer")}
+                        ${renderEditField(row, "farbe", "Farbe")}
+                        ${renderEditField(row, "komposition", "Komposition")}
+                        ${renderEditField(row, "temperatur", "Temperatur")}
+                        ${renderEditField(row, "zeit", "Zeit")}
+                        ${renderEditField(row, "geldStart", "Geld Start")}
+                        ${renderEditField(row, "geldAenderung", "Geld Änderung")}
+                        ${renderEditField(row, "geldAktuell", "Geld Aktuell")}
+                        ${renderEditField(row, "stempel", "Stempel (Marker)")}
+                        ${renderEditField(row, "textboxText", "Info / Text")}
+                        ${renderEditField(row, "todoItem", "To-Do")}
+                        ${renderEditField(row, "schnittTimestamp", "Schnitt Time")}
+                        ${renderEditField(row, "cutterInfo", "Cutter Info")}
+                        
+                        <div class="field" style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px;">
+                             <div style="margin-right: auto;">
+                                <label style="display:block; font-size: 0.75rem; margin-bottom: 4px;">Status</label>
+                                <select id="edit-status-${row.id}" style="padding: 8px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);">
+                                    <option value="draft" ${row.status === 'draft' ? 'selected' : ''}>Entwurf</option>
+                                    <option value="ready" ${row.status === 'ready' ? 'selected' : ''}>Export bereit</option>
+                                    <option value="done" ${row.status === 'done' ? 'selected' : ''}>Done</option>
+                                </select>
+                             </div>
+                            <button class="btn cancel-edit-btn" data-cancel-edit="${row.id}">Abbrechen</button>
+                            <button class="btn btn-primary save-edit-btn" data-save-edit="${row.id}">
+                                <span class="material-icons">save</span> Speichern
+                            </button>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -499,47 +555,62 @@ function renderCloudTable() {
             const id = checkbox.getAttribute("data-done");
             const row = cloudRows.find(item => item.id === id);
             if (!row) return;
+
+            // Optimistic update
+            const oldVal = row.done;
+            row.done = checkbox.checked;
+
             const { error } = await supabase
                 .from("entries")
-                .update({ done: checkbox.checked })
+                .update({ done: row.done })
                 .eq("id", id);
-            if (error) alert(error.message);
+
+            if (error) {
+                alert("Fehler: " + error.message);
+                row.done = oldVal; // revert
+                checkbox.checked = oldVal;
+            }
         });
     });
 
-    body.querySelectorAll("[data-edit]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-            if (btn.disabled) return;
-            const id = btn.getAttribute("data-edit");
-            const row = cloudRows.find(item => item.id === id);
-            if (!row) return;
-            const status = prompt('Status setzen ("draft", "ready", "done"):', row.status || "draft");
-            if (!status) return;
-            const normalized = status.toLowerCase();
-            const allowed = ["draft", "ready", "done"];
-            if (!allowed.includes(normalized)) {
-                alert("Ungültiger Status.");
+    // EDIT / DELETE Handling
+    body.querySelectorAll(".action-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            // Edit
+            const editId = btn.getAttribute("data-edit");
+            if (editId) {
+                if (activeEditId === editId) {
+                    activeEditId = null; // Toggle off
+                } else {
+                    activeEditId = editId;
+                }
+                renderCloudTable();
                 return;
             }
-            const { error } = await supabase
-                .from("entries")
-                .update({ status: normalized })
-                .eq("id", id);
-            if (error) alert(error.message);
+
+            // Delete
+            const deleteId = btn.getAttribute("data-delete");
+            if (deleteId) {
+                if (!confirm("Eintrag wirklich löschen?")) return;
+                const { error } = await supabase.from("entries").delete().eq("id", deleteId);
+                if (error) alert("Lösch-Fehler: " + error.message);
+            }
         });
     });
 
-    body.querySelectorAll("[data-delete]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-            if (btn.disabled) return;
-            const id = btn.getAttribute("data-delete");
-            const confirmed = confirm("Eintrag wirklich löschen?");
-            if (!confirmed) return;
-            const { error } = await supabase
-                .from("entries")
-                .delete()
-                .eq("id", id);
-            if (error) alert(error.message);
+    // Save Edit (in Drawer)
+    body.querySelectorAll(".save-edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-save-edit");
+            if (id) window.saveCloudEdit(id);
+        });
+    });
+
+    // Cancel Edit (in Drawer)
+    body.querySelectorAll(".cancel-edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activeEditId = null;
+            renderCloudTable();
         });
     });
 }
@@ -643,6 +714,73 @@ function exportCloud(format) {
     link.download = fileName;
     link.click();
 }
+
+/** Helper to render a single edit field in the drawer */
+function renderEditField(row, key, label, type = "text") {
+    const val = row[key] || "";
+    // Unique ID for retrieval
+    const id = `edit-${row.id}-${key}`;
+    return `
+        <div class="field">
+            <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">${label}</label>
+            <div class="input-wrap" style="background: var(--bg-primary);">
+                 <input type="${type}" id="${id}" value="${val.replace(/"/g, '&quot;')}" style="font-size: 0.9rem;">
+            </div>
+        </div>
+    `;
+}
+
+/** Perform the save to Supabase */
+window.saveCloudEdit = async function (rowId) {
+    if (!session) return;
+
+    // Collect values
+    const getVal = (key) => document.getElementById(`edit-${rowId}-${key}`)?.value || "";
+
+    const updates = {
+        datum: getVal("datum"),
+        show: getVal("show"),
+        folge: getVal("folge"),
+        type: getVal("type"),
+        komposition: getVal("komposition"),
+        status: document.getElementById(`edit-status-${rowId}`)?.value || "draft",
+        schnitt_timestamp: getVal("schnittTimestamp"),
+        cutter_info: getVal("cutterInfo"),
+        // JSONB values
+        values_json: {
+            teilnehmer: getVal("teilnehmer"),
+            farbe: getVal("farbe"),
+            temperatur: getVal("temperatur"),
+            zeit: getVal("zeit"),
+            geldStart: getVal("geldStart"),
+            geldAenderung: getVal("geldAenderung"),
+            geldAktuell: getVal("geldAktuell"),
+            stempel: getVal("stempel"),
+            textboxText: getVal("textboxText"),
+            todoItem: getVal("todoItem")
+        }
+        // TODO: History tracking logic here (Phase 2)
+    };
+
+    // Optimistic update? No, let's wait for loading.
+    setSaveStatus("Speichere Änderungen...", true);
+
+    const { error } = await supabase
+        .from("entries")
+        .update(updates)
+        .eq("id", rowId)
+        .eq("user_id", session.user.id); // Security check
+
+    if (error) {
+        alert("Fehler: " + error.message);
+        setSaveStatus("Fehler beim Speichern", false);
+    } else {
+        setSaveStatus("Änderungen gespeichert!", true);
+        activeEditId = null; // Close drawer
+        // Realtime subscription will likely trigger reload, but we can force it or wait.
+        // If the table doesn't auto-update from subscription immediately, we might want to manually fetch.
+    }
+};
 
 function getLocalExportRows() {
     const local = loadLocal();
@@ -898,4 +1036,17 @@ if (cloudExportCsv) {
 }
 if (cloudExportJson) {
     cloudExportJson.addEventListener("click", () => exportCloud("json"));
+}
+
+const cloudFullscreenBtn = document.getElementById("cloudFullscreenBtn");
+if (cloudFullscreenBtn) {
+    cloudFullscreenBtn.addEventListener("click", () => {
+        const modalContent = document.querySelector("#cloudModal .modal-content");
+        const icon = cloudFullscreenBtn.querySelector(".material-icons");
+        if (modalContent) {
+            modalContent.classList.toggle("fullscreen");
+            const isFull = modalContent.classList.contains("fullscreen");
+            if (icon) icon.textContent = isFull ? "fullscreen_exit" : "fullscreen";
+        }
+    });
 }

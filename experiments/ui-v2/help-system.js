@@ -11,7 +11,7 @@ const helpPages = [
                 </p>
                 <p style="margin-bottom: 16px;">
                     Um die volle Funktionalität zu nutzen, solltest du dich <strong>zunächst anmelden</strong>. 
-                    Nur so werden deine Einträge sicher in der <strong>Cloud synchronisiert</strong> und sind für das gesamte Team sichtbar.
+                    Nur so werden deine Einträge sicher in der <strong>Cloud synchronisiert</strong> und sind weiterhin für das Team sichtbar.
                 </p>
                 <div style="background: rgba(234, 67, 53, 0.1); border-left: 4px solid #ea4335; padding: 12px; border-radius: 4px; margin-bottom: 20px;">
                     <strong>Ohne Anmeldung:</strong> Deine Einträge werden nur lokal in diesem Browser gespeichert ("Guest-Modus"). 
@@ -101,7 +101,6 @@ const helpPages = [
                     <strong>Problem:</strong> Die Lizenzkosten sind aktuell zu hoch (ca. 470€/Monat für den Server-Bot). 
                     Für dieses Projekt lohnt sich das nicht, aber ich arbeite an einer eigenen, günstigeren Lösung.
                 </p>
-                <p>Bis dahin: <strong>Handarbeit!</strong> Danke für eure Geduld.</p>
             </div>
         `
     }
