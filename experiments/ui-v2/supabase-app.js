@@ -53,27 +53,32 @@ async function updateSyncIndicator() {
     const tooltip = document.getElementById("syncIndicatorTooltip");
     if (!indicator || !tooltip) return;
 
-    const storageOk = await isStorageReliable();
-    let state = "orange";
-    let title = "Guest-Modus";
-    let text = "Einträge werden nur lokal im Browser gespeichert. Bleiben bei Reload, können aber durch Browserdaten löschen/Inkognito verloren gehen.";
-
-    if (!storageOk) {
-        state = "red";
-        title = "Nicht sicher gespeichert";
-        text = "Privater Modus oder Speicher nicht dauerhaft. Einträge können beim Schließen/Browser-Cleanup verloren gehen.";
-    } else if (session) {
-        state = "green";
-        title = "Cloud aktiv";
-        text = "Eingeloggt. Einträge werden im Account in der Cloud gespeichert und sind im Team sichtbar.";
+    // 1. Cloud / Green (Synchronous check first)
+    if (session) {
+        applyIndicatorState(indicator, tooltip, "green", "Cloud aktiv", "Eingeloggt. Einträge werden im Account in der Cloud gespeichert und sind im Team sichtbar.");
+        return;
     }
 
+    // 2. Storage Check (Async)
+    const storageOk = await isStorageReliable();
+
+    // 3. Red / Orange
+    if (!storageOk) {
+        applyIndicatorState(indicator, tooltip, "red", "Nicht sicher gespeichert", "Privater Modus oder Speicher nicht dauerhaft. Einträge können beim Schließen/Browser-Cleanup verloren gehen.");
+    } else {
+        applyIndicatorState(indicator, tooltip, "orange", "Guest-Modus", "Einträge werden nur lokal im Browser gespeichert. Bleiben bei Reload, können aber durch Browserdaten löschen/Inkognito verloren gehen.");
+    }
+}
+
+function applyIndicatorState(indicator, tooltip, state, title, text) {
     indicator.classList.remove("state-red", "state-orange", "state-green");
     indicator.classList.add(`state-${state}`);
+
     const titleEl = tooltip.querySelector("strong");
     const textEl = tooltip.querySelector("span");
     if (titleEl) titleEl.textContent = title;
     if (textEl) textEl.textContent = text;
+
     updateMainExportVisibility(state);
 }
 
@@ -129,26 +134,26 @@ function updateAuthUI() {
 
 /** ===== Login/Logout ===== */
 async function doLogin() {
-  const email = document.getElementById("authEmail")?.value?.trim() || prompt("E-Mail:");
-  if (!email) return;
+    const email = document.getElementById("authEmail")?.value?.trim() || prompt("E-Mail:");
+    if (!email) return;
 
-  const password = document.getElementById("authPassword")?.value || prompt("Passwort:");
-  if (!password) return;
+    const password = document.getElementById("authPassword")?.value || prompt("Passwort:");
+    if (!password) return;
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) alert(error.message);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert(error.message);
 }
 
 async function doSignup() {
-  const email = document.getElementById("authEmail")?.value?.trim() || prompt("E-Mail für Registrierung:");
-  if (!email) return;
+    const email = document.getElementById("authEmail")?.value?.trim() || prompt("E-Mail für Registrierung:");
+    if (!email) return;
 
-  const password = document.getElementById("authPassword")?.value || prompt("Passwort wählen (mind. 6 Zeichen):");
-  if (!password) return;
+    const password = document.getElementById("authPassword")?.value || prompt("Passwort wählen (mind. 6 Zeichen):");
+    if (!password) return;
 
-  const { error } = await supabase.auth.signUp({ email, password });
-  if (error) alert(error.message);
-  else alert("Account erstellt. Du kannst dich jetzt einloggen.");
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) alert(error.message);
+    else alert("Account erstellt. Du kannst dich jetzt einloggen.");
 }
 
 async function doLogout() {
@@ -294,9 +299,9 @@ const shortCode = (userId) => {
 };
 
 function emailCode(email) {
-  if (!email) return "???";
-  const name = email.split("@")[0] || "";
-  return name.slice(0, 3).toUpperCase();
+    if (!email) return "???";
+    const name = email.split("@")[0] || "";
+    return name.slice(0, 3).toUpperCase();
 }
 
 const formatCloudRow = (row) => {
@@ -744,13 +749,13 @@ async function openCloud() {
 
 /** ===== Wire Buttons ===== */
 if (loginBtn) {
-  loginBtn.addEventListener("click", async () => {
-    if (session) {
-      await doLogout();
-      return;
-    }
-    openAuthModal();
-  });
+    loginBtn.addEventListener("click", async () => {
+        if (session) {
+            await doLogout();
+            return;
+        }
+        openAuthModal();
+    });
 }
 
 if (cloudBtn) {
