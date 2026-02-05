@@ -120,25 +120,89 @@ async function initAuth() {
             await syncLocalToCloud();
         }
     });
+
+    // Initial check for display name
+    if (session) {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) session.user = data.user; // Ensure we have latest metadata
+    }
 }
 
 function updateAuthUI() {
     const loggedIn = !!session;
+    const loginBtn = document.getElementById("loginBtn");
 
-    // Login button text
-    if (loginBtn) loginBtn.textContent = loggedIn ? "Logout" : "Login";
+    if (loginBtn) {
+        if (loggedIn) {
+            loginBtn.classList.add("logged-in"); // CSS for glow
+            // Override local click to open Profile
+            loginBtn.onclick = openProfileModal;
+        } else {
+            loginBtn.classList.remove("logged-in");
+            // Override click to open Login
+            loginBtn.onclick = openAuthModal;
+        }
+    }
 
     // Cloud Button sperren wenn nicht eingeloggt
     if (cloudBtn) cloudBtn.disabled = !loggedIn;
 }
 
+async function openProfileModal() {
+    const modal = document.getElementById("profileModal");
+    if (!modal || !session) return;
+
+    // Email
+    const emailDisp = document.getElementById("profileEmailDisplay");
+    if (emailDisp) emailDisp.textContent = session.user.email;
+
+    // Display Name
+    const nameInput = document.getElementById("profileDisplayName");
+    if (nameInput) {
+        const meta = session.user.user_metadata || {};
+        nameInput.value = meta.display_name || "";
+    }
+
+    modal.style.display = "flex";
+}
+
+document.getElementById("saveProfileBtn")?.addEventListener("click", async () => {
+    const input = document.getElementById("profileDisplayName");
+    const newName = input ? input.value.trim() : "";
+
+    if (!newName) return;
+
+    const { data, error } = await supabase.auth.updateUser({
+        data: { display_name: newName }
+    });
+
+    if (error) {
+        alert("Fehler beim Speichern des Profils: " + error.message);
+    } else {
+        alert("Profil gespeichert!");
+        if (data.user) {
+            session.user = data.user; // Update local session
+        }
+        document.getElementById("profileModal").style.display = "none";
+    }
+});
+
+document.getElementById("authLogoutBtn")?.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    document.getElementById("profileModal").style.display = "none";
+    alert("Erfolgreich abgemeldet.");
+    updateAuthUI(); // Fallback
+});
+
 /** ===== Login/Logout ===== */
 async function doLogin() {
-    const email = document.getElementById("authEmail")?.value?.trim() || prompt("E-Mail:");
-    if (!email) return;
+    const email = document.getElementById("authEmail")?.value?.trim();
+    const password = document.getElementById("authPassword")?.value;
 
-    const password = document.getElementById("authPassword")?.value || prompt("Passwort:");
-    if (!password) return;
+    if (!email || !password) {
+        alert("Bitte Email und Passwort angeben.");
+        return;
+    }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert(error.message);
