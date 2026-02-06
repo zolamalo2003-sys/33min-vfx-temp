@@ -119,6 +119,7 @@
     <main class="flex-1 relative flex flex-col items-center justify-center bg-grid overflow-hidden">
 
         <!-- Game HUD Overlay (In-Game) -->
+        <!-- Removed opacity-0 so it is visible behind the menu -->
         <div id="gameHud"
             class="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-panel/90 backdrop-blur border border-border px-8 py-3 rounded-2xl shadow-2xl transition-opacity duration-500 z-10 pointer-events-none">
             <!-- SCORE -->
@@ -149,8 +150,9 @@
         </div>
 
         <!-- Start Screen Overlay -->
+        <!-- Added backdrop-blur-md and lighter bg to see through -->
         <div id="startScreen"
-            class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-30">
+            class="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md z-30">
             <div class="text-center space-y-2 mb-12 animate-fade-in-up">
                 <h1 class="text-6xl font-bold text-white tracking-tighter">ARBEITSZEITBETRUG</h1>
             </div>

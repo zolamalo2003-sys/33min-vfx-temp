@@ -121,11 +121,9 @@ function startGame() {
     particles = [];
 
     // UI Updates
-    // UI Updates
     document.getElementById("startScreen").classList.add("hidden");
     document.getElementById("gameOverScreen").classList.add("hidden");
-    // HUD stays visible
-    // document.getElementById("gameHud").classList.remove("opacity-0");
+    document.getElementById("gameHud").classList.remove("opacity-0");
 
     updateHUD();
 }
@@ -142,7 +140,7 @@ function endGame() {
     document.getElementById("finalMisses").textContent = state.misses;
 
     document.getElementById("gameOverScreen").classList.remove("hidden");
-    // document.getElementById("gameHud").classList.add("opacity-0");
+    document.getElementById("gameHud").classList.add("opacity-0");
 
     saveScore(state.score, accuracy);
 }
@@ -364,13 +362,22 @@ function loop() {
     animationFrame = requestAnimationFrame(loop);
 }
 
+// function render() {
+// line 365
 function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear NOT transparent to keep grid visible? 
-    // Wait, grid is CSS background. So we just clear the canvas pixels.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!state.playing) return;
+    // Draw Particles (Always allow particles)
+    particles.forEach(p => {
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
 
-    // Draw Targets
+    // Draw Targets (Always allow if list has them)
     // Lifetime limit calculation for rendering
     const limit = Math.max(CONFIG.minLifetime, CONFIG.targetLifetime / state.difficultyMultiplier);
 
@@ -398,16 +405,6 @@ function render() {
         ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
         ctx.fillStyle = "white";
         ctx.fill();
-    });
-
-    // Draw Particles
-    particles.forEach(p => {
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
     });
 }
 
@@ -480,27 +477,14 @@ async function fetchLeaderboard() {
 }
 
 async function fetchLeaderboardFallback() {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
         .from("aim_scores")
         .select("score, accuracy, user_id, created_at, player_name")
         .order("score", { ascending: false })
         .limit(20);
 
-    if (error) {
-        // Retry without player_name (legacy schema support)
-        const res = await supabase
-            .from("aim_scores")
-            .select("score, accuracy, user_id, created_at")
-            .order("score", { ascending: false })
-            .limit(20);
-        data = res.data;
-    }
-
     const list = document.getElementById("leaderboardList");
     if (data) renderLeaderboard(data, list);
-    else if (!data && list.innerHTML.includes("Lade")) {
-        list.innerHTML = `<div class="p-4 text-center text-xs text-gray-500">Keine Daten verfügbar</div>`;
-    }
 }
 
 function renderLeaderboard(data, list) {
