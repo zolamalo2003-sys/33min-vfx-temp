@@ -101,8 +101,8 @@
                 <span class="material-symbols-outlined text-white">arrow_back</span>
             </div>
             <div>
-                <h1 class="text-lg font-bold leading-tight">VFX GeoPlanner</h1>
-                <p class="text-xs text-gray-400 font-medium">Project: 33 Minutes</p>
+                <h1 class="text-lg font-bold leading-tight">VFX GeoPlaner</h1>
+                <p class="text-xs text-gray-400 font-medium">Projekt: 33 Minuten</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
@@ -128,7 +128,7 @@
                     </div>
                     <input id="mapSearchInput"
                         class="w-full bg-transparent border-none text-white placeholder-gray-400 focus:ring-0 text-sm"
-                        placeholder="Search location..." type="text" />
+                        placeholder="Ort suchen..." type="text" />
                 </div>
             </div>
 
@@ -138,7 +138,7 @@
                 onclick="// View?">
                 <span class="material-symbols-outlined text-[20px]">person_pin_circle</span>
                 <div>
-                    <span class="block text-[10px] opacity-80 uppercase tracking-widest font-bold">Active</span>
+                    <span class="block text-[10px] opacity-80 uppercase tracking-widest font-bold">Aktiv</span>
                     <span class="badge-name block text-lg font-bold leading-none">Name</span>
                 </div>
             </div>
@@ -149,12 +149,12 @@
             <!-- Sidebar Header -->
             <div class="p-6 pb-4 border-b border-white/10 shrink-0">
                 <div class="flex items-center justify-between mb-5">
-                    <h2 class="text-xl font-bold tracking-tight text-white">Animation Details</h2>
+                    <h2 class="text-xl font-bold tracking-tight text-white">Animations-Details</h2>
                     <select id="animStatus"
                         class="bg-[#192d34] border border-[#2a4049] text-xs rounded px-2 py-1 text-white">
-                        <option value="draft">DRAFT</option>
-                        <option value="active">ACTIVE</option>
-                        <option value="done">DONE</option>
+                        <option value="draft">ENTWURF</option>
+                        <option value="active">AKTIV</option>
+                        <option value="done">FERTIG</option>
                     </select>
                 </div>
 
@@ -180,27 +180,27 @@
                         </div>
                     </div>
                     <div class="flex flex-col gap-2">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Duration</label>
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dauer</label>
                         <div class="relative">
                             <input id="animDuration"
                                 class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 pl-3 pr-10 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm"
                                 type="number" value="10" />
                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 text-xs font-medium">sec</span>
+                                <span class="text-gray-500 text-xs font-medium">Sek</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-2 mb-6">
-                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Participants</label>
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teilnehmer</label>
                     <div class="relative">
                         <div
                             class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
                             <div id="participantsChips" class="contents"></div>
                             <select id="participantSelect"
                                 class="bg-transparent border-none p-0 h-6 text-sm text-gray-400 focus:ring-0 min-w-[80px]">
-                                <option value="">+ Add Person</option>
+                                <option value="">+ Person</option>
                                 <option value="Jerry">Jerry</option>
                                 <option value="Marc">Marc</option>
                                 <option value="Taube">Taube</option>
@@ -212,17 +212,17 @@
                 </div>
 
                 <div class="flex flex-col gap-2 mb-8">
-                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Comment</label>
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kommentar</label>
                     <textarea id="animComment"
                         class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
-                        placeholder="Describe the movement..."></textarea>
+                        placeholder="Bewegung beschreiben..."></textarea>
                 </div>
 
                 <!-- Waypoints Section -->
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
-                        Route Waypoints
+                        Routen-Wegpunkte
                     </h3>
                 </div>
 
@@ -235,7 +235,7 @@
                 <button id="btnAddWaypoint"
                     class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
                     <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
-                    <span class="text-sm font-medium">Add Waypoint Center</span>
+                    <span class="text-sm font-medium">Wegpunkt hinzufügen (Mitte)</span>
                 </button>
             </div>
 
@@ -244,11 +244,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <button id="btnLoadList"
                         class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined">list</span> Load
+                        <span class="material-symbols-outlined">list</span> Laden
                     </button>
                     <button id="btnSave"
                         class="bg-primary hover:bg-[#15a3d4] text-black font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined">save</span> Save
+                        <span class="material-symbols-outlined">save</span> Speichern
                     </button>
                 </div>
             </div>

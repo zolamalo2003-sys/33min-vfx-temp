@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (session) {
         userEmailEl.textContent = session.user.email;
     } else {
-        userEmailEl.textContent = "Guest";
+        userEmailEl.textContent = "Gast";
     }
 
     initMap();
@@ -483,7 +483,7 @@ async function saveAnimation() {
         error = res.error;
     }
 
-    if (error) alert("Error saving: " + error.message);
+    if (error) alert("Fehler beim Speichern: " + error.message);
     else alert("Animation gespeichert!");
 }
 
@@ -492,7 +492,7 @@ async function loadAnimationList() {
     if (!session) return;
 
     const { data, error } = await supabase.from("map_animations").select("*").order("created_at", { ascending: false });
-    if (error) { alert("Error: " + error.message); return; }
+    if (error) { alert("Fehler: " + error.message); return; }
 
     if (!data.length) { alert("Keine Animationen."); return; }
 
