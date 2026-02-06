@@ -147,9 +147,10 @@ function endGame() {
 
 function updateGame(dt) { // dt in ms
     // 1. Difficulty Scaling over time
-    // Every 10 seconds, difficulty increases by 0.1
+    // Increase drastically faster as requested. "Hard after 2 mins"
     const elapsed = Date.now() - state.startTime;
-    state.difficultyMultiplier = 1 + (elapsed / 10000) * 0.1; // mild scaling
+    // Old: +0.1 per 10s. New: +0.3 per 10s. 
+    state.difficultyMultiplier = 1 + (elapsed / 10000) * 0.3;
 
     // 2. Spawning
     const currentSpawnRate = Math.max(CONFIG.minSpawnRate, CONFIG.baseSpawnRate / state.difficultyMultiplier);
@@ -202,13 +203,71 @@ function spawnTarget() {
     });
 }
 
+/** INPUT & HOTKEY LOGIC */
+let bindMode = false;
+let shootKey = null;
+let mouseX = 0, mouseY = 0;
+
+// Track mouse pos globally
+document.addEventListener('mousemove', e => {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+});
+
+// Bind Button Logic
+const bindBtn = document.getElementById('btnBindKey');
+if (bindBtn) {
+    bindBtn.addEventListener('click', () => {
+        bindMode = true;
+        bindBtn.textContent = "Press any key...";
+        bindBtn.classList.add("text-primary", "border-primary");
+    });
+}
+
+function resetBindBtn() {
+    const btn = document.getElementById('btnBindKey');
+    if (!btn) return;
+    btn.textContent = shootKey ? `Key: ${shootKey}` : "Click to Bind Key";
+    btn.classList.remove("text-primary", "border-primary");
+}
+
+document.addEventListener('keydown', e => {
+    // Binding
+    if (bindMode) {
+        if (e.code === "Escape") {
+            bindMode = false;
+            resetBindBtn();
+            return;
+        }
+        shootKey = e.code;
+        const disp = document.getElementById('currentHotkey');
+        if (disp) disp.textContent = e.code;
+
+        bindMode = false;
+        resetBindBtn();
+        return;
+    }
+
+    // Start Game
+    if (e.code === "Space" && !state.playing) startGame();
+
+    // Shooting with Hotkey
+    if (state.playing && e.code === shootKey) {
+        attemptShoot(mouseX, mouseY);
+    }
+});
+
 function handleInput(e) {
     if (!state.playing) return;
-
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    attemptShoot(x, y);
+}
 
+function attemptShoot(clickX, clickY) {
     state.clicks++;
 
     // Check hits (reverse order to hit top-most first)
@@ -235,10 +294,6 @@ function handleInput(e) {
     }
 
     if (!hit) {
-        // Clicked background
-        // User asked: "when man einen punkt missed geht die leiste runter"
-        // Usually clicking background breaks combo but doesn't damage health as much as missing a target.
-        // Let's break combo and small penalty.
         state.combo = 0;
         state.misses++;
         createParticles(clickX, clickY, CONFIG.colors.danger);
@@ -402,20 +457,34 @@ async function saveScore(score, accuracy) {
 }
 
 async function fetchLeaderboard() {
-    // Top 20 Global
+    // Attempt to use view first for distinct users
     const { data, error } = await supabase
-        .from("aim_scores") // Query logic... to get max score per user is tricky without view or rpc
-        // For simplicity, just get top 50 rows regardless of user duplication first
+        .from("aim_leaderboard") // Use VIEW
+        .select("score, accuracy, user_id, created_at")
+        .limit(20);
+
+    const list = document.getElementById("leaderboardList");
+    if (error) {
+        // Fallback to raw table if view missing
+        console.warn("View not found, fallback to raw scores");
+        return fetchLeaderboardFallback();
+    }
+
+    renderLeaderboard(data, list);
+}
+
+async function fetchLeaderboardFallback() {
+    const { data, error } = await supabase
+        .from("aim_scores")
         .select("score, accuracy, user_id, created_at")
         .order("score", { ascending: false })
         .limit(20);
 
     const list = document.getElementById("leaderboardList");
-    if (error) {
-        list.innerHTML = `<div class="text-red-500 text-xs">Error loading</div>`;
-        return;
-    }
+    if (data) renderLeaderboard(data, list);
+}
 
+function renderLeaderboard(data, list) {
     list.innerHTML = "";
 
     // We need avatars/names. 
