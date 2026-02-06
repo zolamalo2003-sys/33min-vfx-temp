@@ -90,7 +90,7 @@
 <body class="flex h-screen w-screen bg-bg-dark">
 
     <!-- LEFT: Navigation / Profile -->
-    <aside class="w-20 shrink-0 flex flex-col items-center py-6 border-r border-border bg-panel z-20">
+    <aside class="w-20 shrink-0 flex flex-col items-center py-6 border-r border-border bg-panel z-50">
         <div class="mb-8">
             <div class="size-10 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer hover:scale-105 transition-transform"
                 onclick="window.location.href='../../index.html'" title="Home">
@@ -120,35 +120,39 @@
 
         <!-- Game HUD Overlay (In-Game) -->
         <div id="gameHud"
-            class="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-panel/90 backdrop-blur border border-border px-8 py-3 rounded-2xl shadow-2xl opacity-0 transition-opacity duration-500 z-10 pointer-events-none">
+            class="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-panel/90 backdrop-blur border border-border px-8 py-3 rounded-2xl shadow-2xl transition-opacity duration-500 z-10 pointer-events-none">
+            <!-- SCORE -->
             <div class="text-center">
-                <div class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Score</div>
-                <div id="hudScore" class="text-3xl font-mono font-bold text-white glow-text">0</div>
+                <div class="text-[10px] text-gray-400 tracking-widest uppercase mb-1">Punkte</div>
+                <div id="hudScore" class="text-3xl font-black text-white font-mono">0</div>
             </div>
 
-            <!-- Health Bar Center -->
-            <div class="w-64">
-                <div class="flex justify-between text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">
-                    <span>Integrity</span>
+            <!-- HEALTH BAR -->
+            <div class="flex-1 max-w-md mx-8">
+                <div class="flex justify-between text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                    <span>Energie</span>
                     <span id="hudHealthText">100%</span>
                 </div>
-                <div class="h-3 w-full bg-black/50 rounded-full overflow-hidden border border-white/10">
-                    <div id="hudHealthBar"
-                        class="h-full w-full bg-primary health-fill shadow-[0_0_15px_rgba(25,186,240,0.6)]"></div>
+                <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div id="hudHealthBar" class="h-full bg-primary transition-all duration-200" style="width: 100%">
+                    </div>
                 </div>
             </div>
 
-            <div class="text-center">
-                <div class="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Combo</div>
-                <div id="hudCombo" class="text-3xl font-mono font-bold text-accent">x0</div>
+            <!-- STATS -->
+            <div class="flex gap-8 text-center">
+                <div>
+                    <div class="text-[10px] text-gray-400 tracking-widest uppercase mb-1">Combo</div>
+                    <div id="hudCombo" class="text-xl font-bold text-primary font-mono">x0</div>
+                </div>
             </div>
         </div>
 
         <!-- Start Screen Overlay -->
         <div id="startScreen"
-            class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-30">
+            class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-30">
             <div class="text-center space-y-2 mb-12 animate-fade-in-up">
-                <h1 class="text-6xl font-bold text-white tracking-tighter">AIM TRAINER</h1>
+                <h1 class="text-6xl font-bold text-white tracking-tighter">ARBEITSZEITBETRUG</h1>
             </div>
 
             <button id="btnStart"
@@ -176,41 +180,37 @@
                 <h2 class="text-red-500 text-sm font-bold tracking-[0.3em] uppercase mb-2">System Failure</h2>
                 <h1 class="text-5xl font-bold text-white mb-8">SESSION ENDED</h1>
 
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="bg-surface p-4 rounded-xl border border-white/5">
-                        <div class="text-xs text-gray-400 uppercase">Final Score</div>
-                        <div id="finalScore" class="text-3xl font-mono font-bold text-primary">0</div>
+                <div class="text-center z-10 w-full max-w-md">
+                    <h2 class="text-4xl font-bold text-white mb-2 tracking-tighter">SESSION BEENDET</h2>
+                    <div class="text-6xl font-black text-primary font-mono mb-8 text-shadow-glow" id="finalScore">0
                     </div>
-                    <div class="bg-surface p-4 rounded-xl border border-white/5">
-                        <div class="text-xs text-gray-400 uppercase">Highscore</div>
-                        <div id="finalHighscore" class="text-3xl font-mono font-bold text-white">0</div>
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-3 gap-2 mb-8 text-center">
-                    <div>
-                        <div class="text-[10px] text-gray-500 uppercase">Accuracy</div>
-                        <div id="finalAcc" class="text-lg font-mono font-bold text-gray-300">0%</div>
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
+                            <div class="text-[10px] text-gray-400 uppercase">Präzision</div>
+                            <div id="finalAcc" class="text-xl font-bold text-white">0%</div>
+                        </div>
+                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
+                            <div class="text-[10px] text-gray-400 uppercase">Treffer</div>
+                            <div id="finalHits" class="text-xl font-bold text-green-400">0</div>
+                        </div>
+                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
+                            <div class="text-[10px] text-gray-400 uppercase">Fehlschüsse</div>
+                            <div id="finalMisses" class="text-xl font-bold text-red-400">0</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-[10px] text-gray-500 uppercase">Hits</div>
-                        <div id="finalHits" class="text-lg font-mono font-bold text-green-400">0</div>
-                    </div>
-                    <div>
-                        <div class="text-[10px] text-gray-500 uppercase">Misses</div>
-                        <div id="finalMisses" class="text-lg font-mono font-bold text-red-400">0</div>
-                    </div>
-                </div>
 
-                <div class="flex gap-4 justify-center">
-                    <button id="btnRestart"
-                        class="px-8 py-3 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors flex items-center gap-2">
-                        <span class="material-symbols-outlined">refresh</span> Retry
-                    </button>
-                    <button onclick="window.location.reload()"
-                        class="px-6 py-3 bg-transparent border border-gray-600 text-gray-400 font-bold rounded hover:text-white hover:border-white transition-colors">
-                        Menu
-                    </button>
+                    <div class="flex gap-4 justify-center">
+                        <button id="btnRestart"
+                            class="px-8 py-3 bg-white text-black font-bold uppercase tracking-wider rounded hover:bg-gray-200 hover:scale-105 transition-all">
+                            Nochmal Spielen
+                        </button>
+                        <button
+                            onclick="document.getElementById('gameOverScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden');"
+                            class="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-wider rounded hover:bg-white/10 transition-all">
+                            Menü
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -224,10 +224,21 @@
     <aside class="w-80 shrink-0 bg-panel border-l border-border flex flex-col z-20">
         <!-- Header -->
         <div class="p-6 border-b border-white/5">
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">leaderboard</span> Leaderboard
-            </h2>
-            <p class="text-xs text-gray-500 mt-1">Global Top Agents</p>
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">trophy</span>
+                    Bestenliste
+                </h2>
+                <div class="text-xs text-gray-500">
+                    Dein Highscore: <span id="finalHighscore" class="text-primary font-mono">--</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-[40px_1fr_100px] text-xs font-bold text-gray-500 uppercase px-3 mb-2">
+                <div>#</div>
+                <div>Agent</div>
+                <div class="text-right">Punkte</div>
+            </div>
         </div>
 
         <!-- Leaderboard List -->
@@ -245,26 +256,24 @@
 
             <div class="space-y-4">
                 <div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-2 text-gray-400">
-                            <span>Shoot Hotkey</span>
-                            <span id="currentHotkey" class="text-white font-mono bg-white/10 px-2 rounded">NONE</span>
-                        </div>
-                        <button id="btnBindKey"
-                            class="w-full py-2 text-xs bg-black/40 border border-white/10 rounded hover:bg-white/5 transition-colors text-gray-300">
-                            Click to Bind Key
-                        </button>
+                    <div class="flex justify-between text-xs mb-2 text-gray-400">
+                        <span>Schuss-Taste</span>
+                        <span id="currentHotkey" class="text-white font-mono bg-white/10 px-2 rounded">KEINE</span>
                     </div>
+                    <button id="btnBindKey"
+                        class="w-full py-2 text-xs bg-black/40 border border-white/10 rounded hover:bg-white/5 transition-colors text-gray-300">
+                        Taste belegen
+                    </button>
+                </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
-                            <div class="text-[10px] text-gray-500">Targets / Sec</div>
-                            <div id="debugSpawnRate" class="text-xs font-mono text-primary font-bold">--</div>
-                        </div>
-                        <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
-                            <div class="text-[10px] text-gray-500">Difficulty</div>
-                            <div id="debugDifficulty" class="text-xs font-mono text-primary font-bold">--</div>
-                        </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
+                        <div class="text-[10px] text-gray-500">Ziele / Sek</div>
+                        <div id="debugSpawnRate" class="text-xs font-mono text-primary font-bold">--</div>
+                    </div>
+                    <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
+                        <div class="text-[10px] text-gray-500">Schwierigkeit</div>
+                        <div id="debugDifficulty" class="text-xs font-mono text-primary font-bold">--</div>
                     </div>
                 </div>
             </div>

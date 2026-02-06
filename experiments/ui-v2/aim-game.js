@@ -121,9 +121,11 @@ function startGame() {
     particles = [];
 
     // UI Updates
+    // UI Updates
     document.getElementById("startScreen").classList.add("hidden");
     document.getElementById("gameOverScreen").classList.add("hidden");
-    document.getElementById("gameHud").classList.remove("opacity-0");
+    // HUD stays visible
+    // document.getElementById("gameHud").classList.remove("opacity-0");
 
     updateHUD();
 }
@@ -140,7 +142,7 @@ function endGame() {
     document.getElementById("finalMisses").textContent = state.misses;
 
     document.getElementById("gameOverScreen").classList.remove("hidden");
-    document.getElementById("gameHud").classList.add("opacity-0");
+    // document.getElementById("gameHud").classList.add("opacity-0");
 
     saveScore(state.score, accuracy);
 }
@@ -221,7 +223,7 @@ const bindBtn = document.getElementById('btnBindKey');
 if (bindBtn) {
     bindBtn.addEventListener('click', () => {
         bindMode = true;
-        bindBtn.textContent = "Press any key...";
+        bindBtn.textContent = "Taste drücken...";
         bindBtn.classList.add("text-primary", "border-primary");
     });
 }
@@ -229,7 +231,7 @@ if (bindBtn) {
 function resetBindBtn() {
     const btn = document.getElementById('btnBindKey');
     if (!btn) return;
-    btn.textContent = shootKey ? `Key: ${shootKey}` : "Click to Bind Key";
+    btn.textContent = shootKey ? `Taste: ${shootKey}` : "Taste belegen";
     btn.classList.remove("text-primary", "border-primary");
 }
 
@@ -437,13 +439,17 @@ async function saveScore(score, accuracy) {
 
     // 1. Check Personal Highscore to display in game over?
     // 2. Insert
+    const meta = session.user.user_metadata || {};
+    const name = meta.display_name || session.user.email;
+
     const { error } = await supabase.from("aim_scores").insert({
         user_id: session.user.id,
         score: score,
         accuracy: accuracy,
         hits: state.hits,
         misses: state.misses,
-        max_streak: state.maxCombo
+        max_streak: state.maxCombo,
+        player_name: name // Save the name!
     });
 
     if (error) console.error("Error saving score:", error);
@@ -460,7 +466,7 @@ async function fetchLeaderboard() {
     // Attempt to use view first for distinct users
     const { data, error } = await supabase
         .from("aim_leaderboard") // Use VIEW
-        .select("score, accuracy, user_id, created_at")
+        .select("score, accuracy, user_id, created_at, player_name")
         .limit(20);
 
     const list = document.getElementById("leaderboardList");
@@ -476,7 +482,7 @@ async function fetchLeaderboard() {
 async function fetchLeaderboardFallback() {
     const { data, error } = await supabase
         .from("aim_scores")
-        .select("score, accuracy, user_id, created_at")
+        .select("score, accuracy, user_id, created_at, player_name")
         .order("score", { ascending: false })
         .limit(20);
 
@@ -494,7 +500,13 @@ function renderLeaderboard(data, list) {
         const isMe = session && row.user_id === session.user.id;
         const color = isMe ? "text-primary" : "text-white";
         const bg = isMe ? "bg-primary/10 border-primary/30" : "bg-surface border-white/5";
-        const code = row.user_id.slice(0, 3).toUpperCase();
+
+        // Name Logic: Use saved player_name OR Email OR Agent Code
+        let displayName = row.player_name;
+        if (!displayName) {
+            const code = row.user_id.slice(0, 3).toUpperCase();
+            displayName = `AGENT ${code}`;
+        }
 
         const card = document.createElement("div");
         card.className = `flex items-center justify-between p-3 rounded border ${bg}`;
@@ -502,7 +514,7 @@ function renderLeaderboard(data, list) {
             <div class="flex items-center gap-3">
                 <div class="text-xs font-bold text-gray-500 w-4">#${index + 1}</div>
                 <div>
-                   <div class="text-xs font-bold ${color}">AGENT ${code}</div>
+                   <div class="text-xs font-bold ${color}">${displayName}</div>
                    <div class="text-[10px] text-gray-500">${new Date(row.created_at).toLocaleDateString()}</div>
                 </div>
             </div>
