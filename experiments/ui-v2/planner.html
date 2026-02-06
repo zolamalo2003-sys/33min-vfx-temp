@@ -131,6 +131,17 @@
                         placeholder="Search location..." type="text" />
                 </div>
             </div>
+
+            <!-- Active Participant Badge (Top Right) -->
+            <div id="activeParticipantBadge"
+                class="absolute top-6 right-6 z-[1000] hidden items-center gap-3 px-4 py-3 rounded-lg shadow-2xl transition-all cursor-pointer hover:scale-105"
+                onclick="// View?">
+                <span class="material-symbols-outlined text-[20px]">person_pin_circle</span>
+                <div>
+                    <span class="block text-[10px] opacity-80 uppercase tracking-widest font-bold">Active</span>
+                    <span class="badge-name block text-lg font-bold leading-none">Name</span>
+                </div>
+            </div>
         </main>
 
         <!-- Sidebar (Right Pane) -->

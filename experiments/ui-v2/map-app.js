@@ -42,13 +42,69 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 /** ================= MAP LOGIC ================= */
 function initMap() {
-    map = L.map('map').setView(DEFAULT_CENTER, 13);
+    // Disable default zoom to create custom position or move it
+    map = L.map('map', { zoomControl: false }).setView(DEFAULT_CENTER, 13);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO',
         subdomains: 'abcd',
         maxZoom: 20
     }).addTo(map);
+}
+
+// Search Logic
+let searchTimeout;
+function handleSearch(query) {
+    if (!query || query.length < 3) return;
+
+    // Clear previous timeout
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    searchTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            showSearchResults(data);
+        } catch (e) {
+            console.error("Search error", e);
+        }
+    }, 500); // 500ms debounce
+}
+
+function showSearchResults(results) {
+    let container = document.getElementById("searchResults");
+    if (!container) {
+        // Create if missing (though we should add it to HTML)
+        container = document.createElement("div");
+        container.id = "searchResults";
+        container.className = "absolute top-14 left-0 w-full bg-[#192d34] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 max-h-60 overflow-y-auto";
+        document.querySelector("#mapSearchInput").parentNode.appendChild(container);
+    }
+
+    container.innerHTML = "";
+    container.style.display = results.length ? "block" : "none";
+
+    results.forEach(place => {
+        const div = document.createElement("div");
+        div.className = "px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 text-sm text-gray-200";
+        div.textContent = place.display_name;
+        div.onclick = () => {
+            const lat = parseFloat(place.lat);
+            const lng = parseFloat(place.lon);
+            map.flyTo([lat, lng], 14);
+            container.style.display = "none";
+            document.getElementById("mapSearchInput").value = place.display_name;
+        };
+        container.appendChild(div);
+    });
+
+    // Hide on click outside
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target) && e.target.id !== 'mapSearchInput') {
+            container.style.display = 'none';
+        }
+    }, { once: true });
 }
 
 function createMarkerIcon(person, isSelected) {
@@ -185,6 +241,15 @@ function bindEvents() {
 
     document.getElementById("btnSave").addEventListener("click", saveAnimation);
     document.getElementById("btnLoadList").addEventListener("click", loadAnimationList);
+
+    // Search Input
+    const searchIn = document.getElementById("mapSearchInput");
+    if (searchIn) {
+        searchIn.addEventListener("input", (e) => handleSearch(e.target.value));
+        searchIn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") handleSearch(e.target.value);
+        });
+    }
 }
 
 function addParticipant(name) {
@@ -215,6 +280,23 @@ function selectParticipant(name) {
     selectedParticipant = name;
     renderParticipants();
     updateVisuals();
+    updateMapBadge(name);
+}
+
+function updateMapBadge(name) {
+    const badge = document.getElementById("activeParticipantBadge");
+    if (!badge || !name) {
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+    const color = COLORS[name] || COLORS.default;
+    badge.style.display = 'flex';
+    badge.style.backgroundColor = color;
+    badge.style.boxShadow = `0 0 15px ${color}66`; // Glow
+
+    // Contrast text color check (simple white/black)
+    badge.style.color = '#fff';
+    badge.querySelector(".badge-name").textContent = name;
 }
 
 function renderParticipants() {
