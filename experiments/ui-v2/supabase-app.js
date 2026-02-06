@@ -144,8 +144,10 @@ function updateAuthUI() {
         }
     }
 
-    // Cloud Button sperren wenn nicht eingeloggt
-    if (cloudBtn) cloudBtn.disabled = !loggedIn;
+    // Cloud Button ausblenden wenn nicht eingeloggt
+    if (cloudBtn) {
+        cloudBtn.style.display = loggedIn ? "flex" : "none";
+    }
 }
 
 async function openProfileModal() {
