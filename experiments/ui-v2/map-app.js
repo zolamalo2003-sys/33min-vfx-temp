@@ -487,24 +487,93 @@ async function saveAnimation() {
     else alert("Animation gespeichert!");
 }
 
+// --- LOAD MODAL LOGIC ---
+let allAnimations = [];
+
+document.getElementById("btnCloseLoadModal").addEventListener("click", () => {
+    document.getElementById("loadModal").classList.add("hidden");
+});
+
+document.getElementById("loadSearchInput").addEventListener("input", (e) => {
+    renderLoadList(e.target.value);
+});
+
 async function loadAnimationList() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) { alert("Bitte einloggen."); return; }
 
-    const { data, error } = await supabase.from("map_animations").select("*").order("created_at", { ascending: false });
-    if (error) { alert("Fehler: " + error.message); return; }
+    // Show Modal
+    const modal = document.getElementById("loadModal");
+    modal.classList.remove("hidden");
 
-    if (!data.length) { alert("Keine Animationen."); return; }
+    // Fetch Data
+    const container = document.getElementById("loadListContainer");
+    container.innerHTML = `<div class="text-center py-8 text-gray-500 flex flex-col items-center gap-2"><span class="material-symbols-outlined animate-spin">progress_activity</span> Lade...</div>`;
 
-    let msg = "Wähle ID (Eingeben):\n";
-    data.forEach((row, i) => {
-        msg += `[${i}] ${row.anim_id} (${row.status})\n`;
-    });
-    const idx = prompt(msg);
-    if (idx !== null && data[idx]) {
-        loadAnimation(data[idx]);
+    const { data, error } = await supabase
+        .from("map_animations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        container.innerHTML = `<div class="text-center py-8 text-red-400">Fehler: ${error.message}</div>`;
+        return;
     }
+
+    allAnimations = data || [];
+    renderLoadList("");
 }
+
+function renderLoadList(filter = "") {
+    const container = document.getElementById("loadListContainer");
+    const term = filter.toLowerCase();
+
+    const filtered = allAnimations.filter(row => {
+        const text = `${row.anim_id} ${row.description || ""} ${row.status}`.toLowerCase();
+        return text.includes(term);
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-gray-500">Keine Animationen gefunden.</div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map(row => {
+        const date = new Date(row.created_at).toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const color = row.status === 'done' ? 'text-green-400 border-green-400/30 bg-green-400/10' :
+            row.status === 'active' ? 'text-blue-400 border-blue-400/30 bg-blue-400/10' :
+                'text-gray-400 border-gray-600 bg-gray-700/30'; // draft
+
+        return `
+            <div onclick="window.loadAnimFromModal('${row.id}')" 
+                 class="group flex items-center justify-between p-4 bg-[#101d22] border border-[#2a4049] rounded-lg cursor-pointer hover:border-primary/50 hover:bg-[#152329] transition-all">
+                <div class="flex-1 min-w-0 mr-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-bold text-white group-hover:text-primary transition-colors">${row.anim_id || "Unbenannt"}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded border ${color} uppercase tracking-wider font-bold">${row.status || "Entwurf"}</span>
+                    </div>
+                    <div class="text-sm text-gray-400 truncate">${row.description || "Keine Beschreibung"}</div>
+                    <div class="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">calendar_today</span> ${date}
+                        <span class="mx-1">•</span>
+                        <span>${(row.participants || []).length} Teilnehmer</span>
+                    </div>
+                </div>
+                <div class="shrink-0 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+window.loadAnimFromModal = (id) => {
+    const row = allAnimations.find(r => r.id === id);
+    if (row) {
+        loadAnimation(row);
+        document.getElementById("loadModal").classList.add("hidden");
+    }
+};
 
 function loadAnimation(row) {
     currentAnimId = row.id;
