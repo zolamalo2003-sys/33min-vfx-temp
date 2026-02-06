@@ -19,8 +19,8 @@ const DEFAULT_CENTER = [52.520, 13.405];
 const COLORS = {
     "Jerry": "#19baf0", // Blue
     "Marc": "#10b981",  // Green
-    "Taube": "#f59e0b", // Orange
-    "Käthe": "#ec4899", // Pink
+    "Taube": "#ef4444", // Red
+    "Käthe": "#f97316", // Orange
     "Kodiak": "#8b5cf6", // Purple
     "default": "#9ca3af" // Gray
 };
@@ -163,10 +163,25 @@ function bindEvents() {
         }
 
         const center = map.getCenter();
-        // Shift slightly so they don't stack perfectly on center
         const offset = (Math.random() - 0.5) * 0.002;
         addWaypoint(center.lat + offset, center.lng + offset, selectedParticipant);
     });
+
+    // Map Click -> Add Waypoint
+    map.on('click', (e) => {
+        if (!selectedParticipant) {
+            // Maybe alert or verify participant existence
+            if (participants.length > 0) {
+                selectParticipant(participants[0]);
+            } else {
+                return; // No participants to add to
+            }
+        }
+        addWaypoint(e.latlng.lat, e.latlng.lng, selectedParticipant);
+    });
+
+    // Hover Preview (Cursor change)
+    map.getContainer().style.cursor = 'crosshair';
 
     document.getElementById("btnSave").addEventListener("click", saveAnimation);
     document.getElementById("btnLoadList").addEventListener("click", loadAnimationList);
