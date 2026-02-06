@@ -146,7 +146,8 @@ function updateAuthUI() {
 
     // Cloud Button ausblenden wenn nicht eingeloggt
     if (cloudBtn) {
-        cloudBtn.style.display = loggedIn ? "flex" : "none";
+        // Use empty string to revert to CSS default (usually flex or grid), 'none' to hide
+        cloudBtn.style.display = loggedIn ? "" : "none";
     }
 }
 
@@ -174,6 +175,14 @@ document.getElementById("saveProfileBtn")?.addEventListener("click", async () =>
 
     if (!newName) return;
 
+    // Ensure session is valid
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+        alert("Session abgelaufen. Bitte neu einloggen.");
+        updateAuthUI();
+        return;
+    }
+
     const { data, error } = await supabase.auth.updateUser({
         data: { display_name: newName }
     });
@@ -186,6 +195,8 @@ document.getElementById("saveProfileBtn")?.addEventListener("click", async () =>
             session.user = data.user; // Update local session
         }
         document.getElementById("profileModal").style.display = "none";
+        // Refresh UI
+        updateAuthUI();
     }
 });
 
@@ -952,15 +963,8 @@ async function openCloud() {
 }
 
 /** ===== Wire Buttons ===== */
-if (loginBtn) {
-    loginBtn.addEventListener("click", async () => {
-        if (session) {
-            await doLogout();
-            return;
-        }
-        openAuthModal();
-    });
-}
+// loginBtn logic is handled in updateAuthUI() to switch between Login and Profile helpers.
+// Removing the duplicate event listener that caused immediate logout.
 
 if (cloudBtn) {
     cloudBtn.addEventListener("click", openCloud);
