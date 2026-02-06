@@ -2,36 +2,41 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 /** ================= CONFIG ================= */
-// Using the same credentials as main app
 const SUPABASE_URL = "https://xdxnprrjnwutpewchjms.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkeG5wcnJqbnd1dHBld2Noam1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NzgwMzQsImV4cCI6MjA4NTA1NDAzNH0.Njz_nuCzW0IWPqHINXbUmiLFX-h3qQPnlzGzxlB8h8A";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// State
 let map;
-let routingControl = null;
-let markers = [];
-let participants = [];
-let currentAnimId = null; // ID of the DB row
+let participants = []; // ["Jerry", "Marc"]
+let selectedParticipant = null; // "Jerry"
+let waypointData = []; // Array of { id, lat, lng, mode, person, markerRef }
+let routeControls = {}; // { "Jerry": L.Routing.control }
+let currentAnimId = null;
 
-// 33 minutes project location default (approx Berlin/Germany or user location)
-const DEFAULT_CENTER = [52.520, 13.405]; // Berlin
+const DEFAULT_CENTER = [52.520, 13.405];
+
+const COLORS = {
+    "Jerry": "#19baf0", // Blue
+    "Marc": "#10b981",  // Green
+    "Taube": "#f59e0b", // Orange
+    "Käthe": "#ec4899", // Pink
+    "Kodiak": "#8b5cf6", // Purple
+    "default": "#9ca3af" // Gray
+};
 
 /** ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Auth Check
+    // Auth Check
     const { data: { session } } = await supabase.auth.getSession();
     const userEmailEl = document.getElementById("userEmail");
     if (session) {
         userEmailEl.textContent = session.user.email;
     } else {
-        userEmailEl.textContent = "Guest (Not Logged In)";
-        alert("Bitte einloggen (in der Haupt-App), um zu speichern.");
+        userEmailEl.textContent = "Guest";
     }
 
-    // 2. Init Map
     initMap();
-
-    // 3. Bind UI Events
     bindEvents();
 });
 
@@ -39,52 +44,99 @@ document.addEventListener("DOMContentLoaded", async () => {
 function initMap() {
     map = L.map('map').setView(DEFAULT_CENTER, 13);
 
-    // CartoDB Dark Matter (User liked the dark vector look)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
         subdomains: 'abcd',
         maxZoom: 20
     }).addTo(map);
+}
 
-    // On Click Map -> Add Waypoint logic could go here, strictly for "adding last point"
-    map.on('click', function (e) {
-        // Optional: add waypoint on click? 
-        // For now, users use the "Add Waypoint" button which adds center, then they drag.
+function createMarkerIcon(person, isSelected) {
+    const color = COLORS[person] || COLORS.default;
+    const opacity = isSelected ? 1 : 0.3;
+    const scale = isSelected ? 1.2 : 0.8;
+    const zIndex = isSelected ? 100 : 1;
+
+    // Custom HTML for the marker (glowing dot)
+    return L.divIcon({
+        className: 'custom-div-icon',
+        html: `
+            <div style="
+                background-color: ${color};
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 0 10px ${color};
+                opacity: ${opacity};
+                transform: scale(${scale});
+                transition: all 0.3s ease;
+            "></div>
+        `,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
     });
 }
 
-function updateRoute() {
-    // Remove old routing
-    if (routingControl) {
-        map.removeControl(routingControl);
-        routingControl = null;
-    }
+function updateVisuals() {
+    // 1. Update Route Lines
+    updateRoutes();
 
-    // Collect Waypoints
-    const waypointElements = document.querySelectorAll(".waypoint-item");
-    if (waypointElements.length < 2) return; // Need at least 2 points for a route
+    // 2. Update Markers Visuals (Opacity based on selection)
+    waypointData.forEach(wp => {
+        if (wp.markerRef) {
+            const isSelected = !selectedParticipant || wp.person === selectedParticipant;
+            const icon = createMarkerIcon(wp.person, isSelected);
+            wp.markerRef.setIcon(icon);
+            wp.markerRef.setZIndexOffset(isSelected ? 1000 : 0);
 
-    const waypoints = [];
-    waypointElements.forEach(el => {
-        const lat = parseFloat(el.querySelector(".wp-lat").value);
-        const lng = parseFloat(el.querySelector(".wp-lng").value);
-        if (!isNaN(lat) && !isNaN(lng)) {
-            waypoints.push(L.latLng(lat, lng));
+            // Allow dragging only if selected
+            if (isSelected) {
+                wp.markerRef.dragging.enable();
+            } else {
+                wp.markerRef.dragging.disable();
+            }
         }
     });
 
-    if (waypoints.length < 2) return;
+    // 3. Filter Waypoint List in Sidebar
+    renderWaypointList();
+}
 
-    // Draw Route
-    routingControl = L.Routing.control({
-        waypoints: waypoints,
-        routeWhileDragging: false, // Performance
-        lineOptions: {
-            styles: [{ color: '#19baf0', opacity: 0.8, weight: 6 }]
-        },
-        createMarker: function () { return null; }, // We handle markers manually
-        show: false // Don't show the text instructions container
-    }).addTo(map);
+function updateRoutes() {
+    // Clean up old controls
+    Object.values(routeControls).forEach(ctrl => map.removeControl(ctrl));
+    routeControls = {};
+
+    // Group waypoints by person
+    const persons = [...new Set(waypointData.map(wp => wp.person))];
+
+    persons.forEach(person => {
+        const personWPs = waypointData.filter(wp => wp.person === person);
+        if (personWPs.length < 2) return;
+
+        const waypoints = personWPs.map(wp => L.latLng(wp.lat, wp.lng));
+        const color = COLORS[person] || COLORS.default;
+        const isSelected = !selectedParticipant || person === selectedParticipant;
+
+        // Create route
+        const ctrl = L.Routing.control({
+            waypoints: waypoints,
+            routeWhileDragging: false,
+            lineOptions: {
+                styles: [{
+                    color: color,
+                    opacity: isSelected ? 0.8 : 0.15, // Dim inactive routes
+                    weight: isSelected ? 5 : 3
+                }]
+            },
+            createMarker: () => null, // No default markers
+            show: false,
+            addWaypoints: false
+        }).addTo(map);
+
+        routeControls[person] = ctrl;
+    });
 }
 
 /** ================= UI LOGIC ================= */
@@ -101,130 +153,208 @@ function bindEvents() {
 
     // Add Waypoint
     document.getElementById("btnAddWaypoint").addEventListener("click", () => {
+        if (!selectedParticipant && participants.length > 0) {
+            // Auto-select first if none selected
+            selectParticipant(participants[0]);
+        }
+        if (!selectedParticipant) {
+            alert("Bitte zuerst einen Teilnehmer auswählen/hinzufügen.");
+            return;
+        }
+
         const center = map.getCenter();
-        addWaypointUI(center.lat, center.lng);
+        // Shift slightly so they don't stack perfectly on center
+        const offset = (Math.random() - 0.5) * 0.002;
+        addWaypoint(center.lat + offset, center.lng + offset, selectedParticipant);
     });
 
-    // Save
     document.getElementById("btnSave").addEventListener("click", saveAnimation);
-
-    // Load List (Simple implementation: Prompt for ID or show list modal - for now simplified)
     document.getElementById("btnLoadList").addEventListener("click", loadAnimationList);
 }
 
 function addParticipant(name) {
     participants.push(name);
-    renderParticipants();
+    // Auto-select newly added
+    selectParticipant(name);
 }
 
 function removeParticipant(name) {
+    if (!confirm(`Entfernen: ${name}? Alle Marker werden gelöscht.`)) return;
+
     participants = participants.filter(p => p !== name);
+    // Remove waypoints for this person
+    const toRemove = waypointData.filter(wp => wp.person === name);
+    toRemove.forEach(wp => {
+        map.removeLayer(wp.markerRef);
+    });
+    waypointData = waypointData.filter(wp => wp.person !== name);
+
+    if (selectedParticipant === name) {
+        selectedParticipant = participants[0] || null;
+    }
     renderParticipants();
+    updateVisuals();
+}
+
+function selectParticipant(name) {
+    selectedParticipant = name;
+    renderParticipants();
+    updateVisuals();
 }
 
 function renderParticipants() {
     const container = document.getElementById("participantsChips");
-    container.innerHTML = participants.map(p => `
-        <div class="bg-primary/20 border border-primary/30 text-primary text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
-            ${p}
-            <button onclick="window.removeParticipantLink('${p}')" class="hover:text-white"><span class="material-symbols-outlined text-[14px]">close</span></button>
-        </div>
-    `).join("");
+    container.innerHTML = participants.map(p => {
+        const isSelected = p === selectedParticipant;
+        const color = COLORS[p] || COLORS.default;
+
+        // Style Logic
+        let style = "";
+        let classes = "cursor-pointer border px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all hover:scale-105";
+
+        if (isSelected) {
+            // Active Style (Solid color pop)
+            style = `background: ${color}22; border-color: ${color}; color: white; box-shadow: 0 0 8px ${color}44;`;
+        } else {
+            // Inactive Style (Dimmed)
+            style = `background: #1f2937; border-color: #374151; color: #9ca3af;`;
+        }
+
+        return `
+            <div onclick="window.selectParticipant('${p}')" 
+                 class="${classes}"
+                 style="${style}">
+                <div style="width:8px; height:8px; background:${color}; border-radius:50%;"></div>
+                <span class="font-bold text-xs uppercase">${p}</span>
+                <button onclick="event.stopPropagation(); window.removeParticipantLink('${p}')" class="hover:text-white flex items-center ml-1">
+                    <span class="material-symbols-outlined text-[14px]">close</span>
+                </button>
+            </div>
+        `;
+    }).join("");
 }
 
-// Global hack via window to allow onclick in innerHTML
+// Global helpers
 window.removeParticipantLink = removeParticipant;
+window.selectParticipant = selectParticipant;
 
-function addWaypointUI(lat, lng, mode = "walking") {
-    const list = document.getElementById("waypointsList");
-    const index = list.children.length;
+function addWaypoint(lat, lng, person, mode = "walking") {
+    const id = crypto.randomUUID();
 
-    // Marker on Map
-    const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-    markers.push({ marker, id: index }); // track markers
+    // Create Marker
+    const icon = createMarkerIcon(person, true);
+    const marker = L.marker([lat, lng], { draggable: true, icon: icon }).addTo(map);
 
-    const div = document.createElement("div");
-    div.className = "waypoint-item bg-[#192d34]/50 border border-border-dark rounded-xl p-3 hover:border-primary/50 transition-colors group";
-    div.dataset.index = index;
+    // Data Object
+    const wp = { id, lat, lng, person, mode, markerRef: marker };
+    waypointData.push(wp);
 
-    div.innerHTML = `
-        <div class="flex items-start gap-3">
-            <div class="mt-1 size-8 rounded-full bg-surface-dark border border-gray-600 text-gray-400 flex items-center justify-center shrink-0">
-                <span class="text-xs font-bold">${index + 1}</span>
-            </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold text-gray-300">Waypoint ${index + 1}</span>
-                    <button class="btn-del-wp size-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-red-400">
-                        <span class="material-symbols-outlined text-[16px]">delete</span>
-                    </button>
-                </div>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <div class="bg-black/20 rounded px-2 py-1.5 border border-white/5">
-                        <label class="block text-[10px] text-gray-500">Lat</label>
-                        <input class="wp-lat w-full bg-transparent border-none p-0 text-xs text-gray-200 focus:ring-0 font-mono" value="${lat.toFixed(6)}" onchange="updateMarkerFromInput(${index})">
-                    </div>
-                    <div class="bg-black/20 rounded px-2 py-1.5 border border-white/5">
-                        <label class="block text-[10px] text-gray-500">Lng</label>
-                        <input class="wp-lng w-full bg-transparent border-none p-0 text-xs text-gray-200 focus:ring-0 font-mono" value="${lng.toFixed(6)}" onchange="updateMarkerFromInput(${index})">
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 mt-2">
-                     <select class="wp-mode bg-black/40 rounded-full pl-2 pr-6 py-1 border border-white/5 text-xs text-gray-300">
-                        <option value="walking" ${mode === 'walking' ? 'selected' : ''}>Walking</option>
-                        <option value="driving" ${mode === 'driving' ? 'selected' : ''}>Driving</option>
-                        <option value="transit" ${mode === 'transit' ? 'selected' : ''}>Transit</option>
-                        <option value="cycling" ${mode === 'cycling' ? 'selected' : ''}>Cycling</option>
-                     </select>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Delete validation
-    div.querySelector(".btn-del-wp").addEventListener("click", () => {
-        div.remove();
-        map.removeLayer(marker);
-        markers = markers.filter(m => m.id !== index); // simple filter, might need re-indexing logic for robust app
-        updateRoute();
-    });
-
-    list.appendChild(div);
-
-    // Sync Marker Drag -> Input
-    marker.on('dragend', function (e) {
+    // Drag Listener
+    marker.on('dragend', (e) => {
         const pos = e.target.getLatLng();
-        div.querySelector(".wp-lat").value = pos.lat.toFixed(6);
-        div.querySelector(".wp-lng").value = pos.lng.toFixed(6);
-        updateRoute();
+        wp.lat = pos.lat;
+        wp.lng = pos.lng;
+        // Update input if visible
+        const inputLat = document.getElementById(`lat-${id}`);
+        const inputLng = document.getElementById(`lng-${id}`);
+        if (inputLat) inputLat.value = pos.lat.toFixed(6);
+        if (inputLng) inputLng.value = pos.lng.toFixed(6);
+
+        updateVisuals(); // Re-route
     });
 
-    updateRoute();
+    // Clicking a marker selects that person
+    marker.on('click', () => {
+        if (selectedParticipant !== person) {
+            selectParticipant(person);
+        }
+    });
+
+    updateVisuals();
 }
 
-/** ================= DATA SYNC ================= */
-
-async function saveAnimation() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        alert("Bitte einloggen.");
+function renderWaypointList() {
+    const list = document.getElementById("waypointsList");
+    if (!selectedParticipant) {
+        list.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">Wähle einen Teilnehmer aus.</div>`;
         return;
     }
+
+    const relevantWPs = waypointData.filter(wp => wp.person === selectedParticipant);
+
+    if (relevantWPs.length === 0) {
+        list.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">Keine Wegpunkte für ${selectedParticipant}.</div>`;
+        return;
+    }
+
+    list.innerHTML = "";
+
+    relevantWPs.forEach((wp, index) => {
+        const div = document.createElement("div");
+        div.className = "waypoint-item bg-[#192d34]/50 border border-border-dark rounded-xl p-3 hover:border-primary/50 transition-colors group mb-2";
+        div.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="mt-1 size-8 rounded-full bg-surface-dark border border-gray-600 text-gray-400 flex items-center justify-center shrink-0">
+                    <span class="text-xs font-bold" style="color:${COLORS[selectedParticipant]}">${index + 1}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-gray-300">WP ${index + 1}</span>
+                        <button class="btn-del-wp size-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-red-400">
+                            <span class="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div class="bg-black/20 rounded px-2 py-1.5 border border-white/5">
+                            <label class="block text-[10px] text-gray-500">Lat</label>
+                            <input id="lat-${wp.id}" class="w-full bg-transparent border-none p-0 text-xs text-gray-200 focus:ring-0 font-mono" value="${wp.lat.toFixed(6)}">
+                        </div>
+                        <div class="bg-black/20 rounded px-2 py-1.5 border border-white/5">
+                            <label class="block text-[10px] text-gray-500">Lng</label>
+                            <input id="lng-${wp.id}" class="w-full bg-transparent border-none p-0 text-xs text-gray-200 focus:ring-0 font-mono" value="${wp.lng.toFixed(6)}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Input Listeners
+        const latIn = div.querySelector(`#lat-${wp.id}`);
+        const lngIn = div.querySelector(`#lng-${wp.id}`);
+        const updateCoords = () => {
+            const nLat = parseFloat(latIn.value);
+            const nLng = parseFloat(lngIn.value);
+            if (!isNaN(nLat) && !isNaN(nLng)) {
+                wp.lat = nLat;
+                wp.lng = nLng;
+                wp.markerRef.setLatLng([nLat, nLng]);
+                updateVisuals();
+            }
+        };
+        latIn.addEventListener("change", updateCoords);
+        lngIn.addEventListener("change", updateCoords);
+
+        // Delete
+        div.querySelector(".btn-del-wp").addEventListener("click", () => {
+            map.removeLayer(wp.markerRef);
+            waypointData = waypointData.filter(i => i.id !== wp.id);
+            updateVisuals();
+        });
+
+        list.appendChild(div);
+    });
+}
+
+
+/** ================= DATA SYNC ================= */
+async function saveAnimation() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert("Bitte einloggen."); return; }
 
     const animIdStr = document.getElementById("animId").value;
     const duration = document.getElementById("animDuration").value;
     const comment = document.getElementById("animComment").value;
     const status = document.getElementById("animStatus").value;
-
-    // Collect Waypoints
-    const wpData = [];
-    document.querySelectorAll(".waypoint-item").forEach(el => {
-        wpData.push({
-            lat: el.querySelector(".wp-lat").value,
-            lng: el.querySelector(".wp-lng").value,
-            mode: el.querySelector(".wp-mode").value
-        });
-    });
 
     const payload = {
         user_id: session.user.id,
@@ -233,7 +363,13 @@ async function saveAnimation() {
         description: comment,
         status: status,
         participants: participants,
-        waypoints: wpData,
+        // Save waypoints without the circular markerRef
+        waypoints: waypointData.map(wp => ({
+            lat: wp.lat,
+            lng: wp.lng,
+            person: wp.person,
+            mode: wp.mode
+        })),
         view_state: {
             center: map.getCenter(),
             zoom: map.getZoom()
@@ -242,23 +378,16 @@ async function saveAnimation() {
 
     let error;
     if (currentAnimId) {
-        // Update
         const res = await supabase.from("map_animations").update(payload).eq("id", currentAnimId);
         error = res.error;
     } else {
-        // Insert
         const res = await supabase.from("map_animations").insert([payload]).select();
-        if (res.data && res.data[0]) {
-            currentAnimId = res.data[0].id;
-        }
+        if (res.data && res.data[0]) currentAnimId = res.data[0].id;
         error = res.error;
     }
 
-    if (error) {
-        alert("Error saving: " + error.message);
-    } else {
-        alert("Animation gespeichert!");
-    }
+    if (error) alert("Error saving: " + error.message);
+    else alert("Animation gespeichert!");
 }
 
 async function loadAnimationList() {
@@ -266,19 +395,10 @@ async function loadAnimationList() {
     if (!session) return;
 
     const { data, error } = await supabase.from("map_animations").select("*").order("created_at", { ascending: false });
-    if (error) {
-        alert("Error loading list: " + error.message);
-        return;
-    }
+    if (error) { alert("Error: " + error.message); return; }
 
-    // Simple Prompt List for now (V1)
-    if (!data.length) {
-        alert("Keine Animationen gefunden.");
-        return;
-    }
+    if (!data.length) { alert("Keine Animationen."); return; }
 
-    // Create a temporary overlay to pick animation
-    // Ideally this should be in the UI properly, but for V1 speed:
     let msg = "Wähle ID (Eingeben):\n";
     data.forEach((row, i) => {
         msg += `[${i}] ${row.anim_id} (${row.status})\n`;
@@ -292,37 +412,28 @@ async function loadAnimationList() {
 function loadAnimation(row) {
     currentAnimId = row.id;
     document.getElementById("animId").value = row.anim_id || "";
-    document.getElementById("animDuration").value = row.duration || 10;
+    document.getElementById("animDuration").value = row.duration || "";
     document.getElementById("animComment").value = row.description || "";
     document.getElementById("animStatus").value = row.status || "draft";
 
-    // Participants
     participants = row.participants || [];
-    renderParticipants();
 
-    // Clear Map
-    markers.forEach(m => map.removeLayer(m.marker));
-    markers = [];
-    document.getElementById("waypointsList").innerHTML = "";
-    if (routingControl) {
-        map.removeControl(routingControl);
-        routingControl = null;
-    }
+    // Clear existing
+    waypointData.forEach(wp => map.removeLayer(wp.markerRef));
+    waypointData = [];
 
-    // Waypoints
-    if (row.waypoints && Array.isArray(row.waypoints)) {
+    // Restore
+    if (row.waypoints) {
         row.waypoints.forEach(wp => {
-            addWaypointUI(parseFloat(wp.lat), parseFloat(wp.lng), wp.mode);
+            addWaypoint(parseFloat(wp.lat), parseFloat(wp.lng), wp.person, wp.mode);
         });
     }
 
-    // View State
+    selectedParticipant = participants.length ? participants[0] : null;
+    renderParticipants();
+    updateVisuals();
+
     if (row.view_state && row.view_state.center) {
-        map.setView(row.view_state.center, row.view_state.zoom || 13);
+        map.setView(row.view_state.center, row.view_state.zoom);
     }
 }
-
-// Expose for HTML onclick helpers
-window.updateMarkerFromInput = (index) => {
-    // Logic to update marker pos from input typing would go here
-};
