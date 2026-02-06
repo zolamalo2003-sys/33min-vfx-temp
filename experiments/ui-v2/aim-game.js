@@ -480,14 +480,27 @@ async function fetchLeaderboard() {
 }
 
 async function fetchLeaderboardFallback() {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from("aim_scores")
         .select("score, accuracy, user_id, created_at, player_name")
         .order("score", { ascending: false })
         .limit(20);
 
+    if (error) {
+        // Retry without player_name (legacy schema support)
+        const res = await supabase
+            .from("aim_scores")
+            .select("score, accuracy, user_id, created_at")
+            .order("score", { ascending: false })
+            .limit(20);
+        data = res.data;
+    }
+
     const list = document.getElementById("leaderboardList");
     if (data) renderLeaderboard(data, list);
+    else if (!data && list.innerHTML.includes("Lade")) {
+        list.innerHTML = `<div class="p-4 text-center text-xs text-gray-500">Keine Daten verfügbar</div>`;
+    }
 }
 
 function renderLeaderboard(data, list) {
