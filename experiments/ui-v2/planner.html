@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>33min Animation Planner</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#19baf0",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#101d22",
+                        "surface-dark": "#192d34",
+                        "border-dark": "#2a4049",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-panel {
+            background: rgba(16, 29, 34, 0.95);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Map Container override */
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #101d22;
+        }
+
+        /* Leaflet overrides for dark mode */
+        .leaflet-bar a {
+            background-color: #192d34;
+            color: white;
+            border-bottom: 1px solid #2a4049;
+        }
+
+        .leaflet-bar a:hover {
+            background-color: #233f48;
+        }
+
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+            background: #192d34;
+            color: white;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-16 bg-[#111e22] border-b border-white/10 flex items-center justify-between px-6 shrink-0 z-20">
+        <div class="flex items-center gap-4">
+            <div class="bg-gradient-to-br from-primary to-blue-600 rounded-lg size-10 flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer"
+                onclick="window.location.href='../../index.html'">
+                <span class="material-symbols-outlined text-white">arrow_back</span>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold leading-tight">VFX GeoPlanner</h1>
+                <p class="text-xs text-gray-400 font-medium">Project: 33 Minutes</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Auth/User Info -->
+            <div id="userProfileDisplay" class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-400" id="userEmail">Loading...</span>
+                <div class="bg-center bg-cover rounded-full size-8 ring-2 ring-white/10 bg-gray-700"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 relative overflow-hidden">
+        <!-- Map View (Left Pane) -->
+        <main class="flex-1 relative bg-black group/map">
+            <div id="map" class="absolute inset-0 z-0"></div>
+
+            <!-- Controls Overlay -->
+            <div class="absolute top-6 left-6 z-[1000] w-96">
+                <div
+                    class="relative flex items-center w-full h-12 rounded-lg bg-[#192d34]/90 backdrop-blur shadow-lg border border-white/10 group-focus-within:border-primary/50 transition-colors">
+                    <div class="pl-4 pr-2 text-gray-400">
+                        <span class="material-symbols-outlined">search</span>
+                    </div>
+                    <input id="mapSearchInput"
+                        class="w-full bg-transparent border-none text-white placeholder-gray-400 focus:ring-0 text-sm"
+                        placeholder="Search location..." type="text" />
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar (Right Pane) -->
+        <aside class="glass-panel w-[460px] shrink-0 flex flex-col h-full z-10 shadow-2xl relative">
+            <!-- Sidebar Header -->
+            <div class="p-6 pb-4 border-b border-white/10 shrink-0">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-xl font-bold tracking-tight text-white">Animation Details</h2>
+                    <select id="animStatus"
+                        class="bg-[#192d34] border border-[#2a4049] text-xs rounded px-2 py-1 text-white">
+                        <option value="draft">DRAFT</option>
+                        <option value="active">ACTIVE</option>
+                        <option value="done">DONE</option>
+                    </select>
+                </div>
+
+                <!-- Character Participants selection visualization -->
+                <div id="activeParticipantsList" class="flex flex-wrap gap-2 mb-2">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Sidebar Content -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+                <!-- Animation Meta Form -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Anim ID</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 text-sm">#</span>
+                            </div>
+                            <input id="animId"
+                                class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 pl-8 pr-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm"
+                                type="text" value="ANIM-NEW" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Duration</label>
+                        <div class="relative">
+                            <input id="animDuration"
+                                class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 pl-3 pr-10 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm"
+                                type="number" value="10" />
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 text-xs font-medium">sec</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-6">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Participants</label>
+                    <div class="relative">
+                        <div
+                            class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
+                            <div id="participantsChips" class="contents"></div>
+                            <select id="participantSelect"
+                                class="bg-transparent border-none p-0 h-6 text-sm text-gray-400 focus:ring-0 min-w-[80px]">
+                                <option value="">+ Add Person</option>
+                                <option value="Jerry">Jerry</option>
+                                <option value="Marc">Marc</option>
+                                <option value="Taube">Taube</option>
+                                <option value="Käthe">Käthe</option>
+                                <option value="Kodiak">Kodiak</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-8">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Comment</label>
+                    <textarea id="animComment"
+                        class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
+                        placeholder="Describe the movement..."></textarea>
+                </div>
+
+                <!-- Waypoints Section -->
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
+                        Route Waypoints
+                    </h3>
+                </div>
+
+                <!-- Waypoints List -->
+                <div id="waypointsList" class="flex flex-col gap-4 relative">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Add Button -->
+                <button id="btnAddWaypoint"
+                    class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+                    <span class="text-sm font-medium">Add Waypoint Center</span>
+                </button>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-6 border-t border-white/10 bg-[#111e22]/50 shrink-0">
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btnLoadList"
+                        class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">list</span> Load
+                    </button>
+                    <button id="btnSave"
+                        class="bg-primary hover:bg-[#15a3d4] text-black font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">save</span> Save
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- LEAFLET JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- MAIN APP LOGIC -->
+    <script type="module" src="map-app.js"></script>
+</body>
+
+</html>
