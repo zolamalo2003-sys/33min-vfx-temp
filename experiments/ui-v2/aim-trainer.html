@@ -2,18 +2,17 @@
 <html class="dark" lang="de">
 
 <head>
+
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>VFX Aim Trainer</title>
+    <title>ARBEITSZEITBETRUG</title>
 
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=JetBrains+Mono:wght@400;700&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1"
-        rel="stylesheet" />
+        href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Material+Icons&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet">
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -23,18 +22,25 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#19baf0", // Cyan
-                        "accent": "#f59e0b",  // Amber
+                        "primary": "#ee652b", // Orange
+                        "accent": "#2dd4bf",  // Teal
                         "danger": "#ef4444",  // Red
-                        "bg-dark": "#0b0d10",
-                        "panel": "#111827",
-                        "surface": "#1f2937",
-                        "border": "#374151"
+                        "bg": "#f3f6fa",
+                        "panel": "#f0f4f8",
+                        "surface": "#f0f4f8",
+                        "border": "rgba(255,255,255,0.4)",
+                        "text": "#334155",
+                        "text-sec": "#64748b"
                     },
                     fontFamily: {
-                        "sans": ["Manrope", "sans-serif"],
-                        "mono": ["JetBrains Mono", "monospace"]
+                        "sans": ["Spline Sans", "sans-serif"],
                     },
+                    boxShadow: {
+                        "out": "8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff",
+                        "out-sm": "5px 5px 10px #d6dbe4, -5px -5px 10px #ffffff",
+                        "in": "inset 6px 6px 12px #cbcfd6, inset -6px -6px 12px #ffffff",
+                        "float": "12px 12px 24px rgba(209, 217, 230, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.8)"
+                    }
                 },
             },
         }
@@ -42,57 +48,68 @@
 
     <style>
         body {
-            background-color: #0b0d10;
-            color: #e5e7eb;
+            background-color: #f3f6fa;
+            color: #334155;
             overflow: hidden;
-            /* No scroll for game */
             user-select: none;
-            /* Prevent text selection while spamming clicks */
+            font-family: 'Spline Sans', sans-serif;
         }
 
-        /* Grid Background pattern */
-        .bg-grid {
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
+        /* Clay Gradients */
+        body {
+            background: linear-gradient(180deg, #f3f6fa 0%, #ffffff 100%);
         }
 
-        /* Neon Glows */
         .glow-text {
-            text-shadow: 0 0 10px rgba(25, 186, 240, 0.5);
+            text-shadow: 0 0 10px rgba(238, 101, 43, 0.3);
         }
 
-        /* Health Bar Animation */
         .health-fill {
             transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
+        /* Mobile Responsive Overrides */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column-reverse;
+                /* Sidebar at bottom */
+            }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
-        }
+            .sidebar-nav {
+                width: 100% !important;
+                height: 70px !important;
+                flex-direction: row !important;
+                border-top: 1px solid rgba(255, 255, 255, 0.4);
+                border-right: none !important;
+                justify-content: space-around;
+                padding: 0 16px;
+                background: #f0f4f8;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
+            .canvas-area {
+                height: calc(100vh - 70px) !important;
+            }
 
-        canvas {
-            cursor: crosshair;
+            /* Adjust HUD positions for mobile */
+            .hud-top {
+                top: 10px;
+                padding: 0 10px;
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
 
-<body class="flex h-screen w-screen bg-bg-dark">
+<body class="flex h-screen w-screen bg-bg">
 
     <!-- LEFT: Navigation / Profile -->
-    <aside class="w-20 shrink-0 flex flex-col items-center py-6 border-r border-border bg-panel z-50">
+    <aside
+        class="sidebar-nav w-20 shrink-0 flex flex-col items-center py-6 border-r border-border bg-panel shadow-out z-50">
         <div class="mb-8">
-            <div class="size-10 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer hover:scale-105 transition-transform"
+            <div class="size-10 bg-primary rounded-full flex items-center justify-center shadow-out-sm cursor-pointer hover:scale-105 hover:shadow-float transition-all"
                 onclick="window.location.href='../../index.html'" title="Home">
                 <span class="material-symbols-outlined text-white">home</span>
             </div>
@@ -121,21 +138,21 @@
         <!-- Game HUD Overlay (In-Game) -->
         <!-- Removed opacity-0 so it is visible behind the menu -->
         <div id="gameHud"
-            class="absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-panel/90 backdrop-blur border border-border px-8 py-3 rounded-2xl shadow-2xl transition-opacity duration-500 z-10 pointer-events-none">
+            class="hud-top absolute top-8 left-1/2 -translate-x-1/2 flex items-center gap-12 bg-panel/80 backdrop-blur-md border border-white/40 px-8 py-3 rounded-2xl shadow-float transition-opacity duration-500 z-10 pointer-events-none">
             <!-- SCORE -->
             <div class="text-center">
-                <div class="text-[10px] text-gray-400 tracking-widest uppercase mb-1">Punkte</div>
-                <div id="hudScore" class="text-3xl font-black text-white font-mono">0</div>
+                <div class="text-[10px] text-text-sec tracking-widest uppercase mb-1">Punkte</div>
+                <div id="hudScore" class="text-3xl font-black text-primary font-mono glow-text">0</div>
             </div>
 
             <!-- HEALTH BAR -->
             <div class="flex-1 max-w-md mx-8">
-                <div class="flex justify-between text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                <div class="flex justify-between text-[10px] text-text-sec uppercase tracking-widest mb-1">
                     <span>Energie</span>
                     <span id="hudHealthText">100%</span>
                 </div>
-                <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div id="hudHealthBar" class="h-full bg-primary transition-all duration-200" style="width: 100%">
+                <div class="h-2 bg-gray-200 shadow-in rounded-full overflow-hidden">
+                    <div id="hudHealthBar" class="h-full bg-accent transition-all duration-200" style="width: 100%">
                     </div>
                 </div>
             </div>
@@ -143,73 +160,73 @@
             <!-- STATS -->
             <div class="flex gap-8 text-center">
                 <div>
-                    <div class="text-[10px] text-gray-400 tracking-widest uppercase mb-1">Combo</div>
+                    <div class="text-[10px] text-text-sec tracking-widest uppercase mb-1">Combo</div>
                     <div id="hudCombo" class="text-xl font-bold text-primary font-mono">x0</div>
                 </div>
             </div>
         </div>
 
         <!-- Start Screen Overlay -->
-        <!-- Added backdrop-blur-md and lighter bg to see through -->
         <div id="startScreen"
-            class="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md z-30">
+            class="absolute inset-0 flex flex-col items-center justify-center bg-white/40 backdrop-blur-md z-30">
             <div class="text-center space-y-2 mb-12 animate-fade-in-up">
-                <h1 class="text-6xl font-bold text-white tracking-tighter">ARBEITSZEITBETRUG</h1>
+                <h1 class="text-6xl font-bold text-text tracking-tighter drop-shadow-lg">ARBEITSZEITBETRUG</h1>
             </div>
 
             <button id="btnStart"
-                class="group relative px-8 py-4 bg-primary hover:bg-white text-black font-black text-xl uppercase tracking-widest rounded transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(25,186,240,0.6)]">
+                class="group relative px-8 py-4 bg-primary hover:bg-primary/90 text-white font-black text-xl uppercase tracking-widest rounded-2xl shadow-out hover:shadow-float transition-all hover:scale-105">
                 <span class="flex items-center gap-3">
                     <span class="material-symbols-outlined">play_arrow</span> Starten
                 </span>
             </button>
 
-            <div class="mt-8 text-sm text-gray-500 font-mono">
-                Drücke <span class="bg-white/10 px-1 rounded text-gray-300">Space</span> zum Starten
+            <div class="mt-8 text-sm text-text-sec font-mono">
+                Drücke <span class="bg-white shadow-in px-2 py-1 rounded text-primary font-bold">Space</span> zum
+                Starten
             </div>
         </div>
 
         <!-- Game Over Overlay -->
         <div id="gameOverScreen"
-            class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-40">
+            class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-md z-40">
             <div
-                class="bg-panel border border-border p-12 rounded-3xl shadow-2xl text-center max-w-lg w-full relative overflow-hidden">
+                class="bg-panel border border-white/60 p-12 rounded-[32px] shadow-float text-center max-w-lg w-full relative overflow-hidden">
                 <!-- Background Glow -->
                 <div
                     class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50">
                 </div>
 
-                <h2 class="text-red-500 text-sm font-bold tracking-[0.3em] uppercase mb-2">System Failure</h2>
-                <h1 class="text-5xl font-bold text-white mb-8">SESSION ENDED</h1>
+                <h2 class="text-danger text-sm font-bold tracking-[0.3em] uppercase mb-2">System Failure</h2>
+                <h1 class="text-5xl font-bold text-text mb-8">SESSION ENDED</h1>
 
                 <div class="text-center z-10 w-full max-w-md">
-                    <h2 class="text-4xl font-bold text-white mb-2 tracking-tighter">SESSION BEENDET</h2>
-                    <div class="text-6xl font-black text-primary font-mono mb-8 text-shadow-glow" id="finalScore">0
+                    <h2 class="text-4xl font-bold text-text mb-2 tracking-tighter">SESSION BEENDET</h2>
+                    <div class="text-6xl font-black text-primary font-mono mb-8 glow-text" id="finalScore">0
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 mb-8">
-                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
-                            <div class="text-[10px] text-gray-400 uppercase">Präzision</div>
-                            <div id="finalAcc" class="text-xl font-bold text-white">0%</div>
+                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                            <div class="text-[10px] text-text-sec uppercase">Präzision</div>
+                            <div id="finalAcc" class="text-xl font-bold text-text">0%</div>
                         </div>
-                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
-                            <div class="text-[10px] text-gray-400 uppercase">Treffer</div>
-                            <div id="finalHits" class="text-xl font-bold text-green-400">0</div>
+                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                            <div class="text-[10px] text-text-sec uppercase">Treffer</div>
+                            <div id="finalHits" class="text-xl font-bold text-green-500">0</div>
                         </div>
-                        <div class="bg-white/5 p-3 rounded backdrop-blur border border-white/10">
-                            <div class="text-[10px] text-gray-400 uppercase">Fehlschüsse</div>
-                            <div id="finalMisses" class="text-xl font-bold text-red-400">0</div>
+                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                            <div class="text-[10px] text-text-sec uppercase">Fehlschüsse</div>
+                            <div id="finalMisses" class="text-xl font-bold text-danger">0</div>
                         </div>
                     </div>
 
                     <div class="flex gap-4 justify-center">
                         <button id="btnRestart"
-                            class="px-8 py-3 bg-white text-black font-bold uppercase tracking-wider rounded hover:bg-gray-200 hover:scale-105 transition-all">
+                            class="px-8 py-3 bg-panel shadow-out text-text font-bold uppercase tracking-wider rounded-xl hover:text-primary hover:shadow-float hover:scale-105 transition-all">
                             Nochmal Spielen
                         </button>
                         <button
                             onclick="document.getElementById('gameOverScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden');"
-                            class="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-wider rounded hover:bg-white/10 transition-all">
+                            class="px-8 py-3 border border-transparent shadow-out text-text-sec font-bold uppercase tracking-wider rounded-xl hover:bg-white/50 hover:shadow-in transition-all">
                             Menü
                         </button>
                     </div>
@@ -223,11 +240,11 @@
     </main>
 
     <!-- RIGHT: Stats & Leaderboard -->
-    <aside class="w-80 shrink-0 bg-panel border-l border-border flex flex-col z-20">
+    <aside class="w-80 shrink-0 bg-panel border-l border-white/40 shadow-out flex flex-col z-20 hidden md:flex">
         <!-- Header -->
         <div class="p-6 border-b border-white/5">
             <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <h2 class="text-lg font-bold text-text flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary">trophy</span>
                     Bestenliste
                 </h2>
@@ -258,12 +275,13 @@
 
             <div class="space-y-4">
                 <div>
-                    <div class="flex justify-between text-xs mb-2 text-gray-400">
+                    <div class="flex justify-between text-xs mb-2 text-text-sec">
                         <span>Schuss-Taste</span>
-                        <span id="currentHotkey" class="text-white font-mono bg-white/10 px-2 rounded">KEINE</span>
+                        <span id="currentHotkey"
+                            class="text-primary font-mono bg-white shadow-in px-2 rounded">KEINE</span>
                     </div>
                     <button id="btnBindKey"
-                        class="w-full py-2 text-xs bg-black/40 border border-white/10 rounded hover:bg-white/5 transition-colors text-gray-300">
+                        class="w-full py-2 text-xs bg-panel shadow-out-sm rounded hover:shadow-float hover:scale-[1.02] transition-all text-text font-bold">
                         Taste belegen
                     </button>
                 </div>

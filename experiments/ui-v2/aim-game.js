@@ -203,6 +203,16 @@ function spawnTarget() {
     });
 }
 
+function ambientSpawn() {
+    // Only spawn if NOT playing and count < 5
+    if (state.playing || targets.length > 5) return;
+
+    // Slow random spawn
+    if (Math.random() < 0.02) {
+        spawnTarget();
+    }
+}
+
 /** INPUT & HOTKEY LOGIC */
 let bindMode = false;
 let shootKey = null;
@@ -356,6 +366,15 @@ function loop() {
 
     if (state.playing) {
         updateGame(dt);
+    } else {
+        // Ambient background movement
+        ambientSpawn();
+        // Update targets for fade out/animation even if paused
+        targets.forEach((t, i) => {
+            t.age += dt;
+            // Slower death in menu
+            if (t.age > 4000) targets.splice(i, 1);
+        });
     }
 
     render();
@@ -495,8 +514,8 @@ function renderLeaderboard(data, list) {
 
     data.forEach((row, index) => {
         const isMe = session && row.user_id === session.user.id;
-        const color = isMe ? "text-primary" : "text-white";
-        const bg = isMe ? "bg-primary/10 border-primary/30" : "bg-surface border-white/5";
+        const color = isMe ? "text-primary" : "text-text-sec"; // Dark text for others
+        const bg = isMe ? "bg-white shadow-in border-transparent" : "bg-panel shadow-out-sm border-transparent";
 
         // Name Logic: Use saved player_name OR Email OR Agent Code
         let displayName = row.player_name;
@@ -506,17 +525,17 @@ function renderLeaderboard(data, list) {
         }
 
         const card = document.createElement("div");
-        card.className = `flex items-center justify-between p-3 rounded border ${bg}`;
+        card.className = `flex items-center justify-between p-3 rounded-2xl border ${bg} transition-all hover:scale-[1.02]`;
         card.innerHTML = `
             <div class="flex items-center gap-3">
-                <div class="text-xs font-bold text-gray-500 w-4">#${index + 1}</div>
+                <div class="text-xs font-bold text-gray-400 w-4">#${index + 1}</div>
                 <div>
                    <div class="text-xs font-bold ${color}">${displayName}</div>
-                   <div class="text-[10px] text-gray-500">${new Date(row.created_at).toLocaleDateString()}</div>
+                   <div class="text-[10px] text-gray-400">${new Date(row.created_at).toLocaleDateString()}</div>
                 </div>
             </div>
             <div class="text-right">
-                <div class="text-sm font-mono font-bold text-white">${row.score.toLocaleString()}</div>
+                <div class="text-sm font-black text-primary font-mono">${row.score.toLocaleString()}</div>
                 <div class="text-[10px] text-gray-400">${row.accuracy}% Acc</div>
             </div>
         `;
