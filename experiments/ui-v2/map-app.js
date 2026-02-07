@@ -46,7 +46,7 @@ function initMap() {
     map = L.map('map', { zoomControl: false }).setView(DEFAULT_CENTER, 13);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO',
         subdomains: 'abcd',
         maxZoom: 20
@@ -78,7 +78,7 @@ function showSearchResults(results) {
         // Create if missing (though we should add it to HTML)
         container = document.createElement("div");
         container.id = "searchResults";
-        container.className = "absolute top-14 left-0 w-full bg-[#192d34] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 max-h-60 overflow-y-auto";
+        container.className = "absolute top-14 left-0 w-full bg-white border border-gray-100 rounded-2xl shadow-float overflow-hidden z-50 max-h-60 overflow-y-auto";
         document.querySelector("#mapSearchInput").parentNode.appendChild(container);
     }
 
@@ -87,7 +87,7 @@ function showSearchResults(results) {
 
     results.forEach(place => {
         const div = document.createElement("div");
-        div.className = "px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 text-sm text-gray-200";
+        div.className = "px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm text-text";
         div.textContent = place.display_name;
         div.onclick = () => {
             const lat = parseFloat(place.lat);

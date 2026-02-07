@@ -20,7 +20,7 @@ const helpPages = [
                 <p style="margin-bottom: 16px;">
                     Sobald du eingeloggt bist, kannst du deine Einträge jederzeit in der Cloud bearbeiten und siehst live, was andere gerade tun.
                 </p>
-                <div style="margin-top: 24px; border: 1px dashed var(--border); border-radius: 8px; height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2);">
+                <div style="margin-top: 24px; border: 1px dashed var(--border); border-radius: 8px; height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.05);">
                     <span style="color: var(--text-secondary); font-style: italic;">(Bild: Screenshot Anmelde-Button)</span>
                 </div>
             </div>
@@ -48,7 +48,7 @@ const helpPages = [
                 <p style="margin-bottom: 16px;">
                     <strong>Status:</strong> Setze einen Status wie <span class="status-chip status-draft" style="font-size: 0.8em; padding: 2px 6px;">Entwurf</span>, wenn du noch Daten (z.B. genaue Geldbeträge) nachliefern musst. Der VFX-Artist sieht dann: "Aha, da kommt was, aber ist noch nicht fertig."
                 </p>
-                <div style="margin-top: 24px; border: 1px dashed var(--border); border-radius: 8px; height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2);">
+                <div style="margin-top: 24px; border: 1px dashed var(--border); border-radius: 8px; height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.05);">
                     <span style="color: var(--text-secondary); font-style: italic;">(Bild: Screenshot Eintrag-Fenster)</span>
                 </div>
             </div>

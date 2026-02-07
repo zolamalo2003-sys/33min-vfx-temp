@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
@@ -9,10 +9,10 @@
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
+        href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Material+Icons&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+        rel="stylesheet">
+
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -22,15 +22,25 @@
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#19baf0",
-                        "background-light": "#f6f8f8",
-                        "background-dark": "#101d22",
-                        "surface-dark": "#192d34",
-                        "border-dark": "#2a4049",
+                        "primary": "#ee652b", // Orange
+                        "accent": "#2dd4bf",  // Teal
+                        "danger": "#ef4444",  // Red
+                        "bg": "#f3f6fa",
+                        "panel": "#f0f4f8",
+                        "surface": "#ffffff",
+                        "border": "rgba(255,255,255,0.4)",
+                        "text": "#334155",
+                        "text-sec": "#64748b"
                     },
                     fontFamily: {
-                        "display": ["Manrope", "sans-serif"]
+                        "sans": ["Spline Sans", "sans-serif"],
                     },
+                    boxShadow: {
+                        "out": "8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff",
+                        "out-sm": "5px 5px 10px #d6dbe4, -5px -5px 10px #ffffff",
+                        "in": "inset 3px 3px 6px #dbe0e9, inset -3px -3px 6px #ffffff",
+                        "float": "12px 12px 24px rgba(209, 217, 230, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.8)"
+                    }
                 },
             },
         }
@@ -46,99 +56,108 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
+            background: #cbd5e1;
             border-radius: 3px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: #94a3b8;
         }
 
-        .glass-panel {
-            background: rgba(16, 29, 34, 0.95);
-            backdrop-filter: blur(16px);
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        .clay-panel {
+            background: var(--panel);
+            border-radius: 24px;
+            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
         /* Map Container override */
         #map {
             width: 100%;
             height: 100%;
-            background: #101d22;
+            background: #e2e8f0;
         }
 
-        /* Leaflet overrides for dark mode */
+        /* Leaflet overrides for light mode */
         .leaflet-bar a {
-            background-color: #192d34;
-            color: white;
-            border-bottom: 1px solid #2a4049;
+            background-color: #f0f4f8;
+            color: #334155;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 5px 5px 10px #d6dbe4, -5px -5px 10px #ffffff;
         }
 
         .leaflet-bar a:hover {
-            background-color: #233f48;
+            background-color: #ffffff;
+            color: #ee652b;
+        }
+
+        .leaflet-control-zoom {
+            border: none !important;
         }
 
         .leaflet-popup-content-wrapper,
         .leaflet-popup-tip {
-            background: #192d34;
-            color: white;
+            background: #ffffff;
+            color: #334155;
+            box-shadow: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
+            border-radius: 12px;
         }
     </style>
 </head>
 
-<body
-    class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-screen flex flex-col">
+<body class="bg-bg text-text font-sans overflow-hidden h-screen w-screen flex flex-col">
 
     <!-- Top Navigation Bar -->
-    <header class="h-16 bg-[#111e22] border-b border-white/10 flex items-center justify-between px-6 shrink-0 z-20">
+    <header
+        class="h-16 bg-panel shadow-out-sm border-b border-border flex items-center justify-between px-6 shrink-0 z-20 relative">
         <div class="flex items-center gap-4">
-            <div class="bg-gradient-to-br from-primary to-blue-600 rounded-lg size-10 flex items-center justify-center shadow-lg shadow-primary/20 cursor-pointer"
+            <div class="bg-primary rounded-full size-10 flex items-center justify-center shadow-out-sm cursor-pointer hover:shadow-float hover:scale-105 transition-all"
                 onclick="window.location.href='../../index.html'">
                 <span class="material-symbols-outlined text-white">home</span>
             </div>
             <div>
-                <h1 class="text-lg font-bold leading-tight">VFX GeoPlaner</h1>
-                <p class="text-xs text-gray-400 font-medium">Projekt: 33 Minuten</p>
+                <h1 class="text-lg font-bold leading-tight text-text">VFX GeoPlaner</h1>
+                <p class="text-xs text-text-sec font-medium">Projekt: 33 Minuten</p>
             </div>
         </div>
         <div class="flex items-center gap-3">
             <!-- Auth/User Info -->
-            <div id="userProfileDisplay" class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-400" id="userEmail">Loading...</span>
-                <div class="bg-center bg-cover rounded-full size-8 ring-2 ring-white/10 bg-gray-700"></div>
+            <div id="userProfileDisplay" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-in">
+                <span class="text-sm font-bold text-text-sec" id="userEmail">Loading...</span>
+                <div class="bg-center bg-cover rounded-full size-8 bg-gray-200 border border-gray-100 shadow-sm"></div>
             </div>
         </div>
     </header>
 
     <div class="flex flex-1 relative overflow-hidden">
         <!-- Map View (Left Pane) -->
-        <main class="flex-1 relative bg-black group/map">
+        <main class="flex-1 relative group/map z-0">
             <div id="map" class="absolute inset-0 z-0"></div>
 
             <!-- Controls Overlay -->
             <div class="absolute top-6 left-6 z-[1000] w-96">
                 <div
-                    class="relative flex items-center w-full h-12 rounded-lg bg-[#192d34]/90 backdrop-blur shadow-lg border border-white/10 group-focus-within:border-primary/50 transition-colors">
-                    <div class="pl-4 pr-2 text-gray-400">
+                    class="relative flex items-center w-full h-12 rounded-2xl bg-white/90 backdrop-blur shadow-float border border-white/60 group-focus-within:border-primary/50 transition-colors">
+                    <div class="pl-4 pr-2 text-text-sec">
                         <span class="material-symbols-outlined">search</span>
                     </div>
                     <input id="mapSearchInput"
-                        class="w-full bg-transparent border-none text-white placeholder-gray-400 focus:ring-0 text-sm"
+                        class="w-full bg-transparent border-none text-text placeholder-text-sec/60 focus:ring-0 text-sm font-medium"
                         placeholder="Ort suchen..." type="text" />
                 </div>
             </div>
 
             <!-- Active Participant Badge (Top Right) -->
             <div id="activeParticipantBadge"
-                class="absolute top-6 right-6 z-[1000] hidden items-center gap-3 px-4 py-3 rounded-lg shadow-2xl transition-all cursor-pointer hover:scale-105"
+                class="absolute top-6 right-6 z-[1000] hidden items-center gap-3 px-4 py-3 rounded-2xl bg-white/90 backdrop-blur shadow-float cursor-pointer hover:scale-105 transition-all text-text"
                 onclick="// View?">
-                <span class="material-symbols-outlined text-[20px]">person_pin_circle</span>
+                <span class="material-symbols-outlined text-[20px] text-primary">person_pin_circle</span>
                 <div>
-                    <span class="block text-[10px] opacity-80 uppercase tracking-widest font-bold">Aktiv</span>
+                    <span class="block text-[10px] opacity-60 uppercase tracking-widest font-bold">Aktiv</span>
                     <span class="badge-name block text-lg font-bold leading-none">Name</span>
                 </div>
             </div>

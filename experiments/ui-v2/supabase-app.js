@@ -107,11 +107,14 @@ let session = null;
 async function initAuth() {
     const { data } = await supabase.auth.getSession();
     session = data.session;
+    window.session = session; // Expose globally
+    window.supabase = supabase; // Expose globally
     updateAuthUI();
     updateSyncIndicator();
 
     supabase.auth.onAuthStateChange(async (_event, newSession) => {
         session = newSession;
+        window.session = newSession; // Update global reference
         updateAuthUI();
         updateSyncIndicator();
         if (session) {
@@ -124,7 +127,10 @@ async function initAuth() {
     // Initial check for display name
     if (session) {
         const { data } = await supabase.auth.getUser();
-        if (data?.user) session.user = data.user; // Ensure we have latest metadata
+        if (data?.user) {
+            session.user = data.user; // Ensure we have latest metadata
+            window.session = session; // Update global reference
+        }
     }
 }
 
@@ -164,6 +170,11 @@ async function openProfileModal() {
     if (nameInput) {
         const meta = session.user.user_metadata || {};
         nameInput.value = meta.display_name || "";
+    }
+
+    // Load Avatar
+    if (typeof loadUserAvatar === 'function') {
+        loadUserAvatar();
     }
 
     modal.style.display = "flex";

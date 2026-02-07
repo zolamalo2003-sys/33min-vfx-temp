@@ -24,7 +24,8 @@
             /* Shadows for Depth */
             --shadow-out: 8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff;
             --shadow-out-sm: 5px 5px 10px #d6dbe4, -5px -5px 10px #ffffff;
-            --shadow-in: inset 6px 6px 12px #cbcfd6, inset -6px -6px 12px #ffffff;
+            /* Softened Inner Shadow */
+            --shadow-in: inset 3px 3px 6px #dbe0e9, inset -3px -3px 6px #ffffff;
             --shadow-float: 12px 12px 24px rgba(209, 217, 230, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.8);
 
             --border: rgba(255, 255, 255, 0.4);
@@ -51,6 +52,37 @@
             /* Legacy overrides for clay */
             --input-bg: #f0f4f8;
             --glass-bg: #f0f4f8;
+        }
+
+        [data-theme="dark"] {
+            --bg: #111827;
+            /* Dark Gray 900 */
+            --bg-gradient: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+
+            --panel: #1f2937;
+            /* Gray 800 */
+            --panel-alt: #374151;
+
+            /* Dark Shadows */
+            --shadow-out: 8px 8px 16px #0d121d, -8px -8px 16px #314051;
+            --shadow-out-sm: 5px 5px 10px #0d121d, -5px -5px 10px #314051;
+            --shadow-in: inset 3px 3px 6px #0b0f19, inset -3px -3px 6px #314051;
+            --shadow-float: 12px 12px 24px rgba(0, 0, 0, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.05);
+
+            --border: rgba(255, 255, 255, 0.05);
+
+            --text: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            --input-bg: #1f2937;
+            --glass-bg: rgba(31, 41, 55, 0.8);
+        }
+
+        [data-theme="dark"] .nav-icon img,
+        [data-theme="dark"] .nav-btn img {
+            filter: none;
+            opacity: 0.9;
         }
 
         body {
@@ -91,6 +123,15 @@
             top: 24px;
             height: calc(100vh - 48px);
             border: 1px solid rgba(255, 255, 255, 0.4);
+            overflow-y: auto;
+            /* Prevent cutting off */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
         }
 
         .nav-group {
@@ -140,11 +181,14 @@
             color: var(--text-secondary);
         }
 
-        .nav-icon img {
+        .nav-icon img,
+        .nav-btn img {
             width: 22px;
             height: 22px;
             object-fit: contain;
-            opacity: 0.6;
+            opacity: 0.8;
+            filter: invert(1);
+            /* Invert white icons to black for Light Mode */
         }
 
         .nav-icon:hover img {
@@ -202,6 +246,36 @@
             border-radius: 999px;
             background: var(--accent);
             box-shadow: 0 0 5px var(--accent);
+        }
+
+        .cbtn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: #10a37f;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-out-sm);
+        }
+
+        .cbtn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-float);
+            filter: brightness(1.1);
+        }
+
+        .cbtn__sub {
+            display: block;
+            font-size: 0.7em;
+            font-weight: 400;
+            opacity: 0.8;
         }
 
         .nav-btn img {
@@ -835,9 +909,12 @@
             align-items: center;
             gap: 8px;
             border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.5);
+            /* Whiter background */
             padding: 10px 12px;
+            box-shadow: var(--shadow-in);
+            /* Soft inner shadow */
         }
 
         .input-wrap input,
@@ -1425,11 +1502,14 @@
         textarea.quick-input {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: var(--radius-md);
-            background: var(--input-bg);
+            background: rgba(255, 255, 255, 0.5);
+            /* Whiter background for clearer inputs */
             color: var(--text);
             font-family: inherit;
+            box-shadow: var(--shadow-in);
+            /* Soft inner shadow */
         }
 
         .quick-input:focus,
@@ -2372,7 +2452,7 @@
                         <input type="password" id="authPassword" placeholder="Passwort">
                     </div>
                 </div>
-                <button class="btn btn-primary" id="authLoginBtn">
+                <button class="btn btn-primary" id="authLoginBtn" style="margin-top: 12px;">
                     <span class="material-icons">login</span>
                     Login
                 </button>
@@ -2399,11 +2479,24 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div style="text-align: center; margin-bottom: 8px;">
-                    <div
-                        style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-accent); border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                        <span class="material-icons"
+                    <div id="profileAvatarContainer" onclick="openAvatarBuilder()"
+                        style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-accent); border: 2px solid var(--border); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;"
+                        onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='var(--shadow-float)';"
+                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                        <img id="profileAvatarImg" src="" alt="Avatar"
+                            style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span class="material-icons" id="profileAvatarPlaceholder"
                             style="font-size: 32px; color: var(--text-secondary);">person</span>
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); padding: 2px; display: flex; justify-content: center; opacity: 0; transition: opacity 0.2s;"
+                            class="avatar-hover-edit">
+                            <span class="material-icons" style="font-size: 14px; color: white;">edit</span>
+                        </div>
                     </div>
+                    <style>
+                        #profileAvatarContainer:hover .avatar-hover-edit {
+                            opacity: 1;
+                        }
+                    </style>
                     <div id="profileEmailDisplay" style="color: var(--text-secondary); font-size: 0.9em;"></div>
                 </div>
 
@@ -2425,6 +2518,53 @@
                 <button class="btn btn-danger" id="authLogoutBtn" style="justify-content: center;">
                     <span class="material-icons">logout</span> Abmelden
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="avatarBuilderModal" class="modal-overlay" style="display: none; z-index: 10001;">
+        <div class="modal-content" style="width: min(400px, 95vw);">
+            <div class="panel-header" style="margin-bottom: 12px;">
+                <div>
+                    <div class="panel-label">DiceBear API</div>
+                    <div class="panel-title">Avatar erstellen</div>
+                </div>
+                <button class="icon-btn close-btn"
+                    onclick="document.getElementById('avatarBuilderModal').style.display='none'">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 10px 0;">
+                <!-- Preview -->
+                <div
+                    style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 4px solid var(--border); box-shadow: var(--shadow-out); background: white; display: flex; align-items: center; justify-content: center;">
+                    <img id="avatarBuilderPreview" src="" alt="Preview"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+
+                <!-- Controls -->
+                <div style="width: 100%; display: flex; gap: 8px;">
+                    <div class="input-wrap" style="flex: 1;">
+                        <span class="material-icons">fingerprint</span>
+                        <input type="text" id="avatarSeedInput" placeholder="Seed (z.B. Name)"
+                            oninput="updateAvatarPreview(this.value)">
+                    </div>
+                    <button class="icon-btn" onclick="generateRandomAvatar()" title="Zufällig">
+                        <span class="material-icons">casino</span>
+                    </button>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 10px; width: 100%; margin-top: 10px;">
+                    <button class="btn" style="flex: 1; justify-content: center;"
+                        onclick="document.getElementById('avatarBuilderModal').style.display='none'">
+                        Abbrechen
+                    </button>
+                    <button class="btn btn-primary" style="flex: 1; justify-content: center;" onclick="saveAvatar()">
+                        <span class="material-icons">check</span> Übernehmen
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2469,7 +2609,7 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 20px;">
                 <div
-                    style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+                    style="font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); background: rgba(255,255,255,0.5); box-shadow: var(--shadow-in); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
                     ChatGPT ist momentan noch nicht direkt mit dieser Seite verknüpft, da die API-Kosten pro Anfrage
                     sehr hoch sein können. Ich arbeite an einer kosteneffizienten Lösung.<br><br>
                     Bis dahin kannst du ChatGPT direkt über den Button unten in einem neuen Tab öffnen.
@@ -2507,6 +2647,7 @@
     <div id="saveStatus" aria-live="polite"></div>
 
     <script src="experiments/ui-v2/help-system.js"></script>
+    <script src="experiments/ui-v2/avatar-builder.js"></script>
     <script src="experiments/ui-v2/dist/app.js"></script>
     <script type="module" src="experiments/ui-v2/supabase-app.js"></script>
 </body>

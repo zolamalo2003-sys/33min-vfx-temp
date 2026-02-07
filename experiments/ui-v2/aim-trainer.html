@@ -38,7 +38,7 @@
                     boxShadow: {
                         "out": "8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff",
                         "out-sm": "5px 5px 10px #d6dbe4, -5px -5px 10px #ffffff",
-                        "in": "inset 6px 6px 12px #cbcfd6, inset -6px -6px 12px #ffffff",
+                        "in": "inset 3px 3px 6px #dbe0e9, inset -3px -3px 6px #ffffff",
                         "float": "12px 12px 24px rgba(209, 217, 230, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.8)"
                     }
                 },
@@ -111,7 +111,7 @@
         <div class="mb-8">
             <div class="size-10 bg-primary rounded-full flex items-center justify-center shadow-out-sm cursor-pointer hover:scale-105 hover:shadow-float transition-all"
                 onclick="window.location.href='../../index.html'" title="Home">
-                <span class="material-symbols-outlined text-white">home</span>
+                <span class="material-symbols-outlined text-white hover:text-primary transition-colors">home</span>
             </div>
         </div>
 
@@ -122,11 +122,11 @@
         <!-- User Avatar -->
         <div id="userAvatarContainer" class="mt-auto relative group">
             <div id="userAvatar"
-                class="size-10 rounded-full bg-surface border border-gray-600 flex items-center justify-center text-xs font-bold text-gray-400">
+                class="size-10 rounded-full bg-white border border-gray-200 shadow-out-sm flex items-center justify-center text-xs font-bold text-primary">
                 --
             </div>
             <div
-                class="absolute left-14 bottom-0 bg-surface px-3 py-1 rounded border border-gray-600 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+                class="absolute left-14 bottom-0 bg-white px-3 py-1 rounded-lg border border-gray-100 shadow-float text-xs text-text-sec whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
                 Not logged in
             </div>
         </div>
@@ -205,17 +205,17 @@
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 mb-8">
-                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Präzision</div>
                             <div id="finalAcc" class="text-xl font-bold text-text">0%</div>
                         </div>
-                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Treffer</div>
-                            <div id="finalHits" class="text-xl font-bold text-green-500">0</div>
+                            <div id="finalHits" class="text-xl font-bold text-green-600">0</div>
                         </div>
-                        <div class="bg-surface shadow-in p-3 rounded-xl border border-white/50">
+                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Fehlschüsse</div>
-                            <div id="finalMisses" class="text-xl font-bold text-danger">0</div>
+                            <div id="finalMisses" class="text-xl font-bold text-red-500">0</div>
                         </div>
                     </div>
 
@@ -278,7 +278,7 @@
                     <div class="flex justify-between text-xs mb-2 text-text-sec">
                         <span>Schuss-Taste</span>
                         <span id="currentHotkey"
-                            class="text-primary font-mono bg-white shadow-in px-2 rounded">KEINE</span>
+                            class="text-primary font-mono bg-white border border-gray-200 px-2 rounded">KEINE</span>
                     </div>
                     <button id="btnBindKey"
                         class="w-full py-2 text-xs bg-panel shadow-out-sm rounded hover:shadow-float hover:scale-[1.02] transition-all text-text font-bold">
@@ -287,12 +287,12 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
-                        <div class="text-[10px] text-gray-500">Ziele / Sek</div>
+                    <div class="bg-white rounded p-2 shadow-out-sm text-center">
+                        <div class="text-[10px] text-text-sec">Ziele / Sek</div>
                         <div id="debugSpawnRate" class="text-xs font-mono text-primary font-bold">--</div>
                     </div>
-                    <div class="bg-black/40 rounded p-2 border border-white/5 text-center">
-                        <div class="text-[10px] text-gray-500">Schwierigkeit</div>
+                    <div class="bg-white rounded p-2 shadow-out-sm text-center">
+                        <div class="text-[10px] text-text-sec">Schwierigkeit</div>
                         <div id="debugDifficulty" class="text-xs font-mono text-primary font-bold">--</div>
                     </div>
                 </div>
