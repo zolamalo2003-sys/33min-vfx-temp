@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Builder - Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            padding: 40px 20px;
+            margin: 0;
+        }
+
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .avatar-display {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #2dd4bf;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar-display img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .test-btn {
+            background: #2dd4bf;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
+        }
+
+        .test-btn:hover {
+            background: #22c3aa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(45, 212, 191, 0.4);
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 2px solid #bae6fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            color: #0369a1;
+            margin-top: 0;
+        }
+
+        .info-box ul {
+            color: #0c4a6e;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🎨 Avatar Builder Test</h1>
+        <p>Teste den interaktiven Avatar-Builder</p>
+
+        <div class="avatar-display">
+            <img id="testAvatar" src="https://api.dicebear.com/9.x/avataaars/svg?seed=test&backgroundColor=b6e3f4"
+                alt="Test Avatar">
+        </div>
+
+        <button class="test-btn" onclick="window.location.href='../../index.html'">
+            🚀 Zur Hauptanwendung
+        </button>
+
+        <div class="info-box">
+            <h3>✨ Features:</h3>
+            <ul>
+                <li><strong>11 Avatar-Stile</strong> zur Auswahl</li>
+                <li><strong>12 Hintergrundfarben</strong></li>
+                <li><strong>Custom Seeds</strong> für personalisierte Avatare</li>
+                <li><strong>Zufalls-Generator</strong> für schnelle Erstellung</li>
+                <li><strong>Live-Vorschau</strong> mit Echtzeit-Updates</li>
+                <li><strong>Supabase Integration</strong> + LocalStorage Fallback</li>
+            </ul>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px; background: #fef3c7; border-color: #fde68a;">
+            <h3 style="color: #92400e;">📝 So funktioniert's:</h3>
+            <ul style="color: #78350f;">
+                <li>Öffne die Hauptanwendung</li>
+                <li>Klicke auf das Profil-Icon (Sidebar)</li>
+                <li>Klicke auf dein Profilbild</li>
+                <li>Wähle Stil, Farbe und Namen</li>
+                <li>Klicke "Speichern"</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Zufälligen Test-Avatar alle 3 Sekunden
+        const styles = ['avataaars', 'bottts', 'personas', 'lorelei', 'notionists', 'adventurer', 'big-smile', 'fun-emoji', 'thumbs', 'croodles'];
+        const colors = ['b6e3f4', 'c0aede', 'ffdfbf', 'ffd5dc', 'ffad60', 'd1d4f9', 'c7f9cc', 'ffc9c9', '81c5ff', 'e0aaff', 'f4e9cd'];
+
+        setInterval(() => {
+            const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomSeed = 'demo-' + Math.random().toString(36).substring(7);
+
+            const img = document.getElementById('testAvatar');
+            img.src = `https://api.dicebear.com/9.x/${randomStyle}/svg?seed=${randomSeed}&backgroundColor=${randomColor}`;
+        }, 3000);
+    </script>
+</body>
+
+</html>

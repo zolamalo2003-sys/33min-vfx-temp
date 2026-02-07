@@ -18,7 +18,7 @@ const CONFIG = {
     minLifetime: 800,
     radius: 40,
     colors: {
-        primary: "#19baf0",
+        primary: "#ee652b",
         danger: "#ef4444",
         hit: "#ffffff"
     }
@@ -416,7 +416,7 @@ function render() {
         ctx.shadowBlur = 0;
 
         // Inner Fill
-        ctx.fillStyle = `rgba(25, 186, 240, 0.2)`;
+        ctx.fillStyle = `rgba(238, 101, 43, 0.25)`;
         ctx.fill();
 
         // Center Dot
