@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -551,6 +552,7 @@
             box-shadow: var(--shadow);
             z-index: 10;
         }
+
         .content-grid {
             display: grid;
             grid-template-columns: minmax(280px, 38%) minmax(0, 62%);
@@ -856,7 +858,7 @@
             background: rgba(255, 255, 255, 0.03);
         }
 
-        details > summary {
+        details>summary {
             cursor: pointer;
             list-style: none;
             font-weight: 600;
@@ -867,13 +869,13 @@
             align-items: center;
         }
 
-        details > summary::after {
+        details>summary::after {
             content: '+';
             color: var(--text-muted);
             font-size: 1.1rem;
         }
 
-        details[open] > summary::after {
+        details[open]>summary::after {
             content: '−';
         }
 
@@ -883,7 +885,7 @@
             background: transparent;
         }
 
-        #notesPanel.notes-plain > summary {
+        #notesPanel.notes-plain>summary {
             display: none;
         }
 
@@ -914,7 +916,7 @@
             justify-content: center;
         }
 
-        #quickForm[style*="display: block"] + #composerHint {
+        #quickForm[style*="display: block"]+#composerHint {
             display: none;
         }
 
@@ -1101,23 +1103,191 @@
             box-shadow: var(--shadow);
         }
 
-        .cloud-shell {
+        /* ===== CLOUD FULLSCREEN PAGE ===== */
+        .cloud-page {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: var(--bg-primary);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            overflow: hidden;
+            animation: cloudPageIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
         }
 
-        .cloud-controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
+        .cloud-page.closing {
+            animation: cloudPageOut 0.25s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
         }
 
-        .cloud-export {
+        @keyframes cloudPageIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes cloudPageOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+        }
+
+        .cloud-page-header {
             display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+            flex-shrink: 0;
+        }
+
+        .cloud-page-header .cloud-back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cloud-page-header .cloud-back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(109, 91, 255, 0.4);
+            color: #fff;
+        }
+
+        .cloud-page-title-block {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cloud-page-title-block h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cloud-page-title-block h2 .material-icons {
+            font-size: 20px;
+            color: rgba(109, 91, 255, 0.8);
+        }
+
+        .cloud-page-title-block .cloud-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            margin-top: 2px;
+        }
+
+        .cloud-page-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cloud-toolbar {
+            display: flex;
+            align-items: center;
             gap: 10px;
+            padding: 10px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--panel);
+            flex-shrink: 0;
             flex-wrap: wrap;
-            justify-content: flex-end;
+        }
+
+        .cloud-toolbar .cloud-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cloud-toolbar .cloud-filter-group label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .cloud-toolbar .cloud-filter-input {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-family: inherit;
+            min-width: 100px;
+        }
+
+        .cloud-toolbar .cloud-filter-input:focus {
+            outline: none;
+            border-color: rgba(109, 91, 255, 0.5);
+            box-shadow: 0 0 0 2px rgba(109, 91, 255, 0.15);
+        }
+
+        .cloud-toolbar .cloud-filter-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .cloud-toolbar .cloud-export-group {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+
+        .cloud-toolbar .cloud-export-btn {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .cloud-toolbar .cloud-export-btn:hover {
+            background: rgba(109, 91, 255, 0.12);
+            border-color: rgba(109, 91, 255, 0.4);
+            color: #fff;
+        }
+
+        .cloud-page-body {
+            flex: 1;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .cloud-table {
@@ -1129,58 +1299,131 @@
         .cloud-table th {
             position: sticky;
             top: 0;
-            background: rgba(15, 18, 24, 0.95);
+            background: rgba(15, 18, 24, 0.98);
             text-align: left;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--text-muted);
-            padding: 12px 14px;
+            padding: 8px 10px;
             border-bottom: 1px solid var(--border);
+            z-index: 2;
         }
 
         .cloud-table td {
-            padding: 12px 14px;
+            padding: 6px 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: var(--text-secondary);
-            font-size: 0.85rem;
-            vertical-align: top;
+            font-size: 0.78rem;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .cloud-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .cloud-table tr.editing td {
+            background: rgba(109, 91, 255, 0.06);
         }
 
         .cloud-row-actions {
             display: flex;
-            gap: 6px;
+            gap: 4px;
+        }
+
+        .cloud-row-actions .action-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
         }
 
         .cloud-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
+            gap: 4px;
+            padding: 2px 8px;
             border-radius: 999px;
             border: 1px solid var(--border);
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
         }
 
-        .cloud-badge.draft { background: rgba(247, 184, 74, 0.2); border-color: rgba(247, 184, 74, 0.5); color: #ffe3b2; }
-        .cloud-badge.ready { background: rgba(61, 213, 154, 0.18); border-color: rgba(61, 213, 154, 0.45); color: #baf3d9; }
-        .cloud-badge.done { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); color: var(--text-muted); }
+        .cloud-badge.draft {
+            background: rgba(247, 184, 74, 0.2);
+            border-color: rgba(247, 184, 74, 0.5);
+            color: #ffe3b2;
+        }
+
+        .cloud-badge.ready {
+            background: rgba(61, 213, 154, 0.18);
+            border-color: rgba(61, 213, 154, 0.45);
+            color: #baf3d9;
+        }
+
+        .cloud-badge.done {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+        }
 
         .user-badge {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 999px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             font-weight: 700;
             color: #fff;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
+        }
+
+        .cloud-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(109, 91, 255, 0.18);
+            border: 1px solid rgba(109, 91, 255, 0.35);
+            color: #c9c0ff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            min-width: 24px;
+        }
+
+        .cloud-page-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+            flex-shrink: 0;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        body[data-theme="light"] .cloud-page {
+            background: var(--bg-primary);
+        }
+
+        body[data-theme="light"] .cloud-page-header,
+        body[data-theme="light"] .cloud-toolbar,
+        body[data-theme="light"] .cloud-page-footer {
+            background: var(--panel);
         }
 
         body[data-theme="light"] .cloud-table th {
@@ -1191,6 +1434,10 @@
         body[data-theme="light"] .cloud-table td {
             border-bottom: 1px solid var(--table-row-border);
             color: var(--text);
+        }
+
+        body[data-theme="light"] .cloud-table tr:hover td {
+            background: rgba(0, 0, 0, 0.02);
         }
 
         .auth-form {
@@ -1593,30 +1840,69 @@
         }
 
         @keyframes jump {
-            0% { bottom: 10px; }
-            45% { bottom: 100px; }
-            55% { bottom: 100px; }
-            100% { bottom: 10px; }
+            0% {
+                bottom: 10px;
+            }
+
+            45% {
+                bottom: 100px;
+            }
+
+            55% {
+                bottom: 100px;
+            }
+
+            100% {
+                bottom: 10px;
+            }
         }
 
         @keyframes slideIn {
-            from { transform: translateX(30px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(60px); opacity: 0; }
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(60px);
+                opacity: 0;
+            }
         }
 
         @keyframes rowIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .obstacle {
@@ -1635,9 +1921,20 @@
             image-rendering: pixelated;
         }
 
-        .obstacle.cactus-small { width: 28px; height: 40px; }
-        .obstacle.cactus-large { width: 40px; height: 55px; }
-        .obstacle.bird { width: 46px; height: 32px; }
+        .obstacle.cactus-small {
+            width: 28px;
+            height: 40px;
+        }
+
+        .obstacle.cactus-large {
+            width: 40px;
+            height: 55px;
+        }
+
+        .obstacle.bird {
+            width: 46px;
+            height: 32px;
+        }
 
         @media (max-width: 1100px) {
             .content-grid {
@@ -1692,373 +1989,394 @@
         }
     </style>
 </head>
+
 <body data-theme="dark">
-<div class="app-shell">
-    <aside class="sidebar">
-        <div class="nav-group">
-            <button class="nav-btn home active" data-nav="home" title="Startseite" onclick="setAppView('home')">
-                <img src="experiments/ui-v2/assets/keyframe.png" alt="Startseite">
-            </button>
-            <button class="nav-btn" data-nav="login" id="loginBtn" title="Login">
-                <span class="material-icons">login</span>
-            </button>
-            <button class="nav-btn" data-nav="cloud" id="cloudBtn" title="Cloud">
-                <span class="material-icons">cloud</span>
-            </button>
-            <div class="nav-icon" data-nav="chatgpt" title="ChatGPT" role="button" tabindex="0" onclick="showPreview('chatgpt')" onkeydown="if(event.key==='Enter'||event.key===' '){showPreview('chatgpt')}">
-                <img src="experiments/ui-v2/assets/chatgpt.png" alt="ChatGPT">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="nav-group">
+                <button class="nav-btn home active" data-nav="home" title="Startseite" onclick="setAppView('home')">
+                    <img src="experiments/ui-v2/assets/keyframe.png" alt="Startseite">
+                </button>
+                <button class="nav-btn" data-nav="login" id="loginBtn" title="Login">
+                    <span class="material-icons">login</span>
+                </button>
+                <button class="nav-btn" data-nav="cloud" id="cloudBtn" title="Cloud">
+                    <span class="material-icons">cloud</span>
+                </button>
+                <div class="nav-icon" data-nav="chatgpt" title="ChatGPT" role="button" tabindex="0"
+                    onclick="showPreview('chatgpt')"
+                    onkeydown="if(event.key==='Enter'||event.key===' '){showPreview('chatgpt')}">
+                    <img src="experiments/ui-v2/assets/chatgpt.png" alt="ChatGPT">
+                </div>
             </div>
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn" title="Theme wechseln" onclick="toggleTheme()">
-                <span class="material-icons">brightness_6</span>
-            </button>
-        </div>
-    </aside>
+            <div class="sidebar-footer">
+                <button class="nav-btn" title="Theme wechseln" onclick="toggleTheme()">
+                    <span class="material-icons">brightness_6</span>
+                </button>
+            </div>
+        </aside>
 
-    <div class="main-area">
-        <header class="topbar">
-            <div class="title-block">
-                <h1>VFX / ANIMATIONS-LOG</h1>
-            </div>
-            <div class="topbar-actions">
-                <span class="status-pill" id="syncIndicator">
-                    <span class="status-dot"></span>Synchronisiert
-                    <span class="status-tooltip" id="syncIndicatorTooltip">
-                        <strong></strong>
-                        <span></span>
+        <div class="main-area">
+            <header class="topbar">
+                <div class="title-block">
+                    <h1>VFX / ANIMATIONS-LOG</h1>
+                </div>
+                <div class="topbar-actions">
+                    <span class="status-pill" id="syncIndicator">
+                        <span class="status-dot"></span>Synchronisiert
+                        <span class="status-tooltip" id="syncIndicatorTooltip">
+                            <strong></strong>
+                            <span></span>
+                        </span>
                     </span>
-                </span>
-                <div id="mainExportWrap" class="main-export-wrap"></div>
-            </div>
-        </header>
-
-        <main class="content-grid">
-            <section class="panel composer-panel">
-                <div class="panel-header">
-                    <div>
-                    <div class="panel-label">NEUER EINTRAG</div>
-                    <div class="panel-title">Neuen Eintrag erfassen</div>
+                    <div id="mainExportWrap" class="main-export-wrap"></div>
                 </div>
-                    <div class="panel-actions">
-                        <label class="switch">
-                            <span>Werte behalten</span>
-                            <input type="checkbox" id="keepValuesToggle" aria-label="Werte behalten">
-                        </label>
-                        <button class="icon-btn" id="globalFieldsToggle" onclick="toggleGlobalFields()" title="Optionale Felder">
-                            <span class="material-icons">tune</span>
-                        </button>
-                    </div>
-                </div>
+            </header>
 
-                <div class="field-grid">
-                    <div class="field">
-                        <label>Typ</label>
-                        <div class="input-wrap">
-                            <span class="material-icons" style="font-size: 18px;">category</span>
-                            <select id="typeSelect" onchange="selectType(this.value)">
-                                <option value="" selected disabled>Typ wählen...</option>
-                                <option value="temperatur">Temperatur</option>
-                                <option value="zeit">Zeit</option>
-                                <option value="geld">Geld</option>
-                                <option value="uebersicht">Übersicht</option>
-                                <option value="textbox">TextBox</option>
-                                <option value="todo">To-Do</option>
-                                <option value="ticket">Ticket</option>
-                                <option value="samsung">Samsung Template</option>
-                            </select>
+            <main class="content-grid">
+                <section class="panel composer-panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-label">NEUER EINTRAG</div>
+                            <div class="panel-title">Neuen Eintrag erfassen</div>
+                        </div>
+                        <div class="panel-actions">
+                            <label class="switch">
+                                <span>Werte behalten</span>
+                                <input type="checkbox" id="keepValuesToggle" aria-label="Werte behalten">
+                            </label>
+                            <button class="icon-btn" id="globalFieldsToggle" onclick="toggleGlobalFields()"
+                                title="Optionale Felder">
+                                <span class="material-icons">tune</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="field">
-                        <label>Datum</label>
-                        <div class="input-wrap">
-                            <span class="material-icons" style="font-size: 18px;">event</span>
-                            <input type="text" id="autoDate" placeholder="Automatisch (heute)" disabled>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label>Produktion / Show</label>
-                        <div class="input-wrap">
-                            <span class="material-icons" style="font-size: 18px;">movie</span>
-                            <select id="qShow">
-                                <option value="WCC">WCC</option>
-                                <option value="TR3">TR3</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label>Folge</label>
-                        <div class="input-wrap">
-                            <span class="material-icons" style="font-size: 18px;">tag</span>
-                            <input type="text" id="qSequence" placeholder="Zahl eintragen">
-                        </div>
-                    </div>
-                </div>
 
-                <form id="quickForm" style="display: none; margin-top: 18px;">
-                    <input type="hidden" id="qType">
-
-                    <div class="quick-row">
-                        <div class="field" id="personFieldGroup">
-                            <label>Teilnehmer</label>
+                    <div class="field-grid">
+                        <div class="field">
+                            <label>Typ</label>
                             <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">group</span>
-                                <select id="qPerson" required>
-                                    <option value="">Person hinzufügen...</option>
-                                    <option value="Jerry">Jerry</option>
-                                    <option value="Marc">Marc</option>
-                                    <option value="Kodiak">Kodiak</option>
-                                    <option value="Taube">Taube</option>
-                                    <option value="Käthe">Käthe</option>
+                                <span class="material-icons" style="font-size: 18px;">category</span>
+                                <select id="typeSelect" onchange="selectType(this.value)">
+                                    <option value="" selected disabled>Typ wählen...</option>
+                                    <option value="temperatur">Temperatur</option>
+                                    <option value="zeit">Zeit</option>
+                                    <option value="geld">Geld</option>
+                                    <option value="uebersicht">Übersicht</option>
+                                    <option value="textbox">TextBox</option>
+                                    <option value="todo">To-Do</option>
+                                    <option value="ticket">Ticket</option>
+                                    <option value="samsung">Samsung Template</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="field" id="dynamicField">
-                            <label id="dynamicLabel">Wert</label>
-                            <div class="input-wrap">
-                                <span class="material-icons" id="dynamicIcon" style="font-size: 18px;">timer</span>
-                                <input type="text" id="qValue" placeholder="Wert eingeben">
-                            </div>
-                        </div>
-                    </div>
-
-                    <details id="notesPanel">
-                        <summary>Notizen &amp; To-Dos</summary>
-                        <div id="extraFields"></div>
-                    </details>
-
-                    <div class="global-fields" id="globalFields">
                         <div class="field">
-                            <label>Schnitt Zeitstempel</label>
+                            <label>Datum</label>
                             <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">schedule</span>
-                                <input type="text" id="qTimestamp" placeholder="00:00:00">
+                                <span class="material-icons" style="font-size: 18px;">event</span>
+                                <input type="text" id="autoDate" placeholder="Automatisch (heute)" disabled>
                             </div>
                         </div>
                         <div class="field">
-                            <label>Cutter Info</label>
+                            <label>Produktion / Show</label>
                             <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">person</span>
-                                <input type="text" id="qCutterInfo" placeholder="Name / Notiz">
+                                <span class="material-icons" style="font-size: 18px;">movie</span>
+                                <select id="qShow">
+                                    <option value="WCC">WCC</option>
+                                    <option value="TR3">TR3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Folge</label>
+                            <div class="input-wrap">
+                                <span class="material-icons" style="font-size: 18px;">tag</span>
+                                <input type="text" id="qSequence" placeholder="Zahl eintragen">
                             </div>
                         </div>
                     </div>
 
-                    <div class="status-selector">
-                        <span class="status-label">Status</span>
-                        <input type="hidden" id="qStatus" value="none">
-                        <button type="button" class="status-chip status-none active" data-status-select="none">Kein Status</button>
-                        <button type="button" class="status-chip status-draft" data-status-select="draft">Entwurf</button>
-                        <button type="button" class="status-chip status-ready" data-status-select="ready">Export bereit</button>
+                    <form id="quickForm" style="display: none; margin-top: 18px;">
+                        <input type="hidden" id="qType">
+
+                        <div class="quick-row">
+                            <div class="field" id="personFieldGroup">
+                                <label>Teilnehmer</label>
+                                <div class="input-wrap">
+                                    <span class="material-icons" style="font-size: 18px;">group</span>
+                                    <select id="qPerson" required>
+                                        <option value="">Person hinzufügen...</option>
+                                        <option value="Jerry">Jerry</option>
+                                        <option value="Marc">Marc</option>
+                                        <option value="Kodiak">Kodiak</option>
+                                        <option value="Taube">Taube</option>
+                                        <option value="Käthe">Käthe</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="field" id="dynamicField">
+                                <label id="dynamicLabel">Wert</label>
+                                <div class="input-wrap">
+                                    <span class="material-icons" id="dynamicIcon" style="font-size: 18px;">timer</span>
+                                    <input type="text" id="qValue" placeholder="Wert eingeben">
+                                </div>
+                            </div>
+                        </div>
+
+                        <details id="notesPanel">
+                            <summary>Notizen &amp; To-Dos</summary>
+                            <div id="extraFields"></div>
+                        </details>
+
+                        <div class="global-fields" id="globalFields">
+                            <div class="field">
+                                <label>Schnitt Zeitstempel</label>
+                                <div class="input-wrap">
+                                    <span class="material-icons" style="font-size: 18px;">schedule</span>
+                                    <input type="text" id="qTimestamp" placeholder="00:00:00">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Cutter Info</label>
+                                <div class="input-wrap">
+                                    <span class="material-icons" style="font-size: 18px;">person</span>
+                                    <input type="text" id="qCutterInfo" placeholder="Name / Notiz">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="status-selector">
+                            <span class="status-label">Status</span>
+                            <input type="hidden" id="qStatus" value="none">
+                            <button type="button" class="status-chip status-none active" data-status-select="none">Kein
+                                Status</button>
+                            <button type="button" class="status-chip status-draft"
+                                data-status-select="draft">Entwurf</button>
+                            <button type="button" class="status-chip status-ready" data-status-select="ready">Export
+                                bereit</button>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary primary-action">
+                            <span class="material-icons">add_circle</span>
+                            Eintrag erstellen
+                        </button>
+                    </form>
+                    <p class="helper-text" id="composerHint" style="margin-top: 12px;">Bitte zuerst einen Typ wählen.
+                    </p>
+                </section>
+
+                <section class="panel console-panel" id="entriesPanel">
+                    <div class="panel-header console-header">
+                        <div class="panel-title-wrap">
+                            <div class="panel-title">Einträge</div>
+                            <span class="badge-count" id="entryCount" title="Anzahl Einträge">--</span>
+                        </div>
+                        <div class="search-field" style="min-width: 200px;">
+                            <span class="material-icons" style="font-size: 18px;">search</span>
+                            <input type="text" id="consoleSearchInput" placeholder="Log durchsuchen..."
+                                aria-label="Log durchsuchen">
+                            <span class="shortcut">STRG /</span>
+                        </div>
+                    </div>
+                    <div class="console-actions" id="consoleActions">
+                        <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display: none;"
+                            onclick="deleteSelectedEntries()">
+                            <span class="material-icons">delete</span>
+                            Ausgewählte löschen
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="deleteAllBtn" style="display: none;"
+                            onclick="deleteAllEntries()">
+                            <span class="material-icons">delete_sweep</span>
+                            Alle löschen
+                        </button>
                     </div>
 
-                    <button type="submit" class="btn btn-primary primary-action">
-                        <span class="material-icons">add_circle</span>
-                        Eintrag erstellen
-                    </button>
-                </form>
-                <p class="helper-text" id="composerHint" style="margin-top: 12px;">Bitte zuerst einen Typ wählen.</p>
-            </section>
-
-            <section class="panel console-panel" id="entriesPanel">
-                <div class="panel-header console-header">
-                    <div class="panel-title-wrap">
-                        <div class="panel-title">Einträge</div>
-                        <span class="badge-count" id="entryCount" title="Anzahl Einträge">--</span>
+                    <div class="chip-row">
+                        <button class="chip" type="button" data-filter="show"
+                            data-label="Produktion">Produktion</button>
+                        <button class="chip" type="button" data-filter="type" data-label="Typ">Typ</button>
                     </div>
-                    <div class="search-field" style="min-width: 200px;">
-                        <span class="material-icons" style="font-size: 18px;">search</span>
-                        <input type="text" id="consoleSearchInput" placeholder="Log durchsuchen..." aria-label="Log durchsuchen">
-                        <span class="shortcut">STRG /</span>
+
+                    <div class="table-wrapper">
+                        <table class="data-grid">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th>
+                                    <th class="sortable" data-sort="id" style="width: 70px;">ID</th>
+                                    <th class="sortable" data-sort="datum" style="width: 110px;">Datum</th>
+                                    <th class="sortable" data-sort="show" style="width: 90px;">Show</th>
+                                    <th class="sortable" data-sort="folge" style="width: 120px;">Folge</th>
+                                    <th class="sortable" data-sort="type" style="width: 120px;">Typ</th>
+                                    <th class="sortable" data-sort="teilnehmer" style="width: 140px;">Teilnehmer</th>
+                                    <th class="sortable" data-sort="temperatur" style="width: 90px;">Temp</th>
+                                    <th class="sortable" data-sort="zeit" style="width: 90px;">Zeit</th>
+                                    <th class="sortable" data-sort="geldStart" style="width: 90px;">Start</th>
+                                    <th class="sortable" data-sort="geldAenderung" style="width: 90px;">+/-</th>
+                                    <th class="sortable" data-sort="geldAktuell" style="width: 90px;">Aktuell</th>
+                                    <th class="sortable" data-sort="stempel" style="width: 120px;">Marker</th>
+                                    <th class="sortable" data-sort="textboxText" style="width: 220px;">Details</th>
+                                    <th class="sortable" data-sort="todoItem" style="width: 200px;">To-Do</th>
+                                    <th class="sortable" data-sort="schnittTimestamp" style="width: 120px;">Schnitt-TS
+                                    </th>
+                                    <th class="sortable" data-sort="cutterInfo" style="width: 150px;">Cutter</th>
+                                    <th style="width: 90px;">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataBody">
+                                <tr>
+                                    <td colspan="17">
+                                        <div class="helper-text" style="padding: 24px;">Noch keine Animationen. Füge
+                                            oben deine erste Animation hinzu.</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                <div class="console-actions" id="consoleActions">
-                    <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display: none;" onclick="deleteSelectedEntries()">
-                        <span class="material-icons">delete</span>
-                        Ausgewählte löschen
-                    </button>
-                    <button class="btn btn-danger btn-sm" id="deleteAllBtn" style="display: none;" onclick="deleteAllEntries()">
-                        <span class="material-icons">delete_sweep</span>
-                        Alle löschen
-                    </button>
-                </div>
-
-                <div class="chip-row">
-                    <button class="chip" type="button" data-filter="show" data-label="Produktion">Produktion</button>
-                    <button class="chip" type="button" data-filter="type" data-label="Typ">Typ</button>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="data-grid">
-                        <thead>
-                        <tr>
-                            <th style="width: 40px;"></th>
-                            <th class="sortable" data-sort="id" style="width: 70px;">ID</th>
-                            <th class="sortable" data-sort="datum" style="width: 110px;">Datum</th>
-                            <th class="sortable" data-sort="show" style="width: 90px;">Show</th>
-                            <th class="sortable" data-sort="folge" style="width: 120px;">Folge</th>
-                            <th class="sortable" data-sort="type" style="width: 120px;">Typ</th>
-                            <th class="sortable" data-sort="teilnehmer" style="width: 140px;">Teilnehmer</th>
-                            <th class="sortable" data-sort="temperatur" style="width: 90px;">Temp</th>
-                            <th class="sortable" data-sort="zeit" style="width: 90px;">Zeit</th>
-                            <th class="sortable" data-sort="geldStart" style="width: 90px;">Start</th>
-                            <th class="sortable" data-sort="geldAenderung" style="width: 90px;">+/-</th>
-                            <th class="sortable" data-sort="geldAktuell" style="width: 90px;">Aktuell</th>
-                            <th class="sortable" data-sort="stempel" style="width: 120px;">Marker</th>
-                            <th class="sortable" data-sort="textboxText" style="width: 220px;">Details</th>
-                            <th class="sortable" data-sort="todoItem" style="width: 200px;">To-Do</th>
-                            <th class="sortable" data-sort="schnittTimestamp" style="width: 120px;">Schnitt-TS</th>
-                            <th class="sortable" data-sort="cutterInfo" style="width: 150px;">Cutter</th>
-                            <th style="width: 90px;">Aktionen</th>
-                        </tr>
-                        </thead>
-                        <tbody id="dataBody">
-                        <tr>
-                            <td colspan="17">
-                                <div class="helper-text" style="padding: 24px;">Noch keine Animationen. Füge oben deine erste Animation hinzu.</div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    </div>
-</div>
-
-<div id="sheetsModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: min(420px, 95vw);">
-        <div class="panel-header" style="margin-bottom: 12px;">
-            <div>
-                <div class="panel-label">Google Sheets</div>
-                <div class="panel-title">Sheets-Verbindung</div>
-            </div>
-            <button class="icon-btn close-btn" onclick="hideSheetsModal()">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div id="authStatus" style="padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); display: flex; align-items: center; gap: 10px; font-size: 0.9em;">
-                <span class="material-icons" style="color: #ea4335;">error</span>
-                <span>Nicht verbunden</span>
-            </div>
-
-            <div class="field">
-                <label>Spreadsheet-ID</label>
-                <div class="input-wrap">
-                    <span class="material-icons" style="font-size: 18px;">description</span>
-                    <input type="text" id="spreadsheetIdInput" placeholder="ID aus der URL kopieren">
-                </div>
-                <p class="helper-text">Beispiel: https://docs.google.com/spreadsheets/d/SpreadsheetID/edit</p>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button id="authBtn" class="btn" style="flex: 1; justify-content: center;" onclick="handleAuthClick()">
-                    <span class="material-icons">login</span> Anmelden
-                </button>
-                <button id="saveSheetsSettings" class="btn btn-primary" style="flex: 1; justify-content: center;" onclick="saveSheetsSettings()">
-                    <span class="material-icons">save</span> Speichern
-                </button>
-            </div>
-
-            <div id="sheetsActions" style="display: none; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border);">
-                <button class="export-opt-btn" onclick="pushToGoogleSheets()">
-                    <span class="material-icons">cloud_upload</span>
-                    <span>Daten jetzt hochladen</span>
-                </button>
-                <button class="export-opt-btn" onclick="pullFromGoogleSheets()">
-                    <span class="material-icons">cloud_download</span>
-                    <span>Daten aus Sheets laden</span>
-                </button>
-            </div>
+                </section>
+            </main>
         </div>
     </div>
-</div>
 
-
-<div id="statusMenu" class="status-menu">
-    <div class="status-menu-title">Status setzen</div>
-    <div class="status-menu-grid">
-        <button class="status-chip status-none" data-status="none" onclick="setStatusForEntry('none')">Kein Status</button>
-        <button class="status-chip status-draft" data-status="draft" onclick="setStatusForEntry('draft')">Entwurf</button>
-        <button class="status-chip status-ready" data-status="ready" onclick="setStatusForEntry('ready')">Export bereit</button>
-        <button class="status-chip status-exported" data-status="exported" onclick="setStatusForEntry('exported')">Exportiert</button>
-        <button class="status-chip status-edited" data-status="edited" onclick="setStatusForEntry('edited')">Bearbeitet</button>
-        <button class="status-chip status-error" data-status="error" onclick="setStatusForEntry('error')">Fehler</button>
-    </div>
-</div>
-
-<div id="previewModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: min(720px, 95vw);">
-        <div class="panel-header" style="margin-bottom: 12px;">
-            <div>
-                <div class="panel-label">Vorschau</div>
-                <div class="panel-title" id="previewTitle">Bereich</div>
+    <div id="sheetsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: min(420px, 95vw);">
+            <div class="panel-header" style="margin-bottom: 12px;">
+                <div>
+                    <div class="panel-label">Google Sheets</div>
+                    <div class="panel-title">Sheets-Verbindung</div>
+                </div>
+                <button class="icon-btn close-btn" onclick="hideSheetsModal()">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
-            <button class="icon-btn close-btn" onclick="hidePreview()">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div style="display: grid; gap: 14px;">
-            <div class="helper-text" id="previewHint">Dieser Bereich wird gerade eingerichtet.</div>
-            <div class="preview-window preview-dim" id="previewBody"></div>
-        </div>
-    </div>
-</div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div id="authStatus"
+                    style="padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); display: flex; align-items: center; gap: 10px; font-size: 0.9em;">
+                    <span class="material-icons" style="color: #ea4335;">error</span>
+                    <span>Nicht verbunden</span>
+                </div>
 
-<div id="cloudModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: min(1200px, 96vw);">
-        <div class="panel-header" style="margin-bottom: 12px;">
-            <div>
-                <div class="panel-label">Cloud</div>
-                <div class="panel-title">Alle Einträge</div>
-            </div>
-            <button class="icon-btn close-btn" id="cloudCloseBtn">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div class="cloud-shell">
-            <div class="cloud-controls">
                 <div class="field">
-                    <label>Folge filtern</label>
+                    <label>Spreadsheet-ID</label>
                     <div class="input-wrap">
-                        <span class="material-icons" style="font-size: 18px;">tag</span>
-                        <input type="text" id="cloudFilterFolge" placeholder="z.B. EP01">
+                        <span class="material-icons" style="font-size: 18px;">description</span>
+                        <input type="text" id="spreadsheetIdInput" placeholder="ID aus der URL kopieren">
                     </div>
+                    <p class="helper-text">Beispiel: https://docs.google.com/spreadsheets/d/SpreadsheetID/edit</p>
                 </div>
-                <div class="field">
-                    <label>Status filtern</label>
-                    <div class="input-wrap">
-                        <span class="material-icons" style="font-size: 18px;">flag</span>
-                        <select id="cloudFilterStatus">
-                            <option value="">Alle</option>
-                            <option value="draft">Entwurf</option>
-                            <option value="ready">Export bereit</option>
-                            <option value="done">Done</option>
-                        </select>
-                    </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="authBtn" class="btn" style="flex: 1; justify-content: center;"
+                        onclick="handleAuthClick()">
+                        <span class="material-icons">login</span> Anmelden
+                    </button>
+                    <button id="saveSheetsSettings" class="btn btn-primary" style="flex: 1; justify-content: center;"
+                        onclick="saveSheetsSettings()">
+                        <span class="material-icons">save</span> Speichern
+                    </button>
                 </div>
-                <div class="field">
-                    <label>Sortierung</label>
-                    <div class="input-wrap">
-                        <span class="material-icons" style="font-size: 18px;">swap_vert</span>
-                        <select id="cloudSort">
-                            <option value="created_desc">Neueste zuerst</option>
-                            <option value="created_asc">Älteste zuerst</option>
-                            <option value="datum_desc">Datum (neu → alt)</option>
-                            <option value="datum_asc">Datum (alt → neu)</option>
-                        </select>
-                    </div>
+
+                <div id="sheetsActions"
+                    style="display: none; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border);">
+                    <button class="export-opt-btn" onclick="pushToGoogleSheets()">
+                        <span class="material-icons">cloud_upload</span>
+                        <span>Daten jetzt hochladen</span>
+                    </button>
+                    <button class="export-opt-btn" onclick="pullFromGoogleSheets()">
+                        <span class="material-icons">cloud_download</span>
+                        <span>Daten aus Sheets laden</span>
+                    </button>
                 </div>
             </div>
-            <div class="cloud-export">
-                <button class="btn btn-sm" id="cloudExportTsv">Export TSV</button>
-                <button class="btn btn-sm" id="cloudExportCsv">Export CSV</button>
-                <button class="btn btn-sm" id="cloudExportJson">Export JSON</button>
+        </div>
+    </div>
+
+
+    <div id="statusMenu" class="status-menu">
+        <div class="status-menu-title">Status setzen</div>
+        <div class="status-menu-grid">
+            <button class="status-chip status-none" data-status="none" onclick="setStatusForEntry('none')">Kein
+                Status</button>
+            <button class="status-chip status-draft" data-status="draft"
+                onclick="setStatusForEntry('draft')">Entwurf</button>
+            <button class="status-chip status-ready" data-status="ready" onclick="setStatusForEntry('ready')">Export
+                bereit</button>
+            <button class="status-chip status-exported" data-status="exported"
+                onclick="setStatusForEntry('exported')">Exportiert</button>
+            <button class="status-chip status-edited" data-status="edited"
+                onclick="setStatusForEntry('edited')">Bearbeitet</button>
+            <button class="status-chip status-error" data-status="error"
+                onclick="setStatusForEntry('error')">Fehler</button>
+        </div>
+    </div>
+
+    <div id="previewModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: min(720px, 95vw);">
+            <div class="panel-header" style="margin-bottom: 12px;">
+                <div>
+                    <div class="panel-label">Vorschau</div>
+                    <div class="panel-title" id="previewTitle">Bereich</div>
+                </div>
+                <button class="icon-btn close-btn" onclick="hidePreview()">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
-            <div class="table-wrapper" id="cloudTableWrapper">
-                <table class="cloud-table">
-                    <thead>
+            <div style="display: grid; gap: 14px;">
+                <div class="helper-text" id="previewHint">Dieser Bereich wird gerade eingerichtet.</div>
+                <div class="preview-window preview-dim" id="previewBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cloudModal" class="cloud-page" style="display: none;">
+        <div class="cloud-page-header">
+            <button class="cloud-back-btn" id="cloudCloseBtn" title="Zurück">
+                <span class="material-icons" style="font-size: 20px;">arrow_back</span>
+            </button>
+            <div class="cloud-page-title-block">
+                <h2><span class="material-icons">cloud</span> Cloud-Einträge</h2>
+                <div class="cloud-subtitle">Alle Team-Einträge in Echtzeit · <span id="cloudRowCount">0</span> Einträge
+                </div>
+            </div>
+            <div class="cloud-page-actions">
+                <button class="icon-btn" id="cloudCloseBtn2" title="Schließen">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="cloud-toolbar">
+            <div class="cloud-filter-group">
+                <label>Folge</label>
+                <input type="text" class="cloud-filter-input" id="cloudFilterFolge" placeholder="z.B. EP01">
+            </div>
+            <div class="cloud-filter-group">
+                <label>Status</label>
+                <select class="cloud-filter-select" id="cloudFilterStatus">
+                    <option value="">Alle</option>
+                    <option value="draft">Entwurf</option>
+                    <option value="ready">Export bereit</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="cloud-filter-group">
+                <label>Sortierung</label>
+                <select class="cloud-filter-select" id="cloudSort">
+                    <option value="created_desc">Neueste zuerst</option>
+                    <option value="created_asc">Älteste zuerst</option>
+                    <option value="datum_desc">Datum (neu → alt)</option>
+                    <option value="datum_asc">Datum (alt → neu)</option>
+                </select>
+            </div>
+            <div class="cloud-export-group">
+                <button class="cloud-export-btn" id="cloudExportTsv">TSV</button>
+                <button class="cloud-export-btn" id="cloudExportCsv">CSV</button>
+                <button class="cloud-export-btn" id="cloudExportJson">JSON</button>
+            </div>
+        </div>
+
+        <div class="cloud-page-body">
+            <table class="cloud-table">
+                <thead>
                     <tr>
                         <th>User</th>
                         <th>Datum</th>
@@ -2082,62 +2400,66 @@
                         <th>Done</th>
                         <th>Aktionen</th>
                     </tr>
-                    </thead>
-                    <tbody id="cloudTableBody">
+                </thead>
+                <tbody id="cloudTableBody">
                     <tr>
                         <td colspan="21">
                             <div class="helper-text" id="cloudEmpty">Keine Cloud-Daten.</div>
                         </td>
                     </tr>
-                    </tbody>
-                </table>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="cloud-page-footer">
+            <span>Cloud-Synchronisation aktiv</span>
+            <span id="cloudFooterCount"></span>
+        </div>
+    </div>
+
+    <div id="authModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: min(420px, 95vw);">
+            <div class="panel-header" style="margin-bottom: 12px;">
+                <div>
+                    <div class="panel-label">Account</div>
+                    <div class="panel-title">Login</div>
+                </div>
+                <button class="icon-btn close-btn" id="authCloseBtn">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="auth-form">
+                <div class="field">
+                    <label>E-Mail</label>
+                    <div class="input-wrap">
+                        <span class="material-icons" style="font-size: 18px;">mail</span>
+                        <input type="email" id="authEmail" placeholder="name@firma.de">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Passwort</label>
+                    <div class="input-wrap">
+                        <span class="material-icons" style="font-size: 18px;">lock</span>
+                        <input type="password" id="authPassword" placeholder="Passwort">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="authLoginBtn">
+                    <span class="material-icons">login</span>
+                    Login
+                </button>
+                <div class="auth-divider">oder</div>
+                <button class="btn" id="authSignupBtn">
+                    <span class="material-icons">person_add</span>
+                    Registrieren
+                </button>
             </div>
         </div>
     </div>
-</div>
 
-<div id="authModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: min(420px, 95vw);">
-        <div class="panel-header" style="margin-bottom: 12px;">
-            <div>
-                <div class="panel-label">Account</div>
-                <div class="panel-title">Login</div>
-            </div>
-            <button class="icon-btn close-btn" id="authCloseBtn">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
-        <div class="auth-form">
-            <div class="field">
-                <label>E-Mail</label>
-                <div class="input-wrap">
-                    <span class="material-icons" style="font-size: 18px;">mail</span>
-                    <input type="email" id="authEmail" placeholder="name@firma.de">
-                </div>
-            </div>
-            <div class="field">
-                <label>Passwort</label>
-                <div class="input-wrap">
-                    <span class="material-icons" style="font-size: 18px;">lock</span>
-                    <input type="password" id="authPassword" placeholder="Passwort">
-                </div>
-            </div>
-            <button class="btn btn-primary" id="authLoginBtn">
-                <span class="material-icons">login</span>
-                Login
-            </button>
-            <div class="auth-divider">oder</div>
-            <button class="btn" id="authSignupBtn">
-                <span class="material-icons">person_add</span>
-                Registrieren
-            </button>
-        </div>
-    </div>
-</div>
+    <div id="saveStatus" aria-live="polite"></div>
 
-<div id="saveStatus" aria-live="polite"></div>
-
-<script src="experiments/ui-v2/dist/app.js"></script>
-<script type="module" src="./supabase-app.js"></script>
+    <script src="experiments/ui-v2/dist/app.js"></script>
+    <script type="module" src="./supabase-app.js"></script>
 </body>
+
 </html>

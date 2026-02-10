@@ -423,12 +423,31 @@ const formatCloudRow = (row) => {
 
 function openCloudModal() {
     const modal = document.getElementById("cloudModal");
-    if (modal) modal.style.display = "flex";
+    if (modal) {
+        modal.style.display = "flex";
+        modal.classList.remove("closing");
+        document.body.style.overflow = "hidden";
+    }
 }
 
 function closeCloudModal() {
     const modal = document.getElementById("cloudModal");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+        modal.classList.add("closing");
+        setTimeout(() => {
+            modal.style.display = "none";
+            modal.classList.remove("closing");
+            document.body.style.overflow = "";
+        }, 250);
+    }
+}
+
+function updateCloudCountDisplay() {
+    const list = applyCloudFilters(cloudRows);
+    const countEl = document.getElementById("cloudRowCount");
+    const footerEl = document.getElementById("cloudFooterCount");
+    if (countEl) countEl.textContent = list.length;
+    if (footerEl) footerEl.textContent = `${list.length} von ${cloudRows.length} Einträgen`;
 }
 
 function applyCloudFilters(list) {
@@ -460,6 +479,7 @@ function renderCloudTable() {
     const body = document.getElementById("cloudTableBody");
     if (!body) return;
     const list = applyCloudFilters(cloudRows);
+    updateCloudCountDisplay();
     if (!list.length) {
         body.innerHTML = `
             <tr>
@@ -991,12 +1011,20 @@ if (cloudCloseBtn) {
     cloudCloseBtn.addEventListener("click", closeCloudModal);
 }
 
-const cloudModal = document.getElementById("cloudModal");
-if (cloudModal) {
-    cloudModal.addEventListener("click", (event) => {
-        if (event.target === cloudModal) closeCloudModal();
-    });
+const cloudCloseBtn2 = document.getElementById("cloudCloseBtn2");
+if (cloudCloseBtn2) {
+    cloudCloseBtn2.addEventListener("click", closeCloudModal);
 }
+
+// ESC key closes cloud page
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        const modal = document.getElementById("cloudModal");
+        if (modal && modal.style.display !== "none") {
+            closeCloudModal();
+        }
+    }
+});
 
 const authModal = document.getElementById("authModal");
 const authCloseBtn = document.getElementById("authCloseBtn");
@@ -1055,15 +1083,4 @@ if (cloudExportJson) {
     cloudExportJson.addEventListener("click", () => exportCloud("json"));
 }
 
-const cloudFullscreenBtn = document.getElementById("cloudFullscreenBtn");
-if (cloudFullscreenBtn) {
-    cloudFullscreenBtn.addEventListener("click", () => {
-        const modalContent = document.querySelector("#cloudModal .modal-content");
-        const icon = cloudFullscreenBtn.querySelector(".material-icons");
-        if (modalContent) {
-            modalContent.classList.toggle("fullscreen");
-            const isFull = modalContent.classList.contains("fullscreen");
-            if (icon) icon.textContent = isFull ? "fullscreen_exit" : "fullscreen";
-        }
-    });
-}
+
