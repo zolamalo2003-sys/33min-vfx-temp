@@ -563,9 +563,8 @@
             gap: 24px;
             flex: 1;
             min-height: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 32px;
+            /* content-grid is simply a container now, no scrolling on it */
+            overflow: hidden;
         }
 
         .preview-window {
@@ -683,24 +682,34 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow);
-            padding: 24px;
-            backdrop-filter: blur(18px);
             display: flex;
             flex-direction: column;
-            height: 100%;
             overflow: hidden;
+            /* Vital for child scrolling */
+            /* Padding moved to children or handled carefully */
+            padding: 0;
+            backdrop-filter: blur(18px);
         }
 
-        .composer-panel {
-            overflow-y: auto;
+        .panel-header {
+            padding: 24px 24px 18px 24px;
+            flex-shrink: 0;
         }
+
+        .panel-scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 24px 24px 24px;
+        }
+
+
 
         .panel-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            margin-bottom: 18px;
+            /* margin-bottom handled by padding/layout now */
         }
 
         .panel-label {
@@ -2107,117 +2116,122 @@
                         </div>
                     </div>
 
-                    <div class="field-grid">
-                        <div class="field">
-                            <label>Typ</label>
-                            <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">category</span>
-                                <select id="typeSelect" onchange="selectType(this.value)">
-                                    <option value="" selected disabled>Typ wählen...</option>
-                                    <option value="temperatur">Temperatur</option>
-                                    <option value="zeit">Zeit</option>
-                                    <option value="geld">Geld</option>
-                                    <option value="uebersicht">Übersicht</option>
-                                    <option value="textbox">TextBox</option>
-                                    <option value="todo">To-Do</option>
-                                    <option value="ticket">Ticket</option>
-                                    <option value="samsung">Samsung Template</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Datum</label>
-                            <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">event</span>
-                                <input type="text" id="autoDate" placeholder="Automatisch (heute)" disabled>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Produktion / Show</label>
-                            <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">movie</span>
-                                <select id="qShow">
-                                    <option value="WCC">WCC</option>
-                                    <option value="TR3">TR3</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Folge</label>
-                            <div class="input-wrap">
-                                <span class="material-icons" style="font-size: 18px;">tag</span>
-                                <input type="text" id="qSequence" placeholder="Zahl eintragen">
-                            </div>
-                        </div>
-                    </div>
-
-                    <form id="quickForm" style="display: none; margin-top: 18px;">
-                        <input type="hidden" id="qType">
-
-                        <div class="quick-row">
-                            <div class="field" id="personFieldGroup">
-                                <label>Teilnehmer</label>
+                    <div class="panel-scroll-content">
+                        <div class="field-grid">
+                            <div class="field">
+                                <label>Typ</label>
                                 <div class="input-wrap">
-                                    <span class="material-icons" style="font-size: 18px;">group</span>
-                                    <select id="qPerson" required>
-                                        <option value="">Person hinzufügen...</option>
-                                        <option value="Jerry">Jerry</option>
-                                        <option value="Marc">Marc</option>
-                                        <option value="Kodiak">Kodiak</option>
-                                        <option value="Taube">Taube</option>
-                                        <option value="Käthe">Käthe</option>
+                                    <span class="material-icons" style="font-size: 18px;">category</span>
+                                    <select id="typeSelect" onchange="selectType(this.value)">
+                                        <option value="" selected disabled>Typ wählen...</option>
+                                        <option value="temperatur">Temperatur</option>
+                                        <option value="zeit">Zeit</option>
+                                        <option value="geld">Geld</option>
+                                        <option value="uebersicht">Übersicht</option>
+                                        <option value="textbox">TextBox</option>
+                                        <option value="todo">To-Do</option>
+                                        <option value="ticket">Ticket</option>
+                                        <option value="samsung">Samsung Template</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="field" id="dynamicField">
-                                <label id="dynamicLabel">Wert</label>
-                                <div class="input-wrap">
-                                    <span class="material-icons" id="dynamicIcon" style="font-size: 18px;">timer</span>
-                                    <input type="text" id="qValue" placeholder="Wert eingeben">
-                                </div>
-                            </div>
-                        </div>
-
-                        <details id="notesPanel">
-                            <summary>Notizen &amp; To-Dos</summary>
-                            <div id="extraFields"></div>
-                        </details>
-
-                        <div class="global-fields" id="globalFields">
                             <div class="field">
-                                <label>Schnitt Zeitstempel</label>
+                                <label>Datum</label>
                                 <div class="input-wrap">
-                                    <span class="material-icons" style="font-size: 18px;">schedule</span>
-                                    <input type="text" id="qTimestamp" placeholder="00:00:00">
+                                    <span class="material-icons" style="font-size: 18px;">event</span>
+                                    <input type="text" id="autoDate" placeholder="Automatisch (heute)" disabled>
                                 </div>
                             </div>
                             <div class="field">
-                                <label>Cutter Info</label>
+                                <label>Produktion / Show</label>
                                 <div class="input-wrap">
-                                    <span class="material-icons" style="font-size: 18px;">person</span>
-                                    <input type="text" id="qCutterInfo" placeholder="Name / Notiz">
+                                    <span class="material-icons" style="font-size: 18px;">movie</span>
+                                    <select id="qShow">
+                                        <option value="WCC">WCC</option>
+                                        <option value="TR3">TR3</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Folge</label>
+                                <div class="input-wrap">
+                                    <span class="material-icons" style="font-size: 18px;">tag</span>
+                                    <input type="text" id="qSequence" placeholder="Zahl eintragen">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="status-selector">
-                            <span class="status-label">Status</span>
-                            <input type="hidden" id="qStatus" value="none">
-                            <button type="button" class="status-chip status-none active" data-status-select="none">Kein
-                                Status</button>
-                            <button type="button" class="status-chip status-draft"
-                                data-status-select="draft">Entwurf</button>
-                            <button type="button" class="status-chip status-ready" data-status-select="ready">Export
-                                bereit</button>
-                        </div>
+                        <form id="quickForm" style="display: none; margin-top: 18px;">
+                            <input type="hidden" id="qType">
 
-                        <button type="submit" class="btn btn-primary primary-action">
-                            <span class="material-icons">add_circle</span>
-                            Eintrag erstellen
-                        </button>
-                    </form>
-                    <p class="helper-text" id="composerHint" style="margin-top: 12px;">Bitte zuerst einen Typ wählen.
-                    </p>
+                            <div class="quick-row">
+                                <div class="field" id="personFieldGroup">
+                                    <label>Teilnehmer</label>
+                                    <div class="input-wrap">
+                                        <span class="material-icons" style="font-size: 18px;">group</span>
+                                        <select id="qPerson" required>
+                                            <option value="">Person hinzufügen...</option>
+                                            <option value="Jerry">Jerry</option>
+                                            <option value="Marc">Marc</option>
+                                            <option value="Kodiak">Kodiak</option>
+                                            <option value="Taube">Taube</option>
+                                            <option value="Käthe">Käthe</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="field" id="dynamicField">
+                                    <label id="dynamicLabel">Wert</label>
+                                    <div class="input-wrap">
+                                        <span class="material-icons" id="dynamicIcon"
+                                            style="font-size: 18px;">timer</span>
+                                        <input type="text" id="qValue" placeholder="Wert eingeben">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <details id="notesPanel">
+                                <summary>Notizen &amp; To-Dos</summary>
+                                <div id="extraFields"></div>
+                            </details>
+
+                            <div class="global-fields" id="globalFields">
+                                <div class="field">
+                                    <label>Schnitt Zeitstempel</label>
+                                    <div class="input-wrap">
+                                        <span class="material-icons" style="font-size: 18px;">schedule</span>
+                                        <input type="text" id="qTimestamp" placeholder="00:00:00">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>Cutter Info</label>
+                                    <div class="input-wrap">
+                                        <span class="material-icons" style="font-size: 18px;">person</span>
+                                        <input type="text" id="qCutterInfo" placeholder="Name / Notiz">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="status-selector">
+                                <span class="status-label">Status</span>
+                                <input type="hidden" id="qStatus" value="none">
+                                <button type="button" class="status-chip status-none active"
+                                    data-status-select="none">Kein
+                                    Status</button>
+                                <button type="button" class="status-chip status-draft"
+                                    data-status-select="draft">Entwurf</button>
+                                <button type="button" class="status-chip status-ready" data-status-select="ready">Export
+                                    bereit</button>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary primary-action">
+                                <span class="material-icons">add_circle</span>
+                                Eintrag erstellen
+                            </button>
+                        </form>
+                        <p class="helper-text" id="composerHint" style="margin-top: 12px;">Bitte zuerst einen Typ
+                            wählen.
+                        </p>
+                    </div>
                 </section>
 
                 <section class="panel console-panel" id="entriesPanel">
@@ -2233,59 +2247,64 @@
                             <span class="shortcut">STRG /</span>
                         </div>
                     </div>
-                    <div class="console-actions" id="consoleActions">
-                        <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display: none;"
-                            onclick="deleteSelectedEntries()">
-                            <span class="material-icons">delete</span>
-                            Ausgewählte löschen
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="deleteAllBtn" style="display: none;"
-                            onclick="deleteAllEntries()">
-                            <span class="material-icons">delete_sweep</span>
-                            Alle löschen
-                        </button>
-                    </div>
 
-                    <div class="chip-row">
-                        <button class="chip" type="button" data-filter="show"
-                            data-label="Produktion">Produktion</button>
-                        <button class="chip" type="button" data-filter="type" data-label="Typ">Typ</button>
-                    </div>
+                    <div class="panel-scroll-content" style="display: flex; flex-direction: column;">
+                        <div class="console-actions" id="consoleActions">
+                            <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" style="display: none;"
+                                onclick="deleteSelectedEntries()">
+                                <span class="material-icons">delete</span>
+                                Ausgewählte löschen
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="deleteAllBtn" style="display: none;"
+                                onclick="deleteAllEntries()">
+                                <span class="material-icons">delete_sweep</span>
+                                Alle löschen
+                            </button>
+                        </div>
 
-                    <div class="table-wrapper">
-                        <table class="data-grid">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th class="sortable" data-sort="id" style="width: 70px;">ID</th>
-                                    <th class="sortable" data-sort="datum" style="width: 110px;">Datum</th>
-                                    <th class="sortable" data-sort="show" style="width: 90px;">Show</th>
-                                    <th class="sortable" data-sort="folge" style="width: 120px;">Folge</th>
-                                    <th class="sortable" data-sort="type" style="width: 120px;">Typ</th>
-                                    <th class="sortable" data-sort="teilnehmer" style="width: 140px;">Teilnehmer</th>
-                                    <th class="sortable" data-sort="temperatur" style="width: 90px;">Temp</th>
-                                    <th class="sortable" data-sort="zeit" style="width: 90px;">Zeit</th>
-                                    <th class="sortable" data-sort="geldStart" style="width: 90px;">Start</th>
-                                    <th class="sortable" data-sort="geldAenderung" style="width: 90px;">+/-</th>
-                                    <th class="sortable" data-sort="geldAktuell" style="width: 90px;">Aktuell</th>
-                                    <th class="sortable" data-sort="stempel" style="width: 120px;">Marker</th>
-                                    <th class="sortable" data-sort="textboxText" style="width: 220px;">Details</th>
-                                    <th class="sortable" data-sort="todoItem" style="width: 200px;">To-Do</th>
-                                    <th class="sortable" data-sort="schnittTimestamp" style="width: 120px;">Schnitt-TS
-                                    </th>
-                                    <th class="sortable" data-sort="cutterInfo" style="width: 150px;">Cutter</th>
-                                    <th style="width: 90px;">Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dataBody">
-                                <tr>
-                                    <td colspan="17">
-                                        <div class="helper-text" style="padding: 24px;">Noch keine Animationen. Füge
-                                            oben deine erste Animation hinzu.</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="chip-row">
+                            <button class="chip" type="button" data-filter="show"
+                                data-label="Produktion">Produktion</button>
+                            <button class="chip" type="button" data-filter="type" data-label="Typ">Typ</button>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="data-grid">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th class="sortable" data-sort="id" style="width: 70px;">ID</th>
+                                        <th class="sortable" data-sort="datum" style="width: 110px;">Datum</th>
+                                        <th class="sortable" data-sort="show" style="width: 90px;">Show</th>
+                                        <th class="sortable" data-sort="folge" style="width: 120px;">Folge</th>
+                                        <th class="sortable" data-sort="type" style="width: 120px;">Typ</th>
+                                        <th class="sortable" data-sort="teilnehmer" style="width: 140px;">Teilnehmer
+                                        </th>
+                                        <th class="sortable" data-sort="temperatur" style="width: 90px;">Temp</th>
+                                        <th class="sortable" data-sort="zeit" style="width: 90px;">Zeit</th>
+                                        <th class="sortable" data-sort="geldStart" style="width: 90px;">Start</th>
+                                        <th class="sortable" data-sort="geldAenderung" style="width: 90px;">+/-</th>
+                                        <th class="sortable" data-sort="geldAktuell" style="width: 90px;">Aktuell</th>
+                                        <th class="sortable" data-sort="stempel" style="width: 120px;">Marker</th>
+                                        <th class="sortable" data-sort="textboxText" style="width: 220px;">Details</th>
+                                        <th class="sortable" data-sort="todoItem" style="width: 200px;">To-Do</th>
+                                        <th class="sortable" data-sort="schnittTimestamp" style="width: 120px;">
+                                            Schnitt-TS
+                                        </th>
+                                        <th class="sortable" data-sort="cutterInfo" style="width: 150px;">Cutter</th>
+                                        <th style="width: 90px;">Aktionen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataBody">
+                                    <tr>
+                                        <td colspan="17">
+                                            <div class="helper-text" style="padding: 24px;">Noch keine Animationen. Füge
+                                                oben deine erste Animation hinzu.</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
             </main>
