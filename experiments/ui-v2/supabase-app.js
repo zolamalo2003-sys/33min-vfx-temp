@@ -657,6 +657,99 @@ function renderCloudTable() {
             renderCloudTable();
         });
     });
+
+    // Initialize column resize handles
+    initCloudTableResize();
+}
+
+// ===== COLUMN RESIZE (Excel-like) =====
+function initCloudTableResize() {
+    const table = document.querySelector("#cloudModal .cloud-table");
+    if (!table) return;
+
+    const thead = table.querySelector("thead");
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll("th");
+    if (!ths.length) return;
+
+    // Set initial widths from current computed widths (only the first time)
+    ths.forEach(th => {
+        if (!th.style.width) {
+            th.style.width = th.offsetWidth + "px";
+        }
+        // Remove old handle if it exists (re-render safe)
+        const oldHandle = th.querySelector(".col-resize-handle");
+        if (oldHandle) oldHandle.remove();
+
+        // Create resize handle
+        const handle = document.createElement("div");
+        handle.className = "col-resize-handle";
+        th.appendChild(handle);
+
+        // Double-click: Auto-fit column width to content
+        handle.addEventListener("dblclick", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const colIndex = Array.from(ths).indexOf(th);
+            const rows = table.querySelectorAll("tbody tr");
+            let maxWidth = th.scrollWidth;
+
+            rows.forEach(row => {
+                const cell = row.cells[colIndex];
+                if (cell) {
+                    // Temporarily remove overflow constraints to measure
+                    const origStyle = cell.style.cssText;
+                    cell.style.whiteSpace = "nowrap";
+                    cell.style.overflow = "visible";
+                    cell.style.width = "auto";
+                    cell.style.maxWidth = "none";
+                    maxWidth = Math.max(maxWidth, cell.scrollWidth + 20);
+                    cell.style.cssText = origStyle;
+                }
+            });
+
+            // Cap at a reasonable maximum
+            maxWidth = Math.min(maxWidth, 600);
+            maxWidth = Math.max(maxWidth, 40);
+
+            th.style.width = maxWidth + "px";
+            th.style.minWidth = maxWidth + "px";
+        });
+
+        handle.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const startX = e.pageX;
+            const startWidth = th.offsetWidth;
+
+            handle.classList.add("active");
+            document.body.classList.add("col-resizing");
+
+            const onMouseMove = (e2) => {
+                const delta = e2.pageX - startX;
+                const newWidth = Math.max(40, startWidth + delta);
+                th.style.width = newWidth + "px";
+                // Also update the min-width to prevent table-layout from shrinking it
+                th.style.minWidth = newWidth + "px";
+            };
+
+            const onMouseUp = () => {
+                handle.classList.remove("active");
+                document.body.classList.remove("col-resizing");
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("mouseup", onMouseUp);
+            };
+
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+        });
+    });
+
+    // Also update table min-width to allow growing beyond initial min
+    table.style.minWidth = "auto";
 }
 
 function getCloudExportRows() {

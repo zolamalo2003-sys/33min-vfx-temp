@@ -1294,6 +1294,7 @@
             width: 100%;
             border-collapse: collapse;
             min-width: 1100px;
+            table-layout: fixed;
         }
 
         .cloud-table th {
@@ -1308,6 +1309,42 @@
             padding: 8px 10px;
             border-bottom: 1px solid var(--border);
             z-index: 2;
+            position: sticky;
+            top: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cloud-table th .col-resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            transition: background 0.15s;
+            z-index: 3;
+        }
+
+        .cloud-table th .col-resize-handle:hover,
+        .cloud-table th .col-resize-handle.active {
+            background: rgba(109, 91, 255, 0.5);
+        }
+
+        .cloud-table th {
+            position: relative;
+        }
+
+        body.col-resizing {
+            cursor: col-resize !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        body.col-resizing * {
+            cursor: col-resize !important;
         }
 
         .cloud-table td {
@@ -1319,7 +1356,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
         }
 
         .cloud-table tr:hover td {
