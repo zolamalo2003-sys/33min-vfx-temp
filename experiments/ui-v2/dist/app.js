@@ -703,11 +703,7 @@ function showNotification(message, duration = 3000) {
     }, duration);
 }
 function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    body.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    // Dark mode is now the only theme
 }
 function scrollToEntries() {
     const entriesPanel = document.getElementById('entriesPanel');
@@ -813,10 +809,7 @@ function syncGlobalFieldsToggle() {
         return;
     toggleBtn.classList.toggle('active', fields.classList.contains('visible'));
 }
-// Load saved theme state
-if (localStorage.getItem('theme') === 'dark') {
-    document.body.setAttribute('data-theme', 'dark');
-}
+// Dark mode is now the only theme – no toggle needed
 function updateFields() {
     const type = document.getElementById('qType').value;
     const extraFields = document.getElementById('extraFields');
