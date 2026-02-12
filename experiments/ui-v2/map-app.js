@@ -1,5 +1,6 @@
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { initTrackManager } from "./track-manager.js";
 
 /** ================= CONFIG ================= */
 const SUPABASE_URL = "https://xdxnprrjnwutpewchjms.supabase.co";
@@ -14,7 +15,7 @@ let waypointData = []; // Array of { id, lat, lng, mode, person, markerRef }
 let routeControls = {}; // { "Jerry": L.Routing.control }
 let currentAnimId = null;
 
-const DEFAULT_CENTER = [52.520, 13.405];
+const DEFAULT_CENTER = [51.1657, 10.4515]; // Center of Germany
 
 const COLORS = {
     "Jerry": "#19baf0", // Blue
@@ -26,6 +27,8 @@ const COLORS = {
 };
 
 /** ================= INIT ================= */
+let currentMode = "planner"; // "planner" or "tracking"
+
 document.addEventListener("DOMContentLoaded", async () => {
     // Auth Check
     const { data: { session } } = await supabase.auth.getSession();
@@ -38,15 +41,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     initMap();
     bindEvents();
+    initTrackManager(map);
 });
+
+/** ================= MODE SWITCHING ================= */
+function switchMode(mode) {
+    currentMode = mode;
+
+    // Toggle tabs
+    document.querySelectorAll(".mode-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.mode === mode);
+    });
+
+    // Toggle panels
+    document.getElementById("plannerMode").style.display = mode === "planner" ? "flex" : "none";
+    document.getElementById("trackingMode").style.display = mode === "tracking" ? "flex" : "none";
+
+    // Toggle map cursor
+    if (mode === "tracking") {
+        map.getContainer().style.cursor = "grab";
+    } else {
+        map.getContainer().style.cursor = "crosshair";
+    }
+}
+window.switchMode = switchMode;
 
 /** ================= MAP LOGIC ================= */
 function initMap() {
     // Disable default zoom to create custom position or move it
-    map = L.map('map', { zoomControl: false }).setView(DEFAULT_CENTER, 13);
+    map = L.map('map', { zoomControl: false }).setView(DEFAULT_CENTER, 6);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Dark map tiles with labels
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO',
         subdomains: 'abcd',
         maxZoom: 20
@@ -56,14 +83,30 @@ function initMap() {
 // Search Logic
 let searchTimeout;
 function handleSearch(query) {
-    if (!query || query.length < 3) return;
+    if (!query || query.length < 2) return;
 
     // Clear previous timeout
     if (searchTimeout) clearTimeout(searchTimeout);
 
+    // Check if input is coordinates (e.g. "52.520, 13.405" or "52.520 13.405")
+    const coordMatch = query.match(/^\s*(-?\d+\.?\d*)\s*[,;\s]\s*(-?\d+\.?\d*)\s*$/);
+    if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lng = parseFloat(coordMatch[2]);
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            map.flyTo([lat, lng], 14);
+            document.getElementById("mapSearchInput").value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            // Hide any open results
+            const container = document.getElementById("searchResults");
+            if (container) container.style.display = "none";
+            return;
+        }
+    }
+
     searchTimeout = setTimeout(async () => {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            // English results but Nominatim still matches German input (e.g. "Köln" → "Cologne")
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&accept-language=en&q=${encodeURIComponent(query)}`);
             const data = await res.json();
             showSearchResults(data);
         } catch (e) {
@@ -78,7 +121,7 @@ function showSearchResults(results) {
         // Create if missing (though we should add it to HTML)
         container = document.createElement("div");
         container.id = "searchResults";
-        container.className = "absolute top-14 left-0 w-full bg-white border border-gray-100 rounded-2xl shadow-float overflow-hidden z-50 max-h-60 overflow-y-auto";
+        container.className = "absolute top-14 left-0 w-full bg-[#1e293b] border border-white/10 rounded-2xl shadow-float overflow-hidden z-50 max-h-60 overflow-y-auto";
         document.querySelector("#mapSearchInput").parentNode.appendChild(container);
     }
 
@@ -87,7 +130,7 @@ function showSearchResults(results) {
 
     results.forEach(place => {
         const div = document.createElement("div");
-        div.className = "px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm text-text";
+        div.className = "px-4 py-3 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 text-sm text-gray-200";
         div.textContent = place.display_name;
         div.onclick = () => {
             const lat = parseFloat(place.lat);
@@ -223,14 +266,14 @@ function bindEvents() {
         addWaypoint(center.lat + offset, center.lng + offset, selectedParticipant);
     });
 
-    // Map Click -> Add Waypoint
+    // Map Click -> Add Waypoint (only in planner mode)
     map.on('click', (e) => {
+        if (currentMode !== "planner") return;
         if (!selectedParticipant) {
-            // Maybe alert or verify participant existence
             if (participants.length > 0) {
                 selectParticipant(participants[0]);
             } else {
-                return; // No participants to add to
+                return;
             }
         }
         addWaypoint(e.latlng.lat, e.latlng.lng, selectedParticipant);

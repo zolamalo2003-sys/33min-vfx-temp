@@ -264,6 +264,15 @@
             align-items: center;
         }
 
+        .nav-title {
+            font-size: 1.1rem;
+            letter-spacing: 0.02em;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         .main-area {
             display: flex;
             flex-direction: column;
@@ -271,15 +280,7 @@
         }
 
         .topbar {
-            background: var(--panel);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-out);
-            border: 1px solid var(--border);
-            padding: 16px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
+            display: none;
         }
 
         .title-block {
@@ -2123,9 +2124,8 @@
                 padding: 18px;
             }
 
-            .topbar {
-                flex-direction: column;
-                align-items: flex-start;
+            .nav-title {
+                font-size: 0.9rem;
             }
 
             .geld-summary {
@@ -2174,6 +2174,11 @@
             .nav-btn {
                 width: 40px;
                 height: 40px;
+            }
+
+            .nav-title,
+            .main-export-wrap {
+                display: none;
             }
 
             .topbar {
@@ -2225,6 +2230,8 @@
                     <span class="material-icons">help_outline</span>
                 </button>
             </div>
+            <h1 class="nav-title">VFX / ANIMATIONS-LOG</h1>
+            <div id="mainExportWrap" class="main-export-wrap" style="margin-left: auto;"></div>
             <div class="sidebar-footer">
                 <button class="nav-btn" data-nav="map" title="Map Planner"
                     onclick="window.location.href='experiments/ui-v2/planner.html'">
@@ -2244,15 +2251,6 @@
         </nav>
 
         <div class="main-area">
-            <header class="topbar">
-                <div class="title-block">
-                    <h1>VFX / ANIMATIONS-LOG</h1>
-                </div>
-                <div class="topbar-actions">
-
-                    <div id="mainExportWrap" class="main-export-wrap"></div>
-                </div>
-            </header>
 
             <main class="content-grid">
                 <section class="panel composer-panel">
