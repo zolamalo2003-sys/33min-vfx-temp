@@ -211,6 +211,74 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
+            <!-- Notification Bell -->
+            <div class="relative">
+                <button id="ntfyBell"
+                    class="size-10 flex items-center justify-center rounded-full bg-surface hover:bg-surface-dark transition-colors cursor-pointer relative"
+                    onclick="document.getElementById('ntfyPanel').classList.toggle('hidden')">
+                    <span class="material-symbols-outlined text-[20px] text-text-sec">notifications</span>
+                    <div id="ntfyDot"
+                        class="absolute top-1 right-1 size-2.5 bg-green-500 rounded-full border border-bg"></div>
+                </button>
+
+                <!-- Notification Settings Panel -->
+                <div id="ntfyPanel"
+                    class="hidden absolute right-0 top-12 w-80 bg-panel border border-border rounded-2xl shadow-float z-50 overflow-hidden">
+                    <div class="p-4 border-b border-white/10">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">notifications_active</span>
+                            Push-Benachrichtigungen
+                        </h3>
+                        <p class="text-[11px] text-gray-500 mt-1">Via ntfy.sh – kostenlos, kein Account nötig</p>
+                    </div>
+                    <div class="p-4 flex flex-col gap-3">
+                        <!-- Enable Toggle -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-300 font-medium">Aktiv</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="ntfyToggle" class="sr-only peer" checked
+                                    onchange="localStorage.setItem('33min_ntfy_enabled', this.checked); document.getElementById('ntfyDot').style.background = this.checked ? '#22c55e' : '#6b7280';">
+                                <div
+                                    class="w-9 h-5 bg-gray-600 peer-checked:bg-primary rounded-full peer-focus:ring-0 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full">
+                                </div>
+                            </label>
+                        </div>
+                        <!-- Topic -->
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Dein
+                                Topic</label>
+                            <div class="flex gap-1 mt-1">
+                                <input id="ntfyTopicInput" type="text"
+                                    class="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:ring-1 focus:ring-primary focus:border-primary"
+                                    placeholder="33min-vfx-xxxxx" />
+                                <button
+                                    onclick="const t = document.getElementById('ntfyTopicInput').value; if(t) { window.setNtfyTopic(t); alert('Topic gespeichert: ' + t); }"
+                                    class="bg-surface-dark hover:bg-surface text-xs text-gray-300 px-2 py-1.5 rounded-lg border border-white/10 transition-colors">
+                                    <span class="material-symbols-outlined text-[14px]">save</span>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-gray-600 mt-1">Alle mit demselben Topic bekommen die
+                                Notifications</p>
+                        </div>
+                        <!-- Test Button -->
+                        <button onclick="window.sendTestNotification()"
+                            class="w-full bg-primary/15 hover:bg-primary/25 text-primary text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px]">send</span>
+                            Test-Notification senden
+                        </button>
+                        <!-- Instructions -->
+                        <div class="bg-black/20 rounded-lg p-3 text-[11px] text-gray-400 leading-relaxed">
+                            <p class="font-semibold text-gray-300 mb-1">📱 So geht's:</p>
+                            <ol class="list-decimal list-inside space-y-0.5">
+                                <li>ntfy App installieren (<a href="https://ntfy.sh" target="_blank"
+                                        class="text-primary hover:underline">ntfy.sh</a>)</li>
+                                <li>Topic oben kopieren & in der App subscriben</li>
+                                <li>"Test" klicken – Push sollte ankommen</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Auth/User Info -->
             <div id="userProfileDisplay" class="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-full shadow-in">
                 <span class="text-sm font-bold text-text-sec" id="userEmail">Loading...</span>

@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initMap();
     bindEvents();
     initTrackManager(map);
+    initNtfyPanel();
 });
 
 /** ================= MODE SWITCHING ================= */
@@ -517,6 +518,7 @@ async function saveAnimation() {
     };
 
     let error;
+    const isNew = !currentAnimId;
     if (currentAnimId) {
         const res = await supabase.from("map_animations").update(payload).eq("id", currentAnimId);
         error = res.error;
@@ -526,8 +528,117 @@ async function saveAnimation() {
         error = res.error;
     }
 
-    if (error) alert("Fehler beim Speichern: " + error.message);
-    else alert("Animation gespeichert!");
+    if (error) {
+        alert("Fehler beim Speichern: " + error.message);
+    } else {
+        alert("Animation gespeichert!");
+        // Send ntfy push notification
+        sendNtfyNotification({
+            animId: animIdStr,
+            participants: participants,
+            comment: comment,
+            status: status,
+            duration: duration,
+            user: session.user.email,
+            isNew: isNew
+        });
+    }
+}
+
+/** ================= NTFY NOTIFICATIONS ================= */
+const NTFY_STORAGE_KEY = "33min_ntfy_topic";
+const NTFY_ENABLED_KEY = "33min_ntfy_enabled";
+
+function getNtfyTopic() {
+    let topic = localStorage.getItem(NTFY_STORAGE_KEY);
+    if (!topic) {
+        // Generate a unique topic on first use
+        topic = "33min-vfx-" + crypto.randomUUID().slice(0, 8);
+        localStorage.setItem(NTFY_STORAGE_KEY, topic);
+    }
+    return topic;
+}
+
+function isNtfyEnabled() {
+    return localStorage.getItem(NTFY_ENABLED_KEY) !== "false";
+}
+
+async function sendNtfyNotification({ animId, participants, comment, status, duration, user, isNew }) {
+    if (!isNtfyEnabled()) return;
+
+    const topic = getNtfyTopic();
+    const action = isNew ? "Neue Animation" : "Animation aktualisiert";
+    const people = participants.length > 0 ? participants.join(", ") : "–";
+    const commentPreview = comment ? comment.substring(0, 80) : "–";
+    const statusLabel = { draft: "Entwurf", active: "Aktiv", done: "Fertig" }[status] || status;
+
+    const body = [
+        `${action}: ${animId}`,
+        `Von: ${user}`,
+        `Personen: ${people}`,
+        `Status: ${statusLabel} · Dauer: ${duration}s`,
+        comment ? `Kommentar: ${commentPreview}` : ""
+    ].filter(Boolean).join("\n");
+
+    try {
+        await fetch(`https://ntfy.sh/${topic}`, {
+            method: "POST",
+            headers: {
+                "Title": `🎬 ${action}`,
+                "Priority": isNew ? "high" : "default",
+                "Tags": isNew ? "movie_camera,sparkles" : "movie_camera,pencil",
+            },
+            body: body
+        });
+        console.log(`[ntfy] Notification sent to topic: ${topic}`);
+    } catch (err) {
+        console.warn("[ntfy] Failed to send notification:", err);
+    }
+}
+
+// Test notification
+async function sendTestNotification() {
+    const topic = getNtfyTopic();
+    try {
+        await fetch(`https://ntfy.sh/${topic}`, {
+            method: "POST",
+            headers: {
+                "Title": "🔔 Test – 33min VFX",
+                "Priority": "default",
+                "Tags": "white_check_mark"
+            },
+            body: "Benachrichtigungen funktionieren! Du wirst hier informiert wenn neue Animationen erstellt werden."
+        });
+        alert(`Test-Notification gesendet!\n\nDein Topic: ${topic}\n\nInstalliere die ntfy App und subscribe das Topic.`);
+    } catch (err) {
+        alert("Fehler: " + err.message);
+    }
+}
+window.sendTestNotification = sendTestNotification;
+window.setNtfyTopic = (t) => { localStorage.setItem(NTFY_STORAGE_KEY, t); };
+window.getNtfyTopic = getNtfyTopic;
+
+function initNtfyPanel() {
+    // Populate topic input with stored/generated topic
+    const topicInput = document.getElementById("ntfyTopicInput");
+    if (topicInput) topicInput.value = getNtfyTopic();
+
+    // Sync toggle state
+    const toggle = document.getElementById("ntfyToggle");
+    const dot = document.getElementById("ntfyDot");
+    const enabled = isNtfyEnabled();
+    if (toggle) toggle.checked = enabled;
+    if (dot) dot.style.background = enabled ? "#22c55e" : "#6b7280";
+
+    // Close panel on outside click
+    document.addEventListener("click", (e) => {
+        const panel = document.getElementById("ntfyPanel");
+        const bell = document.getElementById("ntfyBell");
+        if (panel && !panel.classList.contains("hidden") &&
+            !panel.contains(e.target) && !bell.contains(e.target)) {
+            panel.classList.add("hidden");
+        }
+    });
 }
 
 // --- LOAD MODAL LOGIC ---
