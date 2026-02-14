@@ -292,9 +292,10 @@ export async function saveEntry(entry) {
             textboxText: entry.textboxText ?? null,
             todoItem: entry.todoItem ?? null,
             stempel2: entry.stempel2 ?? null,
+            // Store profile info in JSON to avoid schema changes
+            player_name: session?.user?.user_metadata?.display_name ?? null,
+            avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
         },
-        player_name: session?.user?.user_metadata?.display_name ?? null,
-        avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
     };
 
     const { error } = await supabase.from("entries").insert(row);
@@ -339,9 +340,9 @@ async function syncLocalToCloud() {
             textboxText: e.textboxText ?? null,
             todoItem: e.todoItem ?? null,
             stempel2: e.stempel2 ?? null,
+            player_name: session?.user?.user_metadata?.display_name ?? null,
+            avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
         },
-        player_name: session?.user?.user_metadata?.display_name ?? null,
-        avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
     }));
 
     // upsert verhindert doppelte Uploads (wegen unique index user_id+local_id)
@@ -422,8 +423,9 @@ const formatCloudRow = (row) => {
         done: !!row.done,
         user_id: row.user_id,
         created_by_email: row.created_by_email || null,
-        player_name: row.player_name || null,
-        avatar_config: row.avatar_config || null
+        // Read from top-level (if columns added later) OR from values_json
+        player_name: row.player_name || values.player_name || null,
+        avatar_config: row.avatar_config || values.avatar_config || null
     };
 };
 
@@ -1005,8 +1007,11 @@ window.saveCloudEdit = async function (rowId) {
             geldAktuell: getVal("geldAktuell"),
             stempel: getVal("stempel"),
             textboxText: getVal("textboxText"),
-            todoItem: getVal("todoItem")
-        }
+            todoItem: getVal("todoItem"),
+            // Preserve/Update profile data in JSON
+            player_name: session?.user?.user_metadata?.display_name ?? null,
+            avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
+        },
         // TODO: History tracking logic here (Phase 2)
     };
 
