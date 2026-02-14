@@ -12,6 +12,7 @@ const STORAGE_ID_KEY = 'raceAnimationsNextId';
 const CLOUD_ENDPOINT = '/api/animations';
 const PERSON_KAETHE = 'K\u00e4the';
 const PERSON_NAMES = ['Jerry', 'Marc', 'Kodiak', 'Taube', PERSON_KAETHE];
+const NTFY_TOPIC = '33min-vfx-stream-8k2p'; // Generated secret topic
 let cloudAvailable = false;
 let nextLocalId = Number.parseInt(localStorage.getItem(STORAGE_ID_KEY) || '1', 10);
 let sortState = { key: null, direction: 'asc' };
@@ -1285,6 +1286,11 @@ async function addAnimation(event) {
             typeSelect.value = '';
     }
     showNotification(`Animation hinzugefügt!`);
+    sendNtfyAlert(
+        'Neuer Eintrag',
+        `${animation.teilnehmer || 'Jemand'} hat einen Eintrag erstellt: ${animation.type} ${animation.textboxText ? '- ' + animation.textboxText.substring(0, 30) : ''}`,
+        ['star']
+    );
 }
 function updateStats() {
     const pending = animations.filter(a => a.status === 'draft' || a.status === 'none').length;
@@ -1497,6 +1503,19 @@ function setStatusForEntry(status) {
     saveLocalAnimations();
     renderTable();
     closeStatusMenu();
+    sendNtfyAlert('Status Update', `Eintrag #${anim.id} - ${anim.komposition || 'Unbekannt'}: Status -> ${status}`, ['pencil']);
+}
+function sendNtfyAlert(title, message, tags = []) {
+    fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+        method: 'POST',
+        body: message,
+        headers: {
+            'Title': title,
+            'Tags': tags.join(',')
+        }
+    }).then(res => {
+        if (!res.ok) console.warn('Ntfy Send Error', res.status);
+    }).catch(err => console.warn('Ntfy Network Error', err));
 }
 function loadChatHistory() {
     try {
