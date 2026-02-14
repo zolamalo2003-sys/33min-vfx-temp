@@ -431,22 +431,98 @@ const formatCloudRow = (row) => {
 
 function openCloudModal() {
     const modal = document.getElementById("cloudModal");
-    if (modal) {
-        modal.style.display = "flex";
-        modal.classList.remove("closing");
-        document.body.style.overflow = "hidden";
-    }
+    if (!modal) return;
+
+    modal.style.display = "flex"; // Ensure container is visible
+
+    // Inject Console Layout
+    modal.innerHTML = `
+        <div class="cloud-modal-overlay open">
+            <div class="console-layout">
+                <!-- Header -->
+                <header class="console-header">
+                    <div class="header-content">
+                        <h2>Cloud-Einträge</h2>
+                        <div class="header-meta">
+                            Alle Team-Einträge · <span id="cloudRowCount">0</span> Einträge
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div class="console-search">
+                            <input type="text" id="consoleSearch" placeholder="Suchen (Text/ID)...">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <!-- Exports -->
+                        <button class="icon-btn" id="consoleExportTSV" title="Export TSV">
+                            <span class="material-icons">description</span>
+                        </button>
+                         <button class="icon-btn" id="consoleExportJSON" title="Export JSON">
+                            <span class="material-icons">code</span>
+                        </button>
+                        <button class="btn btn-primary" id="consoleCloseBtn" style="height:36px; padding:0 16px;">
+                            Schließen
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Toolbar -->
+                <div class="console-toolbar">
+                     <div class="filter-pill">
+                        <span class="material-icons" style="font-size:16px;">filter_list</span>
+                        <select id="cloudFilterStatus">
+                            <option value="">Status: Alle</option>
+                            <option value="draft">Entwurf</option>
+                            <option value="ready">Bereit</option>
+                            <option value="exported">Exportiert</option>
+                            <option value="error">Fehler</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-pill">
+                         <span class="material-icons" style="font-size:16px;">tag</span>
+                         <input type="text" id="cloudFilterFolge" placeholder="Folge (z.B. EP01)" style="width: 100px;">
+                    </div>
+
+                    <div class="filter-pill" style="margin-left:auto;">
+                        <span class="material-icons" style="font-size:16px;">sort</span>
+                        <select id="cloudSort">
+                            <option value="created_desc">Neueste zuerst</option>
+                            <option value="created_asc">Älteste zuerst</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="console-content" id="cloudContentArea">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Re-attach listeners
+    document.getElementById("consoleCloseBtn")?.addEventListener("click", closeCloudModal);
+    document.getElementById("consoleExportTSV")?.addEventListener("click", () => exportCloud("tsv"));
+    document.getElementById("consoleExportJSON")?.addEventListener("click", () => exportCloud("json"));
+
+    // Bind filters
+    const filterIds = ["cloudFilterFolge", "cloudFilterStatus", "cloudSort", "consoleSearch"];
+    filterIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", renderCloudConsole);
+            el.addEventListener("change", renderCloudConsole);
+        }
+    });
+
+    document.body.style.overflow = "hidden";
 }
 
 function closeCloudModal() {
     const modal = document.getElementById("cloudModal");
     if (modal) {
-        modal.classList.add("closing");
-        setTimeout(() => {
-            modal.style.display = "none";
-            modal.classList.remove("closing");
-            document.body.style.overflow = "";
-        }, 250);
+        modal.style.display = "none";
+        document.body.style.overflow = "";
     }
 }
 
@@ -484,171 +560,148 @@ function applyCloudFilters(list) {
 // Track which row is being edited
 let activeEditId = null;
 
-function renderCloudTable() {
-    const body = document.getElementById("cloudTableBody");
-    if (!body) return;
-    const list = applyCloudFilters(cloudRows);
-    updateCloudCountDisplay();
+window.toggleEntryDetails = function (id) {
+    const card = document.querySelector(`.entry-card[data-id="${id}"]`);
+    if (card) {
+        card.classList.toggle("expanded");
+    }
+};
+
+function renderCloudConsole() {
+    const container = document.getElementById("cloudContentArea");
+    if (!container) return;
+
+    // Apply basic filters
+    let list = applyCloudFilters(cloudRows);
+
+    // Apply Search
+    const searchVal = document.getElementById("consoleSearch")?.value.toLowerCase().trim();
+    if (searchVal) {
+        list = list.filter(row => {
+            const str = (row.show + " " + row.folge + " " + row.type + " " + row.textboxText + " " + row.todoItem + " " + row.player_name).toLowerCase();
+            return str.includes(searchVal);
+        });
+    }
+
+    // Update count
+    const countEl = document.getElementById("cloudRowCount");
+    if (countEl) countEl.textContent = list.length;
+
     if (!list.length) {
-        body.innerHTML = `
-            <tr>
-                <td colspan="21">
-                    <div class="helper-text" id="cloudEmpty">Keine Cloud-Daten.</div>
-                </td>
-            </tr>
+        container.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; color:var(--text-muted); gap:12px;">
+                <span class="material-icons" style="font-size:48px; opacity:0.5;">inbox</span>
+                <span>Keine Einträge gefunden.</span>
+            </div>
         `;
         return;
     }
 
     const currentUserId = session?.user?.id;
 
-    // Status Labels for Dropdown
-    const statusOptions = [
-        { val: 'none', label: 'Kein Status' },
-        { val: 'draft', label: 'Entwurf' },
-        { val: 'ready', label: 'Export bereit' },
-        { val: 'exported', label: 'Exportiert' },
-        { val: 'edited', label: 'Bearbeitet' },
-        { val: 'error', label: 'Fehler' }
-    ];
-
-    // Person Options (from app.js logic, hardcoded here or synced?)
-    // We'll use a simple list or just text input for flexibility if lists aren't shared
-    const personOptions = ['Jerry', 'Marc', 'Kodiak', 'Taube', 'Käthe'];
-
-    body.innerHTML = list.map((row) => {
-        const canEdit = currentUserId && row.user_id === currentUserId;
-        const isEditing = activeEditId === row.id;
-
-        // User Display Logic
+    container.innerHTML = list.map((row) => {
+        // --- Avatar Logic ---
         let userDisplay = "";
+        // 1. Try Config
+        const metaValues = (row.avatar_config || row.values_json?.avatar_config) ?
+            (row.avatar_config || row.values_json.avatar_config) : null;
 
-        // 1. Try Avatar Config (if saved in row)
-        if (row.avatar_config) {
-            const settings = row.avatar_config;
-            if (settings.style && settings.seed) {
-                const avatarUrl = `https://api.dicebear.com/9.x/${settings.style}/svg?seed=${encodeURIComponent(settings.seed)}&backgroundColor=${settings.bgColor || 'transparent'}`;
-                userDisplay = `<img src="${avatarUrl}" class="cloud-avatar-img" title="${row.player_name || 'User'}">`;
-            }
-        }
+        const playerName = row.player_name || row.values_json?.player_name || row.created_by_email || "User";
 
-        // 2. Fallback: Initials with Pastel Background
-        if (!userDisplay) {
-            const userCode = emailCode(row.created_by_email); // 3 letters
-            // Generate pastel color from user_id or email
-            const hash = (row.user_id || row.created_by_email || "").split("").reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+        if (metaValues && metaValues.style && metaValues.seed) {
+            const avatarUrl = `https://api.dicebear.com/9.x/${metaValues.style}/svg?seed=${encodeURIComponent(metaValues.seed)}&backgroundColor=${metaValues.bgColor || 'transparent'}`;
+            userDisplay = `<img src="${avatarUrl}" class="cloud-avatar-img" title="${playerName}">`;
+        } else {
+            // Fallback Initials
+            const email = row.created_by_email || "???";
+            const userCode = emailCode(email);
+            const hash = (row.user_id || email).split("").reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
             const hue = Math.abs(hash % 360);
             const pastelColor = `hsl(${hue}, 70%, 80%)`;
-            const textColor = `hsl(${hue}, 80%, 20%)`; // Darker text for contrast
-
-            userDisplay = `<div class="cloud-avatar-initials" style="background-color: ${pastelColor}; color: ${textColor};" title="${row.player_name || row.created_by_email}">${userCode}</div>`;
+            const textColor = `hsl(${hue}, 80%, 20%)`;
+            userDisplay = `<div class="cloud-avatar-initials" style="background-color: ${pastelColor}; color: ${textColor};" title="${playerName}">${userCode}</div>`;
         }
 
-        // Helper to generating select options
-        const renderSelect = (field, currentVal, options) => {
-            return `<select class="cloud-edit-input" data-field="${field}">
-                <option value="">-</option>
-                ${options.map(o => {
-                const val = typeof o === 'object' ? o.val : o;
-                const label = typeof o === 'object' ? o.label : o;
-                return `<option value="${val}" ${currentVal === val ? 'selected' : ''}>${label}</option>`;
-            }).join('')}
-            </select>`;
-        };
+        // --- Badges ---
+        const typeBadge = row.type ? `<span class="ec-badge type">${row.type}</span>` : "";
+        const showBadge = row.show ? `<span class="ec-badge show">${row.show}</span>` : "";
+        const folgeBadge = row.folge ? `<span class="ec-badge folge">${row.folge}</span>` : "";
 
-        const renderInput = (field, val, type = 'text') => {
-            return `<input type="${type}" class="cloud-edit-input" data-field="${field}" value="${(val || '').replace(/"/g, '&quot;')}" style="width: 100%; min-width: 60px;">`;
-        };
+        // --- Preview Text ---
+        // Prefer explicit text fields, else generic
+        let previewText = row.textboxText || row.todoItem || row.cutterInfo || "Keine Text-Details";
+        if (previewText.length > 80) previewText = previewText.slice(0, 80) + "...";
 
-        const renderTextarea = (field, val) => {
-            return `<textarea class="cloud-edit-input" data-field="${field}" rows="1" style="width: 100%; min-width: 100px;">${val || ''}</textarea>`;
-        };
+        // --- Status ---
+        const statusLabel = row.status || "Entwurf";
+        const statusClass = row.status === "ready" ? "ready" : (row.status === "exported" ? "exported" : "draft");
 
-        // Static Cell
-        const staticCell = (content) => `<td>${content}</td>`;
-
-        // Editable Cell Wrapper
-        const editCell = (content) => `<td class="editable-cell">${content}</td>`;
-
-        if (isEditing) {
-            return `
-            <tr data-cloud-id="${row.id}" class="cloud-row editing">
-                <td>${userDisplay}</td>
-                ${editCell(renderInput("datum", row.datum, "date") || renderInput("datum", parseGermanDateToISO(row.datum || ""), "date"))}
-                ${editCell(renderInput("show", row.show))}
-                ${editCell(renderInput("folge", row.folge))}
-                ${editCell(renderSelect("type", row.type, ['temperatur', 'zeit', 'geld', 'uebersicht', 'textbox', 'todo', 'ticket', 'samsung']))}
-                ${editCell(renderSelect("teilnehmer", row.teilnehmer, personOptions))}
-                ${editCell(renderInput("farbe", row.farbe))}
-                ${editCell(renderInput("komposition", row.komposition))}
-                ${editCell(renderInput("temperatur", row.temperatur))}
-                ${editCell(renderInput("zeit", row.zeit))}
-                ${editCell(renderInput("geldStart", row.geldStart))}
-                ${editCell(renderInput("geldAenderung", row.geldAenderung))}
-                ${editCell(renderInput("geldAktuell", row.geldAktuell))}
-                ${editCell(renderInput("stempel", row.stempel))}
-                ${editCell(renderTextarea("textboxText", row.textboxText))}
-                ${editCell(renderTextarea("todoItem", row.todoItem))}
-                ${editCell(renderSelect("status", row.status, statusOptions))}
-                ${editCell(renderInput("schnittTimestamp", row.schnittTimestamp))}
-                ${editCell(renderInput("cutterInfo", row.cutterInfo))}
-                <td>
-                    <input type="checkbox" disabled ${row.done ? "checked" : ""}>
-                </td>
-                <td>
-                    <div class="cloud-row-actions">
-                        <button class="action-btn save-edit-btn" data-save-edit="${row.id}" title="Speichern">
-                            <span class="material-icons" style="color: var(--success);">check</span>
-                        </button>
-                        <button class="action-btn cancel-edit-btn" title="Abbrechen">
-                            <span class="material-icons" style="color: var(--danger);">close</span>
-                        </button>
-                    </div>
-                </td>
-            </tr>`;
-        }
-
-        // --- READ ONLY ROW ---
-        // Status Translation
-        const statusLabel = statusOptions.find(o => o.val === row.status)?.label || row.status || 'Entwurf';
+        // --- Date ---
+        const dateObj = new Date(row.created_at);
+        const day = dateObj.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+        const time = dateObj.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
         return `
-            <tr data-cloud-id="${row.id}" class="cloud-row">
-                <td>${userDisplay}</td>
-                <td>${row.datum || "-"}</td>
-                <td>${row.show || "-"}</td>
-                <td>${row.folge || "-"}</td>
-                <td>${row.type || "-"}</td>
-                <td>${row.teilnehmer || "-"}</td>
-                <td>${row.farbe || "-"}</td>
-                <td>${row.komposition || "-"}</td>
-                <td>${row.temperatur || "-"}</td>
-                <td>${row.zeit || "-"}</td>
-                <td>${row.geldStart || "-"}</td>
-                <td>${row.geldAenderung || "-"}</td>
-                <td>${row.geldAktuell || "-"}</td>
-                <td>${row.stempel || "-"}</td>
-                <td>${row.textboxText || "-"}</td>
-                <td>${row.todoItem || "-"}</td>
-                <td>
-                    <span class="cloud-badge ${cloudStatusClass(row.status)}">${statusLabel}</span>
-                </td>
-                <td>${row.schnittTimestamp || "-"}</td>
-                <td>${row.cutterInfo || "-"}</td>
-                <td>
-                    <input type="checkbox" data-done="${row.id}" ${row.done ? "checked" : ""} ${canEdit ? "" : "disabled"}>
-                </td>
-                <td>
-                    <div class="cloud-row-actions">
-                        <button class="action-btn" data-edit="${row.id}" ${canEdit ? "" : "disabled"} title="Bearbeiten">
-                            <span class="material-icons" style="font-size: 18px;">edit</span>
-                        </button>
-                        <button class="action-btn" data-delete="${row.id}" ${canEdit ? "" : "disabled"} title="Löschen">
-                            <span class="material-icons" style="font-size: 18px;">delete</span>
-                        </button>
+        <div class="entry-card" data-id="${row.id}" onclick="toggleEntryDetails('${row.id}')">
+            <!-- Left: Avatar & Date -->
+            <div class="ec-left">
+                ${userDisplay}
+                <div class="ec-date">${day}<br>${time}</div>
+            </div>
+
+            <!-- Main: Badges & Preview -->
+            <div class="ec-main">
+                <div class="ec-header">
+                    <span style="font-weight:700; font-size:0.9rem; color:var(--text);">${playerName}</span>
+                    <div class="ec-badges">
+                        ${showBadge}
+                        ${folgeBadge}
+                        ${typeBadge}
                     </div>
-                </td>
-            </tr>
+                </div>
+                <div class="ec-preview">${previewText.replace(/</g, "&lt;")}</div>
+            </div>
+
+            <!-- Meta: Status & Extra -->
+            <div class="ec-meta">
+                <span class="status-indicator ${statusClass}">${statusLabel}</span>
+                <span>${row.komposition || ""}</span>
+                <span>${row.zeit || ""}</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="ec-actions">
+                <button class="icon-btn" title="Mehr anzeigen">
+                    <span class="material-icons">expand_more</span>
+                </button>
+            </div>
+
+            <!-- Expanded Details -->
+            <div class="entry-details" onclick="event.stopPropagation();">
+                <div class="detail-grid">
+                    <div class="detail-box">
+                        <span class="detail-label">Text / Inhalt</span>
+                        <div class="detail-text">${(row.textboxText || row.todoItem || "-").replace(/</g, "&lt;")}</div>
+                    </div>
+                    <div class="detail-box">
+                        <span class="detail-label">Metadaten</span>
+                        <div style="font-size:0.85rem; display:grid; grid-template-columns:auto 1fr; gap:8px;">
+                            <span style="color:var(--text-muted);">Teilnehmer:</span> <span>${row.teilnehmer || "-"}</span>
+                            <span style="color:var(--text-muted);">Farbe:</span> <span>${row.farbe || "-"}</span>
+                            <span style="color:var(--text-muted);">Geld:</span> <span>${row.geldStart || "-"} → ${row.geldAktuell || "-"}</span>
+                            <span style="color:var(--text-muted);">Cutter Info:</span> <span>${row.cutterInfo || "-"}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-actions">
+                     <button class="btn btn-secondary" onclick="exportCloud('tsv')">Export This (TSV)</button>
+                     ${(currentUserId === row.user_id) ?
+                `<button class="btn btn-primary" onclick="activeEditId='${row.id}'; renderCloudConsole();">Bearbeiten (Coming Soon)</button>` :
+                `<span style="color:var(--text-muted); font-size:0.8rem; align-self:center;">Nur eigene Einträge bearbeitbar</span>`
+            }
+                </div>
+            </div>
+        </div>
         `;
     }).join("");
 
@@ -1175,7 +1228,7 @@ async function openCloud() {
     }
 
     cloudRows = data.map(formatCloudRow);
-    renderCloudTable();
+    renderCloudConsole();
 
     // Realtime subscribe
     if (cloudChannel) await supabase.removeChannel(cloudChannel);
@@ -1186,17 +1239,17 @@ async function openCloud() {
             if (payload.eventType === "INSERT") {
                 const row = formatCloudRow(payload.new);
                 cloudRows = [row, ...cloudRows.filter(item => item.id !== row.id)];
-                renderCloudTable();
+                renderCloudConsole();
             }
             if (payload.eventType === "UPDATE") {
                 const row = formatCloudRow(payload.new);
                 cloudRows = cloudRows.map(item => (item.id === row.id ? row : item));
-                renderCloudTable();
+                renderCloudConsole();
             }
             if (payload.eventType === "DELETE") {
                 const id = payload.old?.id;
                 cloudRows = cloudRows.filter(item => item.id !== id);
-                renderCloudTable();
+                renderCloudConsole();
             }
         })
         .subscribe();
@@ -1292,4 +1345,278 @@ if (cloudExportJson) {
     cloudExportJson.addEventListener("click", () => exportCloud("json"));
 }
 
+
+
+/** 
+ * ==========================================
+ * AI REWRITE FEATURE INTEGRATION 
+ * ==========================================
+ */
+import { aiService } from "./ai-service.js";
+
+async function setupAiFeature() {
+    // 1. Monkey-patch selectType to inject UI
+    const originalSelectType = window.selectType;
+
+    window.selectType = function (type) {
+        // Call original
+        if (originalSelectType) originalSelectType(type);
+
+        // Inject AI if applicable
+        if (type === 'textbox' || type === 'todo') {
+            // Wait for DOM update
+            setTimeout(() => injectAiUI(type), 100);
+        } else {
+            removeAiUI();
+        }
+    };
+
+    console.log("AI Feature: Setup complete");
+}
+
+let currentAiAbort = null;
+
+function injectAiUI(type) {
+    const targetId = type === 'todo' ? 'qTodoContent' : 'qTextContent';
+    const textarea = document.getElementById(targetId);
+
+    if (!textarea) return;
+
+    const wrapper = textarea.parentElement; // .input-wrap (hopefully) or create one
+    if (!wrapper) return;
+
+    // Ensure wrapper is relative for absolute positioning of button
+    wrapper.style.position = 'relative';
+
+    // Check if button exists
+    if (wrapper.querySelector('.ai-btn')) return;
+
+    // Create Button
+    const btn = document.createElement('div');
+    btn.className = 'ai-btn';
+    btn.innerHTML = '<span class="material-icons">auto_awesome</span>';
+    btn.title = "Rewrite with AI";
+    btn.onclick = (e) => handleAiClick(e, type, textarea);
+
+    wrapper.appendChild(btn);
+
+    // Add Progress Ring (hidden by default unless loading)
+    // We can add it inside the button or around it. 
+    // Let's add it to the wrapper as a sibling to button for easier positioning?
+    // css says: .ai-progress-ring { top: -2px; left: -2px; ... } relative to what?
+    // The css I wrote assumes it's absolute. .ai-btn is absolute right: 8px bottom: 8px.
+    // If we want the ring AROUND the button, the button needs a wrapper or specific coords.
+    // Let's wrap the button in a .ai-trigger-wrap if possible, OR just adjust CSS.
+    // My css: .ai-trigger-wrap { position: relative ... }
+
+    // Let's wrap the button in a div that handles position
+    // But .ai-btn is absolute. 
+    // Let's adjust:
+    // We will append .ai-btn to the text area wrapper.
+}
+
+function removeAiUI() {
+    // Cleanup if needed (the form rewrites itself so maybe not strictly needed, but good practice)
+    document.querySelectorAll('.ai-suggestions').forEach(el => el.remove());
+}
+
+async function handleAiClick(e, type, textarea) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const text = textarea.value.trim();
+    if (!text) {
+        showToast("Bitte erst Text eingeben.");
+        return;
+    }
+
+    if (text.length > 600) {
+        showToast("Text zu lang (max 600 Zeichen).");
+        return;
+    }
+
+    // Check if model loaded
+    if (!aiService.engine) {
+        showAiConsentModal(() => startAiGeneration(type, textarea));
+        return;
+    }
+
+    startAiGeneration(type, textarea);
+}
+
+function showAiConsentModal(onConfirm) {
+    // Create modal
+    const modalId = 'aiConsentModal';
+    if (document.getElementById(modalId)) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '9999';
+
+    overlay.innerHTML = `
+        <div class="modal-content ai-modal-content">
+            <div class="ai-hero-icon"><span class="material-icons">download</span></div>
+            <div class="panel-title" style="margin-bottom:8px; justify-content:center;">AI Rewrite aktivieren?</div>
+            <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-bottom:20px;">
+                Für dieses Feature wird einmalig ein kleines Sprachmodell (~600MB) heruntergeladen. 
+                <br><br>
+                <strong>Privatsphäre:</strong> Die Verarbeitung passiert zu <strong>100% lokal</strong> in deinem Browser. 
+                Kein Text verlässt dein Gerät.
+            </p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn" onclick="document.getElementById('').remove()">Später</button>
+                <button class="btn btn-primary" id="aiConfirmBtn">Ok, laden</button>
+            </div>
+            <div style="margin-top:16px;">
+                <a href="#" style="color:var(--text-muted); font-size:0.8rem;" onclick="alert('Info Page Placeholder'); return false;">Mehr erfahren</a>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('aiConfirmBtn').onclick = async () => {
+        // Start download
+        document.getElementById(modalId).remove();
+
+        // Show progress on button?
+        // We'll show a toast or global loader for first time
+        showToast("Lade AI Model...", 5000);
+
+        const btn = document.querySelector('.ai-btn');
+        if (btn) btn.classList.add('thinking'); // Use pulsing as loading ind for now
+
+        try {
+            await aiService.loadModel((progress) => {
+                console.log("AI Progress:", progress);
+                // We could update a progress bar here
+                if (progress.text) showToast(progress.text, 1000);
+            });
+            if (btn) btn.classList.remove('thinking');
+            showToast("AI Bereit!", 2000);
+            onConfirm();
+        } catch (err) {
+            if (btn) btn.classList.remove('thinking');
+            alert("Fehler beim Laden: " + err.message);
+        }
+    };
+}
+
+async function startAiGeneration(type, textarea) {
+    const btn = document.querySelector('.ai-btn');
+    if (btn) btn.classList.add('thinking');
+
+    // Remove old suggestions
+    document.querySelectorAll('.ai-suggestions').forEach(el => el.remove());
+
+    try {
+        const text = textarea.value;
+        const suggestions = await aiService.generateRewrites(text, type);
+
+        if (btn) btn.classList.remove('thinking');
+
+        if (!suggestions || suggestions.length === 0) {
+            showToast("Keine Vorschläge generiert.");
+            return;
+        }
+
+        showSuggestions(suggestions, textarea);
+
+    } catch (err) {
+        if (btn) btn.classList.remove('thinking');
+        console.error(err);
+        showToast("Fehler bei der Generierung.");
+    }
+}
+
+function showSuggestions(suggestions, textarea) {
+    const wrapper = textarea.parentElement;
+
+    const container = document.createElement('div');
+    container.className = 'ai-suggestions';
+
+    container.innerHTML = `
+        <div class="ai-header">
+            <div class="ai-label"><span class="material-icons" style="font-size:14px;">auto_awesome</span> Vorschläge</div>
+            <button class="icon-btn" style="width:20px; height:20px; border:none;" onclick="this.closest('.ai-suggestions').remove()">
+                <span class="material-icons" style="font-size:16px;">close</span>
+            </button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto;">
+            ${suggestions.map((s, i) => `
+                <div class="ai-suggestion-card" onclick="applySuggestion(this, ${i})">
+                    ${s}
+                </div>
+            `).join('')}
+        </div>
+        <div class="ai-actions">
+            <button class="action-btn" title="Neu generieren" onclick="regenerateAi()">
+                <span class="material-icons">refresh</span>
+            </button>
+        </div>
+    `;
+
+    wrapper.appendChild(container);
+
+    // Helper to store suggestion data if needed
+    container.dataset.suggestions = JSON.stringify(suggestions);
+}
+
+window.applySuggestion = function (card, index) {
+    const suggestions = JSON.parse(card.closest('.ai-suggestions').dataset.suggestions);
+    const text = suggestions[index];
+
+    const textarea = card.closest('.input-wrap').querySelector('textarea');
+    const original = textarea.value;
+
+    // Apply
+    textarea.value = text;
+
+    // Trigger input event for autosave/etc if bound
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Remove suggestions
+    card.closest('.ai-suggestions').remove();
+
+    // Undo Toast
+    const toast = document.createElement('div');
+    toast.className = 'notification';
+    toast.innerHTML = `
+        <span>Text ersetzt.</span>
+        <button style="background:transparent; border:none; color:var(--primary); font-weight:700; cursor:pointer; margin-left:10px;" id="undoAi">Rückgängig</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000); // 4s display
+
+    document.getElementById('undoAi').onclick = () => {
+        textarea.value = original;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        toast.remove();
+    };
+};
+
+window.regenerateAi = function () {
+    // Just trigger click again on the button
+    const btn = document.querySelector('.ai-btn');
+    if (btn) btn.click();
+};
+
+function showToast(msg, duration = 3000) {
+    // Reuse existing showNotification if available globally, else create one
+    if (window.showNotification) {
+        window.showNotification(msg, duration);
+    } else {
+        alert(msg);
+    }
+}
+
+// Start Setup on module load
+setupAiFeature();
 
