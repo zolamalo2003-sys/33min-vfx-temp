@@ -496,14 +496,20 @@ async function fetchLeaderboard() {
 }
 
 async function fetchLeaderboardFallback() {
+    const list = document.getElementById("leaderboardList");
     const { data, error } = await supabase
         .from("aim_scores")
         .select("score, accuracy, user_id, created_at, player_name")
         .order("score", { ascending: false })
         .limit(20);
 
-    const list = document.getElementById("leaderboardList");
-    if (data) renderLeaderboard(data, list);
+    if (error) {
+        console.error("Leaderboard Error:", error);
+        if (list) list.innerHTML = `<div class="text-center text-red-500 py-4 text-xs">Fehler: ${error.message}</div>`;
+        return;
+    }
+
+    if (data && list) renderLeaderboard(data, list);
 }
 
 function renderLeaderboard(data, list) {

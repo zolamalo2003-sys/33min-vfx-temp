@@ -1330,7 +1330,7 @@ function renderTable() {
     const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
     const paginationInfo = document.getElementById('paginationInfo');
     if (paginationInfo) {
-        paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} items`;
+        paginationInfo.textContent = `Zeige ${startItem} - ${endItem} von ${totalItems} Einträgen`;
     }
 
     // Render Pagination Controls
@@ -1340,7 +1340,7 @@ function renderTable() {
             <button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
                 <span class="material-icons" style="font-size: 16px;">chevron_left</span>
             </button>
-            <span style="font-size: 0.8rem; padding: 0 8px;">Page ${currentPage} of ${totalPages}</span>
+            <span style="font-size: 0.8rem; padding: 0 8px;">Seite ${currentPage} von ${totalPages}</span>
             <button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>
                 <span class="material-icons" style="font-size: 16px;">chevron_right</span>
             </button>
@@ -1357,8 +1357,8 @@ function renderTable() {
                 <td colspan="9">
                     <div class="empty-state">
                         <span class="material-icons" style="font-size: 48px; opacity: 0.3;">post_add</span>
-                        <h3>No entries found</h3>
-                        <p>Adjust filters or add new entry.</p>
+                        <h3>Keine Einträge gefunden</h3>
+                        <p>Filter anpassen oder neuen Eintrag erstellen.</p>
                     </div>
                 </td>
             </tr>`;
@@ -1458,7 +1458,7 @@ function deleteSelectedEntries() {
     selectedIds.clear();
     saveLocalAnimations();
     renderTable();
-    showNotification('Entries deleted');
+    showNotification('Einträge gelöscht');
 }
 function deleteAllEntries() {
     if (animations.length === 0)

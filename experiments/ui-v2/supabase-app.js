@@ -473,7 +473,8 @@ function applyCloudFilters(list) {
     return filtered;
 }
 
-let activeEditId = null; // Track which row is being edited
+// Track which row is being edited
+let activeEditId = null;
 
 function renderCloudTable() {
     const body = document.getElementById("cloudTableBody");
@@ -492,22 +493,97 @@ function renderCloudTable() {
     }
 
     const currentUserId = session?.user?.id;
-    body.innerHTML = list.map((row) => {
-        // --- STANDARD ROW ---
-        const canEdit = currentUserId && row.user_id === currentUserId;
-        // User Name Display Logic: Use display_name if available in row (requires backend update to fetch it) OR code
-        // For now, sticking to email code but checking if we can get a precise name from metadata relative to user ID?
-        // Since row.created_by_email is all we have, we use that + hash color.
 
-        // Check if we have a robust display name override (not currently in row format, maybe add later).
+    // Status Labels for Dropdown
+    const statusOptions = [
+        { val: 'none', label: 'Kein Status' },
+        { val: 'draft', label: 'Entwurf' },
+        { val: 'ready', label: 'Export bereit' },
+        { val: 'exported', label: 'Exportiert' },
+        { val: 'edited', label: 'Bearbeitet' },
+        { val: 'error', label: 'Fehler' }
+    ];
+
+    // Person Options (from app.js logic, hardcoded here or synced?)
+    // We'll use a simple list or just text input for flexibility if lists aren't shared
+    const personOptions = ['Jerry', 'Marc', 'Kodiak', 'Taube', 'Käthe'];
+
+    body.innerHTML = list.map((row) => {
+        const canEdit = currentUserId && row.user_id === currentUserId;
+        const isEditing = activeEditId === row.id;
         const userCode = emailCode(row.created_by_email);
         const userColor = hashToColor(row.user_id || "");
 
-        const isEditing = activeEditId === row.id;
-        const rowClass = isEditing ? "cloud-row editing" : "cloud-row";
+        // Helper to generating select options
+        const renderSelect = (field, currentVal, options) => {
+            return `<select class="cloud-edit-input" data-field="${field}">
+                <option value="">-</option>
+                ${options.map(o => {
+                const val = typeof o === 'object' ? o.val : o;
+                const label = typeof o === 'object' ? o.label : o;
+                return `<option value="${val}" ${currentVal === val ? 'selected' : ''}>${label}</option>`;
+            }).join('')}
+            </select>`;
+        };
 
-        const standardRow = `
-            <tr data-cloud-id="${row.id}" class="${rowClass}">
+        const renderInput = (field, val, type = 'text') => {
+            return `<input type="${type}" class="cloud-edit-input" data-field="${field}" value="${(val || '').replace(/"/g, '&quot;')}" style="width: 100%; min-width: 60px;">`;
+        };
+
+        const renderTextarea = (field, val) => {
+            return `<textarea class="cloud-edit-input" data-field="${field}" rows="1" style="width: 100%; min-width: 100px;">${val || ''}</textarea>`;
+        };
+
+        // Static Cell
+        const staticCell = (content) => `<td>${content}</td>`;
+
+        // Editable Cell Wrapper
+        const editCell = (content) => `<td class="editable-cell">${content}</td>`;
+
+        if (isEditing) {
+            return `
+            <tr data-cloud-id="${row.id}" class="cloud-row editing">
+                <td><span class="user-badge" style="background:${userColor}">${userCode}</span></td>
+                ${editCell(renderInput("datum", row.datum, "date") || renderInput("datum", parseGermanDateToISO(row.datum || ""), "date"))}
+                ${editCell(renderInput("show", row.show))}
+                ${editCell(renderInput("folge", row.folge))}
+                ${editCell(renderSelect("type", row.type, ['temperatur', 'zeit', 'geld', 'uebersicht', 'textbox', 'todo', 'ticket', 'samsung']))}
+                ${editCell(renderSelect("teilnehmer", row.teilnehmer, personOptions))}
+                ${editCell(renderInput("farbe", row.farbe))}
+                ${editCell(renderInput("komposition", row.komposition))}
+                ${editCell(renderInput("temperatur", row.temperatur))}
+                ${editCell(renderInput("zeit", row.zeit))}
+                ${editCell(renderInput("geldStart", row.geldStart))}
+                ${editCell(renderInput("geldAenderung", row.geldAenderung))}
+                ${editCell(renderInput("geldAktuell", row.geldAktuell))}
+                ${editCell(renderInput("stempel", row.stempel))}
+                ${editCell(renderTextarea("textboxText", row.textboxText))}
+                ${editCell(renderTextarea("todoItem", row.todoItem))}
+                ${editCell(renderSelect("status", row.status, statusOptions))}
+                ${editCell(renderInput("schnittTimestamp", row.schnittTimestamp))}
+                ${editCell(renderInput("cutterInfo", row.cutterInfo))}
+                <td>
+                    <input type="checkbox" disabled ${row.done ? "checked" : ""}>
+                </td>
+                <td>
+                    <div class="cloud-row-actions">
+                        <button class="action-btn save-edit-btn" data-save-edit="${row.id}" title="Speichern">
+                            <span class="material-icons" style="color: var(--success);">check</span>
+                        </button>
+                        <button class="action-btn cancel-edit-btn" title="Abbrechen">
+                            <span class="material-icons" style="color: var(--danger);">close</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }
+
+        // --- READ ONLY ROW ---
+        // Status Translation
+        const statusLabel = statusOptions.find(o => o.val === row.status)?.label || row.status || 'Entwurf';
+
+        return `
+            <tr data-cloud-id="${row.id}" class="cloud-row">
                 <td>
                     <span class="user-badge" style="background:${userColor}" title="User: ${userCode}">${userCode}</span>
                 </td>
@@ -527,7 +603,7 @@ function renderCloudTable() {
                 <td>${row.textboxText || "-"}</td>
                 <td>${row.todoItem || "-"}</td>
                 <td>
-                    <span class="cloud-badge ${cloudStatusClass(row.status)}">${row.status || "draft"}</span>
+                    <span class="cloud-badge ${cloudStatusClass(row.status)}">${statusLabel}</span>
                 </td>
                 <td>${row.schnittTimestamp || "-"}</td>
                 <td>${row.cutterInfo || "-"}</td>
@@ -537,7 +613,7 @@ function renderCloudTable() {
                 <td>
                     <div class="cloud-row-actions">
                         <button class="action-btn" data-edit="${row.id}" ${canEdit ? "" : "disabled"} title="Bearbeiten">
-                            <span class="material-icons" style="font-size: 18px;">${isEditing ? 'close' : 'edit'}</span>
+                            <span class="material-icons" style="font-size: 18px;">edit</span>
                         </button>
                         <button class="action-btn" data-delete="${row.id}" ${canEdit ? "" : "disabled"} title="Löschen">
                             <span class="material-icons" style="font-size: 18px;">delete</span>
@@ -546,53 +622,11 @@ function renderCloudTable() {
                 </td>
             </tr>
         `;
-
-        if (!isEditing) return standardRow;
-
-        // --- EDIT DRAWER (Expanded Row) ---
-        // This row spans all columns and contains the form
-        return standardRow + `
-            <tr class="edit-row-container" style="background: var(--bg-secondary);">
-                <td colspan="21" style="padding: 0;">
-                    <div class="edit-drawer" style="padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; border-bottom: 2px solid var(--accent-primary);">
-                        ${renderEditField(row, "datum", "Datum", "date")}
-                        ${renderEditField(row, "show", "Show")}
-                        ${renderEditField(row, "folge", "Folge (EPxx)")}
-                        ${renderEditField(row, "type", "Typ")}
-                        ${renderEditField(row, "teilnehmer", "Teilnehmer")}
-                        ${renderEditField(row, "farbe", "Farbe")}
-                        ${renderEditField(row, "komposition", "Komposition")}
-                        ${renderEditField(row, "temperatur", "Temperatur")}
-                        ${renderEditField(row, "zeit", "Zeit")}
-                        ${renderEditField(row, "geldStart", "Geld Start")}
-                        ${renderEditField(row, "geldAenderung", "Geld Änderung")}
-                        ${renderEditField(row, "geldAktuell", "Geld Aktuell")}
-                        ${renderEditField(row, "stempel", "Stempel (Marker)")}
-                        ${renderEditField(row, "textboxText", "Info / Text")}
-                        ${renderEditField(row, "todoItem", "To-Do")}
-                        ${renderEditField(row, "schnittTimestamp", "Schnitt Time")}
-                        ${renderEditField(row, "cutterInfo", "Cutter Info")}
-                        
-                        <div class="field" style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px;">
-                             <div style="margin-right: auto;">
-                                <label style="display:block; font-size: 0.75rem; margin-bottom: 4px;">Status</label>
-                                <select id="edit-status-${row.id}" style="padding: 8px; border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border);">
-                                    <option value="draft" ${row.status === 'draft' ? 'selected' : ''}>Entwurf</option>
-                                    <option value="ready" ${row.status === 'ready' ? 'selected' : ''}>Export bereit</option>
-                                    <option value="done" ${row.status === 'done' ? 'selected' : ''}>Done</option>
-                                </select>
-                             </div>
-                            <button class="btn cancel-edit-btn" data-cancel-edit="${row.id}">Abbrechen</button>
-                            <button class="btn btn-primary save-edit-btn" data-save-edit="${row.id}">
-                                <span class="material-icons">save</span> Speichern
-                            </button>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `;
     }).join("");
 
+    // --- EVENT LISTENERS ---
+
+    // Checkbox Done
     body.querySelectorAll("[data-done]").forEach((checkbox) => {
         checkbox.addEventListener("change", async () => {
             if (checkbox.disabled) return;
@@ -617,44 +651,95 @@ function renderCloudTable() {
         });
     });
 
-    // EDIT / DELETE Handling
-    body.querySelectorAll(".action-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            // Edit
-            const editId = btn.getAttribute("data-edit");
-            if (editId) {
-                if (activeEditId === editId) {
-                    activeEditId = null; // Toggle off
-                } else {
-                    activeEditId = editId;
-                }
-                renderCloudTable();
-                return;
-            }
-
-            // Delete
-            const deleteId = btn.getAttribute("data-delete");
-            if (deleteId) {
-                if (!confirm("Eintrag wirklich löschen?")) return;
-                const { error } = await supabase.from("entries").delete().eq("id", deleteId);
-                if (error) alert("Lösch-Fehler: " + error.message);
-            }
-        });
-    });
-
-    // Save Edit (in Drawer)
-    body.querySelectorAll(".save-edit-btn").forEach(btn => {
+    // Edit Enable
+    body.querySelectorAll("[data-edit]").forEach(btn => {
         btn.addEventListener("click", () => {
-            const id = btn.getAttribute("data-save-edit");
-            if (id) window.saveCloudEdit(id);
+            const editId = btn.getAttribute("data-edit");
+            activeEditId = editId;
+            renderCloudTable();
         });
     });
 
-    // Cancel Edit (in Drawer)
+    // Delete
+    body.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const deleteId = btn.getAttribute("data-delete");
+            if (!confirm("Eintrag wirklich löschen?")) return;
+            const { error } = await supabase.from("entries").delete().eq("id", deleteId);
+            if (error) alert("Lösch-Fehler: " + error.message);
+        });
+    });
+
+    // Cancel Edit
     body.querySelectorAll(".cancel-edit-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             activeEditId = null;
             renderCloudTable();
+        });
+    });
+
+    // Save Edit
+    body.querySelectorAll(".save-edit-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-save-edit");
+            const rowElem = document.querySelector(`tr[data-cloud-id="${id}"]`);
+            if (!rowElem) return;
+
+            const inputs = rowElem.querySelectorAll('.cloud-edit-input');
+            const updates = {};
+
+            // Helper to determine where fields belong (root or values_json)
+            const rootFields = ['datum', 'show', 'folge', 'type', 'komposition', 'status', 'schnittTimestamp', 'cutterInfo'];
+            const jsonFields = ['teilnehmer', 'farbe', 'temperatur', 'zeit', 'geldStart', 'geldAenderung', 'geldAktuell', 'stempel', 'textboxText', 'todoItem'];
+
+            const originalRow = cloudRows.find(r => r.id === id);
+            if (!originalRow) return;
+
+            // Build update object
+            // Note: We need to respect the structure (root cols vs json)
+            // But supabase update takes flat object matching columns.
+            // Wait, supabase-app.js handles this by constructing the object in `saveEntry`.
+            // Here we are UPDATING an existing row. We need to construct the update payload correctly.
+
+            // We'll read all inputs
+            const newValues = { ...getValues(originalRow) }; // start with existing json values
+            const newRoot = {};
+
+            inputs.forEach(input => {
+                const field = input.getAttribute('data-field');
+                const val = input.value;
+
+                if (rootFields.includes(field)) {
+                    // Mapping for specific DB columns if names differ
+                    if (field === 'schnittTimestamp') newRoot['schnitt_timestamp'] = val || null;
+                    else if (field === 'cutterInfo') newRoot['cutter_info'] = val || null;
+                    else newRoot[field] = val || null;
+                } else if (jsonFields.includes(field)) {
+                    newValues[field] = val || null;
+                }
+            });
+
+            newRoot['values_json'] = newValues;
+
+            // Optimistic Update local
+            // (We can't easily sync local cloudRows deeply without re-fetching, 
+            // but we can try to update the object in place for immediate feedback if we wanted)
+
+            const { error } = await supabase
+                .from("entries")
+                .update(newRoot)
+                .eq("id", id);
+
+            if (error) {
+                alert("Fehler beim Speichern: " + error.message);
+            } else {
+                activeEditId = null;
+                // renderCloudTable will be called by realtime subscription or we can call it manually
+                // But subscription might delay. Let's rely on realtime to refresh or force fetch?
+                // The existing code relies on realtime updates to refresh `cloudRows`.
+                // We'll just clear edit mode.
+                renderCloudTable();
+            }
         });
     });
 

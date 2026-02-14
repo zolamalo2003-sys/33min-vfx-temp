@@ -196,26 +196,26 @@
                     class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50">
                 </div>
 
-                <h2 class="text-danger text-sm font-bold tracking-[0.3em] uppercase mb-2">System Failure</h2>
-                <h1 class="text-5xl font-bold text-text mb-8">SESSION ENDED</h1>
+                <h2 class="text-danger text-sm font-bold tracking-[0.3em] uppercase mb-2">Systemfehler</h2>
+                <h1 class="text-5xl font-bold text-text mb-8">SITZUNG BEENDET</h1>
 
                 <div class="text-center z-10 w-full max-w-md">
-                    <h2 class="text-4xl font-bold text-text mb-2 tracking-tighter">SESSION BEENDET</h2>
+                    <h2 class="text-4xl font-bold text-text mb-2 tracking-tighter">SITZUNG BEENDET</h2>
                     <div class="text-6xl font-black text-primary font-mono mb-8 glow-text" id="finalScore">0
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 mb-8">
-                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
+                        <div class="bg-panel border border-white/10 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Präzision</div>
                             <div id="finalAcc" class="text-xl font-bold text-text">0%</div>
                         </div>
-                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
+                        <div class="bg-panel border border-white/10 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Treffer</div>
-                            <div id="finalHits" class="text-xl font-bold text-green-600">0</div>
+                            <div id="finalHits" class="text-xl font-bold text-green-500">0</div>
                         </div>
-                        <div class="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
+                        <div class="bg-panel border border-white/10 p-3 rounded-xl shadow-sm">
                             <div class="text-[10px] text-text-sec uppercase">Fehlschüsse</div>
-                            <div id="finalMisses" class="text-xl font-bold text-red-500">0</div>
+                            <div id="finalMisses" class="text-xl font-bold text-danger">0</div>
                         </div>
                     </div>
 
@@ -278,7 +278,7 @@
                     <div class="flex justify-between text-xs mb-2 text-text-sec">
                         <span>Schuss-Taste</span>
                         <span id="currentHotkey"
-                            class="text-primary font-mono bg-white border border-gray-200 px-2 rounded">KEINE</span>
+                            class="text-primary font-mono bg-surface border border-white/10 px-2 rounded">KEINE</span>
                     </div>
                     <button id="btnBindKey"
                         class="w-full py-2 text-xs bg-panel shadow-out-sm rounded hover:shadow-float hover:scale-[1.02] transition-all text-text font-bold">
@@ -287,11 +287,11 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-white rounded p-2 shadow-out-sm text-center">
+                    <div class="bg-surface rounded p-2 shadow-out-sm text-center">
                         <div class="text-[10px] text-text-sec">Ziele / Sek</div>
                         <div id="debugSpawnRate" class="text-xs font-mono text-primary font-bold">--</div>
                     </div>
-                    <div class="bg-white rounded p-2 shadow-out-sm text-center">
+                    <div class="bg-surface rounded p-2 shadow-out-sm text-center">
                         <div class="text-[10px] text-text-sec">Schwierigkeit</div>
                         <div id="debugDifficulty" class="text-xs font-mono text-primary font-bold">--</div>
                     </div>
