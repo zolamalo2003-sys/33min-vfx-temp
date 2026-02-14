@@ -1506,24 +1506,26 @@ function setStatusForEntry(status) {
     sendNtfyAlert('Status Update', `Eintrag #${anim.id} - ${anim.komposition || 'Unbekannt'}: Status -> ${status}`, ['pencil']);
 }
 function sendNtfyAlert(title, message, tags = []) {
-    // Determine if we need to simplify (e.g. if CORS fails with custom headers)
-    // For ntfy.sh public topics, simple POST text body is safest from 'file://'
-    // Title and Tags in headers trigger preflight which may fail on local files.
-    // We will append Title/Tags to the message body as a workaround or just send clean text.
+    // Einfache Methode ohne Server-Proxy (funktioniert auch lokal mit file://)
+    // Wir senden eine "einfache" POST-Nachricht.
+    // Damit der Browser nicht blockiert (CORS), nutzen wir mode: 'no-cors'.
+    // Nachteil: Wir können keine speziellen Header (Title, Tags) senden,
+    // daher schreiben wir den Titel einfach in die Nachricht.
 
-    // Attempt 1: Try with no-cors mode (opaque response, no custom headers allowed)
-    // We lose Title/Tags headers but gain delivery success.
-    const fullMessage = `[${title}] ${message}`;
+    // Nachricht formatieren: [TITEL] Nachricht
+    const simpleBody = `[${title}] ${message}`;
 
+    // Direkt an ntfy.sh senden (Fire & Forget)
     fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-        method: 'POST',
-        body: fullMessage,
-        mode: 'no-cors' // Important for file:// usage
+        method: 'POST', // oder PUT
+        body: simpleBody,
+        mode: 'no-cors' // WICHTIGE Zeile: Verhindert CORS-Fehler
     }).then(() => {
-        console.log('Ntfy sent (opaque)');
+        console.log('Ntfy sent (simple mode)');
     }).catch(err => {
         console.warn('Ntfy Network Error', err);
-        showNotification('Ntfy Error: ' + err.message);
+        // Da 'no-cors' keine Fehler im JS zurückgibt (außer Netzwerk-Totalausfall),
+        // sehen wir hier nur echte Verbindungsprobleme.
     });
 }
 function loadChatHistory() {
