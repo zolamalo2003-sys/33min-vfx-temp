@@ -293,6 +293,8 @@ export async function saveEntry(entry) {
             todoItem: entry.todoItem ?? null,
             stempel2: entry.stempel2 ?? null,
         },
+        player_name: session?.user?.user_metadata?.display_name ?? null,
+        avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
     };
 
     const { error } = await supabase.from("entries").insert(row);
@@ -338,6 +340,8 @@ async function syncLocalToCloud() {
             todoItem: e.todoItem ?? null,
             stempel2: e.stempel2 ?? null,
         },
+        player_name: session?.user?.user_metadata?.display_name ?? null,
+        avatar_config: session?.user?.user_metadata?.avatar_settings ?? null
     }));
 
     // upsert verhindert doppelte Uploads (wegen unique index user_id+local_id)
@@ -417,7 +421,9 @@ const formatCloudRow = (row) => {
         cutterInfo: row.cutter_info || "",
         done: !!row.done,
         user_id: row.user_id,
-        created_by_email: row.created_by_email || null
+        created_by_email: row.created_by_email || null,
+        player_name: row.player_name || null,
+        avatar_config: row.avatar_config || null
     };
 };
 
@@ -511,8 +517,30 @@ function renderCloudTable() {
     body.innerHTML = list.map((row) => {
         const canEdit = currentUserId && row.user_id === currentUserId;
         const isEditing = activeEditId === row.id;
-        const userCode = emailCode(row.created_by_email);
-        const userColor = hashToColor(row.user_id || "");
+
+        // User Display Logic
+        let userDisplay = "";
+
+        // 1. Try Avatar Config (if saved in row)
+        if (row.avatar_config) {
+            const settings = row.avatar_config;
+            if (settings.style && settings.seed) {
+                const avatarUrl = `https://api.dicebear.com/9.x/${settings.style}/svg?seed=${encodeURIComponent(settings.seed)}&backgroundColor=${settings.bgColor || 'transparent'}`;
+                userDisplay = `<img src="${avatarUrl}" class="cloud-avatar-img" title="${row.player_name || 'User'}">`;
+            }
+        }
+
+        // 2. Fallback: Initials with Pastel Background
+        if (!userDisplay) {
+            const userCode = emailCode(row.created_by_email); // 3 letters
+            // Generate pastel color from user_id or email
+            const hash = (row.user_id || row.created_by_email || "").split("").reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+            const hue = Math.abs(hash % 360);
+            const pastelColor = `hsl(${hue}, 70%, 80%)`;
+            const textColor = `hsl(${hue}, 80%, 20%)`; // Darker text for contrast
+
+            userDisplay = `<div class="cloud-avatar-initials" style="background-color: ${pastelColor}; color: ${textColor};" title="${row.player_name || row.created_by_email}">${userCode}</div>`;
+        }
 
         // Helper to generating select options
         const renderSelect = (field, currentVal, options) => {
@@ -543,7 +571,7 @@ function renderCloudTable() {
         if (isEditing) {
             return `
             <tr data-cloud-id="${row.id}" class="cloud-row editing">
-                <td><span class="user-badge" style="background:${userColor}">${userCode}</span></td>
+                <td>${userDisplay}</td>
                 ${editCell(renderInput("datum", row.datum, "date") || renderInput("datum", parseGermanDateToISO(row.datum || ""), "date"))}
                 ${editCell(renderInput("show", row.show))}
                 ${editCell(renderInput("folge", row.folge))}
@@ -584,9 +612,7 @@ function renderCloudTable() {
 
         return `
             <tr data-cloud-id="${row.id}" class="cloud-row">
-                <td>
-                    <span class="user-badge" style="background:${userColor}" title="User: ${userCode}">${userCode}</span>
-                </td>
+                <td>${userDisplay}</td>
                 <td>${row.datum || "-"}</td>
                 <td>${row.show || "-"}</td>
                 <td>${row.folge || "-"}</td>

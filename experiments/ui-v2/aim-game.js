@@ -451,102 +451,130 @@ function updateHUD() {
 /** SUPABASE / DATA */
 
 async function saveScore(score, accuracy) {
-    if (!session) return;
+    if (!window.session) return;
 
-    // 1. Check Personal Highscore to display in game over?
-    // 2. Insert
-    const meta = session.user.user_metadata || {};
-    const name = meta.display_name || session.user.email;
+    const user = window.session.user;
+    const meta = user.user_metadata || {};
+    const name = meta.display_name || user.email?.split('@')[0] || "Agent";
+    const avatarConfig = meta.avatar_settings || null;
 
-    const { error } = await supabase.from("aim_scores").insert({
-        user_id: session.user.id,
+    const { error } = await window.supabase.from("aim_scores").insert({
+        user_id: user.id,
         score: score,
         accuracy: accuracy,
         hits: state.hits,
         misses: state.misses,
-        max_streak: state.maxCombo,
-        player_name: name // Save the name!
+        max_streak: state.maxCombo || 0,
+        player_name: name,
+        avatar_config: avatarConfig
     });
 
-    if (error) console.error("Error saving score:", error);
-    else {
-        // Refresh leaderboard
-        fetchLeaderboard();
+    if (error) {
+        console.error("Error saving score:", error);
     }
 
-    // Fetch personal highscore logic if wanted...
+    // Refresh leaderboard
+    fetchLeaderboard();
     fetchPersonalBest();
 }
 
 async function fetchLeaderboard() {
-    // Attempt to use view first for distinct users
-    const { data, error } = await supabase
-        .from("aim_leaderboard") // Use VIEW
-        .select("score, accuracy, user_id, created_at, player_name")
-        .limit(20);
-
     const list = document.getElementById("leaderboardList");
-    if (error) {
-        // Fallback to raw table if view missing
-        console.warn("View not found, fallback to raw scores");
-        return fetchLeaderboardFallback();
-    }
+    if (!list) return;
 
-    renderLeaderboard(data, list);
-}
-
-async function fetchLeaderboardFallback() {
-    const list = document.getElementById("leaderboardList");
-    const { data, error } = await supabase
+    const { data, error } = await window.supabase
         .from("aim_scores")
-        .select("score, accuracy, user_id, created_at, player_name")
+        .select("score, accuracy, user_id, created_at, player_name, avatar_config")
         .order("score", { ascending: false })
-        .limit(20);
+        .limit(100);
 
     if (error) {
         console.error("Leaderboard Error:", error);
-        if (list) list.innerHTML = `<div class="text-center text-red-500 py-4 text-xs">Fehler: ${error.message}</div>`;
+        if (error.message?.includes("column")) {
+            list.innerHTML = `<div class="text-center text-red-400 py-4 text-xs">
+                Datenbank-Update erforderlich:<br>
+                Spalten <code>player_name</code> & <code>avatar_config</code> fehlen.
+             </div>`;
+        } else {
+            list.innerHTML = `<div class="text-center text-red-500 py-4 text-xs">Fehler: ${error.message}</div>`;
+        }
         return;
     }
 
-    if (data && list) renderLeaderboard(data, list);
+    renderLeaderboard(data || [], list);
 }
 
+// Fallback function not needed anymore, merged into fetchLeaderboard
+async function fetchLeaderboardFallback() { fetchLeaderboard(); }
+
 function renderLeaderboard(data, list) {
-    list.innerHTML = "";
+    if (!data.length) {
+        list.innerHTML = `<div class="text-center text-gray-500 py-4 text-xs">Noch keine Einträge.</div>`;
+        return;
+    }
 
-    // We need avatars/names. 
-    // Since we don't have a public profile table joined, we'll hash the user_id to a color/code
+    // Filter unique users (keep highest score)
+    const uniqueMap = new Map();
+    data.forEach(entry => {
+        if (!uniqueMap.has(entry.user_id) || entry.score > uniqueMap.get(entry.user_id).score) {
+            uniqueMap.set(entry.user_id, entry);
+        }
+    });
 
-    data.forEach((row, index) => {
-        const isMe = session && row.user_id === session.user.id;
-        const color = isMe ? "text-primary" : "text-text-sec"; // Dark text for others
-        const bg = isMe ? "bg-white shadow-in border-transparent" : "bg-panel shadow-out-sm border-transparent";
+    // Sort by score descending and take top 20
+    const top20 = Array.from(uniqueMap.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 20);
 
-        // Name Logic: Use saved player_name OR Email OR Agent Code
-        let displayName = row.player_name;
-        if (!displayName) {
-            const code = row.user_id.slice(0, 3).toUpperCase();
-            displayName = `AGENT ${code}`;
+    const currentUser = window.session?.user?.id;
+
+    list.innerHTML = top20.map((entry, index) => {
+        const isMe = entry.user_id === currentUser;
+
+        const date = new Date(entry.created_at).toLocaleDateString("de-DE", {
+            day: "2-digit", month: "2-digit"
+        });
+
+        let displayName = entry.player_name || "Agent";
+        if (displayName === "Agent" && entry.user_id) {
+            displayName = "Agent " + entry.user_id.slice(0, 4).toUpperCase();
         }
 
-        const card = document.createElement("div");
-        card.className = `flex items-center justify-between p-3 rounded-2xl border ${bg} transition-all hover:scale-[1.02]`;
-        card.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="text-xs font-bold text-gray-400 w-4">#${index + 1}</div>
-                <div>
-                   <div class="text-xs font-bold ${color}">${displayName}</div>
-                   <div class="text-[10px] text-gray-400">${new Date(row.created_at).toLocaleDateString()}</div>
+        // Avatar
+        let avatarUrl = "";
+        if (entry.avatar_config) {
+            const settings = entry.avatar_config;
+            if (settings.style && settings.seed) {
+                avatarUrl = `https://api.dicebear.com/9.x/${settings.style}/svg?seed=${encodeURIComponent(settings.seed)}&backgroundColor=${settings.bgColor || 'transparent'}`;
+            }
+        }
+
+        if (!avatarUrl) {
+            avatarUrl = `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=151a26&textColor=f1f5f9`;
+        }
+
+        return `
+        <div class="flex items-center gap-3 p-2 rounded-lg ${isMe ? 'bg-primary/10 border border-primary/20' : 'bg-surface/50 border border-white/5'} transition-all hover:bg-white/5">
+            <div class="font-mono text-xs font-bold w-6 text-center ${index < 3 ? 'text-primary' : 'text-gray-500'}">#${index + 1}</div>
+            
+            <div class="relative size-8 shrink-0">
+                <img src="${avatarUrl}" class="size-8 rounded-full bg-panel border border-white/10 object-cover">
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-text truncate leading-tight">${displayName}</div>
+                <div class="text-[10px] text-text-sec flex gap-2">
+                    <span>${entry.accuracy}% Acc</span>
+                    <span>${date}</span>
                 </div>
             </div>
+            
             <div class="text-right">
-                <div class="text-sm font-black text-primary font-mono">${row.score.toLocaleString()}</div>
-                <div class="text-[10px] text-gray-400">${row.accuracy}% Acc</div>
+                <div class="font-mono font-bold text-primary text-sm">${entry.score.toLocaleString()}</div>
             </div>
+        </div>
         `;
-        list.appendChild(card);
-    });
+    }).join("");
 }
 
 async function fetchPersonalBest() {
