@@ -24,6 +24,8 @@ const filterState = {
 };
 let tokenClient;
 let spreadsheetId = localStorage.getItem('googleSpreadsheetId') || '';
+const ITEMS_PER_PAGE = 15;
+let currentPage = 1;
 // --- Initialisierung ---
 function gapiLoaded() {
     gapi = window.gapi;
@@ -1284,80 +1286,127 @@ async function addAnimation(event) {
     }
     showNotification(`Animation hinzugefügt!`);
 }
+function updateStats() {
+    const pending = animations.filter(a => a.status === 'draft' || a.status === 'none').length;
+    const total = animations.length;
+    // Count unique teilnehmer (case insensitive)
+    const active = new Set(animations.map(a => a.teilnehmer ? a.teilnehmer.toLowerCase() : '').filter(Boolean)).size;
+
+    const statPending = document.getElementById('statPending');
+    const statTotal = document.getElementById('statTotal');
+    const statActive = document.getElementById('statActive');
+
+    if (statPending) statPending.innerText = String(pending);
+    if (statTotal) statTotal.innerText = String(total);
+    if (statActive) statActive.innerText = String(active);
+}
+
+function changePage(page) {
+    if (page < 1) return;
+    currentPage = page;
+    renderTable();
+}
+
 function renderTable() {
     const tbody = document.getElementById('dataBody');
-    if (!tbody)
-        return;
+    if (!tbody) return;
+
+    updateStats();
+
     const filtered = getFilteredAnimations();
-    if (animations.length === 0) {
-        tbody.innerHTML = `
-                <tr>
-                    <td colspan="18">
-                        <div class="empty-state">
-                            <div class="material-icons" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;">post_add</div>
-                            <h3>Noch keine Animationen</h3>
-                            <p>Füge oben deine erste Animation hinzu</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        return;
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+    if (currentPage > totalPages) currentPage = 1;
+
+    // Update Pagination Info
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+    const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (paginationInfo) {
+        paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} items`;
     }
-    if (filtered.length === 0) {
-        tbody.innerHTML = `
-                <tr>
-                    <td colspan="18">
-                        <div class="empty-state">
-                            <div class="material-icons" style="font-size: 44px; margin-bottom: 10px; opacity: 0.3;">search_off</div>
-                            <h3>Keine Treffer</h3>
-                            <p>Filter oder Suche anpassen.</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        const entryCount = document.getElementById('entryCount');
-        if (entryCount)
-            entryCount.textContent = '0';
-        return;
+
+    // Render Pagination Controls
+    const controls = document.getElementById('paginationControls');
+    if (controls) {
+        controls.innerHTML = `
+            <button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                <span class="material-icons" style="font-size: 16px;">chevron_left</span>
+            </button>
+            <span style="font-size: 0.8rem; padding: 0 8px;">Page ${currentPage} of ${totalPages}</span>
+            <button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>
+                <span class="material-icons" style="font-size: 16px;">chevron_right</span>
+            </button>
+        `;
     }
-    const rows = getSortedAnimations(filtered);
-    tbody.innerHTML = rows.map((anim) => `
-            <tr ondblclick="editRow(${anim.id})" data-id="${anim.id}">
-                <td>
-                    <input type="checkbox" class="row-select" data-id="${anim.id}" ${selectedIds.has(Number(anim.id)) ? 'checked' : ''}>
-                </td>
-                <td>${anim.id ?? '-'}</td>
-                <td>${anim.datum || '-'}</td>
-                <td>${anim.show || '-'}</td>
-                <td>${getFolgeValue(anim) || '-'}</td>
-                <td>
-                    <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
-                        ${typeLabels[anim.type] || anim.type}
-                    </span>
-                    <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
-                        ${getStatusLabel(anim)}
-                    </button>
-                </td>
-                <td>${anim.teilnehmer ? `<span class="person-badge ${badgeClass[anim.teilnehmer] || ''}">${anim.teilnehmer}</span>` : '-'}</td>
-                <td>${anim.temperatur || '-'}</td>
-                <td>${anim.zeit || '-'}</td>
-                <td>${(anim.geldStart !== undefined && anim.geldStart !== '') ? anim.geldStart + '€' : '-'}</td>
-                <td>${anim.geldAenderung || '-'}</td>
-                <td>${(anim.geldAktuell !== undefined && anim.geldAktuell !== '') ? anim.geldAktuell + '€' : '-'}</td>
-                <td>${anim.stempel || '-'}</td>
-                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${anim.textboxText || '-'}</td>
-                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: pre-wrap;">${anim.todoItem || '-'}</td>
-                <td>${anim.schnittTimestamp || '-'}</td>
-                <td>${anim.cutterInfo || '-'}</td>
-                <td>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="action-btn" onclick="duplicateRow(${anim.id})" title="Duplizieren"><span class="material-icons" style="font-size: 18px;">control_point_duplicate</span></button>
-                        <button class="action-btn" onclick="deleteRow(${anim.id})" title="Löschen"><span class="material-icons" style="font-size: 18px;">delete</span></button>
+
+    // Legacy count update
+    const entryCount = document.getElementById('entryCount');
+    if (entryCount) entryCount.textContent = String(totalItems);
+
+    if (totalItems === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">
+                        <span class="material-icons" style="font-size: 48px; opacity: 0.3;">post_add</span>
+                        <h3>No entries found</h3>
+                        <p>Adjust filters or add new entry.</p>
                     </div>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        return;
+    }
+
+    const sorted = getSortedAnimations(filtered);
+    const sliced = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    tbody.innerHTML = sliced.map(anim => {
+        let desc = anim.textboxText || '';
+        if (anim.type === 'todo') desc = anim.todoItem || '';
+        else if (anim.type === 'ticket') desc = anim.textboxText || ''; // Ticket details are stored here by addAnimation logic
+        else if (anim.type === 'samsung') desc = anim.textboxText || '';
+
+        // Truncate description for table view
+        const displayDesc = desc.length > 50 ? desc.substring(0, 50) + '...' : (desc || '-');
+
+        return `
+        <tr ondblclick="editRow(${anim.id})" data-id="${anim.id}">
+            <td>
+                <input type="checkbox" class="row-select" data-id="${anim.id}" ${selectedIds.has(Number(anim.id)) ? 'checked' : ''}>
+            </td>
+            <td style="font-family: monospace; color: var(--text-muted);">${anim.id}</td>
+            <td>
+                 <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-icons" style="font-size: 16px; color: var(--text-muted);">${typeIcon[anim.type] || 'category'}</span>
+                 </div>
+            </td>
+            <td>
+                <div style="font-weight: 500;">${anim.show || '?'}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">${getFolgeValue(anim) || '-'}</div>
+            </td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);">
+                ${displayDesc}
+            </td>
+            <td>
+                <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
+                    ${getStatusLabel(anim)}
+                </button>
+            </td>
+            <td>
+                ${anim.teilnehmer ? `<span class="person-badge ${badgeClass[anim.teilnehmer] || ''}">${anim.teilnehmer}</span>` : '-'}
+            </td>
+            <td><span class="version-pill">v1</span></td>
+             <td>
+                <div style="display: flex; gap: 4px;">
+                    <button class="action-btn" onclick="duplicateRow(${anim.id})" title="Duplicate"><span class="material-icons" style="font-size: 18px;">control_point_duplicate</span></button>
+                    <button class="action-btn" onclick="deleteRow(${anim.id})" title="Delete"><span class="material-icons" style="font-size: 18px;">delete</span></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
     tbody.querySelectorAll('.row-select').forEach((checkbox) => {
         checkbox.addEventListener('change', () => {
             const idValue = Number(checkbox.getAttribute('data-id'));
@@ -1370,22 +1419,29 @@ function renderTable() {
             }
         });
     });
-    updateSortIndicators();
-    const entryCount = document.getElementById('entryCount');
-    if (entryCount)
-        entryCount.textContent = String(rows.length);
+
     updateDeleteActions();
 }
+
 function updateDeleteActions() {
     const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const deleteAllBtn = document.getElementById('deleteAllBtn');
     if (deleteSelectedBtn) {
+        // Show only if something selected. In new UI, this button is in a hidden container initially or toggled.
+        // We'll rely on the container visibility logic or just toggle button display.
+        // Wait, the consoleActions container is hidden by default in HTML? checking...
+        // "display: none;" on #consoleActions.
+        const actionsContainer = document.getElementById('consoleActions');
+        if (actionsContainer) {
+            actionsContainer.style.display = (selectedIds.size > 0 || animations.length > 0) ? 'flex' : 'none';
+        }
         deleteSelectedBtn.style.display = selectedIds.size > 0 ? 'inline-flex' : 'none';
     }
     if (deleteAllBtn) {
         deleteAllBtn.style.display = animations.length > 0 ? 'inline-flex' : 'none';
     }
 }
+
 function deleteSelectedEntries() {
     if (selectedIds.size === 0)
         return;
@@ -1396,7 +1452,7 @@ function deleteSelectedEntries() {
     selectedIds.clear();
     saveLocalAnimations();
     renderTable();
-    showNotification('Ausgewählte Einträge gelöscht');
+    showNotification('Entries deleted');
 }
 function deleteAllEntries() {
     if (animations.length === 0)
@@ -1549,67 +1605,63 @@ function initChatPanel() {
 }
 function editRow(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);
-    if (!row)
-        return;
+    if (!row) return;
     const anim = getAnimationById(id);
-    if (!anim)
-        return;
+    if (!anim) return;
+
     row.classList.add('editing');
+
     const personOptions = PERSON_NAMES
         .map(name => `<option value="${name}" ${anim.teilnehmer === name ? 'selected' : ''}>${name}</option>`)
         .join('');
+
+    // Cells: [Checkbox, ID, Preview, Shot ID, Description, Status, Artist, Version, Actions]
     row.innerHTML = `
-            <td>${anim.id ?? '-'}</td>
-            <td class="editable-cell"><input type="text" value="${anim.datum || ''}" data-field="datum"></td>
-            <td class="editable-cell">
-                <select data-field="show">
-                    <option value="WCC" ${anim.show === 'WCC' ? 'selected' : ''}>WCC</option>
-                    <option value="TR3" ${anim.show === 'TR3' ? 'selected' : ''}>TR3</option>
-                </select>
-            </td>
-            <td class="editable-cell"><input type="text" value="${getFolgeValue(anim)}" data-field="folge"></td>
-            <td>
-                <span class="type-badge" style="display: flex; align-items: center; gap: 4px;">
-                    <span class="material-icons" style="font-size: 16px;">${typeIcon[anim.type] || 'info'}</span>
-                    ${typeLabels[anim.type] || anim.type}
-                </span>
-                <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
-                    ${getStatusLabel(anim)}
-                </button>
-            </td>
-            <td class="editable-cell">
-                <select data-field="teilnehmer" ${anim.type === 'samsung' ? 'disabled' : ''}>
-                    <option value="">-</option>
-                    ${personOptions}
-                </select>
-            </td>
-            <td class="editable-cell"><input type="text" value="${anim.temperatur || ''}" data-field="temperatur"></td>
-            <td class="editable-cell"><input type="text" value="${anim.zeit || ''}" data-field="zeit"></td>
-            <td class="editable-cell"><input type="text" value="${anim.geldStart || ''}" data-field="geldStart"></td>
-            <td class="editable-cell"><input type="text" value="${anim.geldAenderung || ''}" data-field="geldAenderung"></td>
-            <td class="editable-cell"><input type="text" value="${anim.geldAktuell || ''}" data-field="geldAktuell"></td>
-            <td class="editable-cell"><input type="text" value="${anim.stempel || ''}" data-field="stempel"></td>
-            <td class="editable-cell"><textarea data-field="textboxText">${anim.textboxText || ''}</textarea></td>
-            <td class="editable-cell"><textarea data-field="todoItem">${anim.todoItem || ''}</textarea></td>
-            <td class="editable-cell"><input type="text" value="${anim.schnittTimestamp || ''}" data-field="schnittTimestamp"></td>
-            <td class="editable-cell"><input type="text" value="${anim.cutterInfo || ''}" data-field="cutterInfo"></td>
-            <td>
-                <div style="display: flex; gap: 4px;">
-                    <button class="action-btn" onclick="saveEdit(${anim.id})" title="Speichern"><span class="material-icons" style="font-size: 18px;">save</span></button>
-                    <button class="action-btn" onclick="cancelEdit()" title="Abbrechen"><span class="material-icons" style="font-size: 18px;">close</span></button>
-                </div>
-            </td>
-        `;
+        <td><input type="checkbox" disabled></td>
+        <td style="font-family: monospace; color: var(--text-muted);">${anim.id}</td>
+        <td>
+             <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                <span class="material-icons" style="font-size: 16px; color: var(--text-muted);">${typeIcon[anim.type] || 'category'}</span>
+             </div>
+        </td>
+        <td>
+            <div style="display: flex; gap: 4px;">
+                <input type="text" value="${anim.show || ''}" data-field="show" style="width: 50px;" placeholder="Show">
+                <input type="text" value="${getFolgeValue(anim)}" data-field="folge" style="width: 60px;" placeholder="Shot">
+            </div>
+        </td>
+        <td class="editable-cell">
+            <textarea data-field="textboxText" placeholder="Description/Notes" style="width: 100%;">${anim.textboxText || anim.todoItem || ''}</textarea>
+        </td>
+        <td>
+             <button class="status-badge status-${getStatusKey(anim)}" onclick="openStatusMenu(event, ${anim.id})" title="Status ändern">
+                ${getStatusLabel(anim)}
+            </button>
+        </td>
+        <td class="editable-cell">
+             <select data-field="teilnehmer" ${anim.type === 'samsung' ? 'disabled' : ''}>
+                <option value="">-</option>
+                ${personOptions}
+            </select>
+        </td>
+        <td><span class="version-pill">v1</span></td>
+        <td>
+            <div style="display: flex; gap: 4px;">
+                <button class="action-btn" onclick="saveEdit(${anim.id})" title="Save"><span class="material-icons" style="font-size: 18px;">save</span></button>
+                <button class="action-btn" onclick="cancelEdit()" title="Cancel"><span class="material-icons" style="font-size: 18px;">close</span></button>
+            </div>
+        </td>
+    `;
+
     const firstInput = row.querySelector('input');
-    if (firstInput)
-        firstInput.focus();
-    row.querySelectorAll('input, textarea, select').forEach(input => {
+    if (firstInput) firstInput.focus();
+
+    row.querySelectorAll('input, select').forEach(input => {
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey && e.target.tagName !== 'TEXTAREA') {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                void saveEdit(id);
-            }
-            else if (e.key === 'Escape') {
+                saveEdit(id);
+            } else if (e.key === 'Escape') {
                 cancelEdit();
             }
         });
@@ -2001,8 +2053,43 @@ Object.assign(window, {
     saveEdit,
     cancelEdit,
     duplicateRow,
-    deleteRow
+    deleteRow,
+    changePage,
+    initFilterListeners
 });
+
+function initFilterListeners() {
+    const chips = document.querySelectorAll('.chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+
+            const filterType = chip.dataset.filter;
+            const label = chip.getAttribute('data-label') || '';
+            const showInput = document.getElementById('qShow');
+
+            // Reset other filter states
+            filterState.showOnly = false;
+            filterState.typeOnly = false;
+            filterState.todoOnly = false;
+            filterState.samsungOnly = false;
+
+            if (filterType === 'all') {
+                // No specific filter
+            } else if (filterType === 'show') {
+                filterState.showOnly = true;
+                if (showInput) {
+                    if (label.includes('WCC')) showInput.value = 'WCC';
+                    if (label.includes('TR3')) showInput.value = 'TR3';
+                }
+            }
+
+            currentPage = 1;
+            renderTable();
+        });
+    });
+}
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
     const quickForm = document.getElementById('quickForm');
@@ -2062,6 +2149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     renderTable();
     updateSortIndicators();
+    initFilterListeners();
     await loadFromCloud();
 });
 // UI-only enhancements for the v2 experiment.
@@ -2121,35 +2209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             syncSearchInputs(event.target.value);
         });
     }
-    filterChips.forEach(chip => {
-        chip.addEventListener('click', () => {
-            const filter = chip.dataset?.filter;
-            if (filter === 'show') {
-                const showValue = showSelect?.value || '';
-                if (!showValue) {
-                    showNotification('Bitte zuerst eine Show auswählen.');
-                    return;
-                }
-                filterState.showOnly = !filterState.showOnly;
-            }
-            if (filter === 'type') {
-                const typeValue = document.getElementById('qType')?.value || '';
-                if (!typeValue) {
-                    showNotification('Bitte zuerst einen Typ auswählen.');
-                    return;
-                }
-                filterState.typeOnly = !filterState.typeOnly;
-            }
-            if (filter === 'todo') {
-                filterState.todoOnly = !filterState.todoOnly;
-            }
-            if (filter === 'samsung') {
-                filterState.samsungOnly = !filterState.samsungOnly;
-            }
-            updateFilterChips();
-            renderTable();
-        });
-    });
+    // Old filter logic removed in favor of initFilterListeners
     if (showSelect) {
         showSelect.addEventListener('change', () => {
             updateFilterChips();
