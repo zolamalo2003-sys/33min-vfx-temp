@@ -1506,16 +1506,25 @@ function setStatusForEntry(status) {
     sendNtfyAlert('Status Update', `Eintrag #${anim.id} - ${anim.komposition || 'Unbekannt'}: Status -> ${status}`, ['pencil']);
 }
 function sendNtfyAlert(title, message, tags = []) {
+    // Determine if we need to simplify (e.g. if CORS fails with custom headers)
+    // For ntfy.sh public topics, simple POST text body is safest from 'file://'
+    // Title and Tags in headers trigger preflight which may fail on local files.
+    // We will append Title/Tags to the message body as a workaround or just send clean text.
+
+    // Attempt 1: Try with no-cors mode (opaque response, no custom headers allowed)
+    // We lose Title/Tags headers but gain delivery success.
+    const fullMessage = `[${title}] ${message}`;
+
     fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
         method: 'POST',
-        body: message,
-        headers: {
-            'Title': title,
-            'Tags': tags.join(',')
-        }
-    }).then(res => {
-        if (!res.ok) console.warn('Ntfy Send Error', res.status);
-    }).catch(err => console.warn('Ntfy Network Error', err));
+        body: fullMessage,
+        mode: 'no-cors' // Important for file:// usage
+    }).then(() => {
+        console.log('Ntfy sent (opaque)');
+    }).catch(err => {
+        console.warn('Ntfy Network Error', err);
+        showNotification('Ntfy Error: ' + err.message);
+    });
 }
 function loadChatHistory() {
     try {
