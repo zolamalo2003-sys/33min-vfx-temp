@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/experiments/ui-v2/index.html" },
+    { "source": "/index.html", "destination": "/experiments/ui-v2/index.html" },
+    { "source": "/ai", "destination": "/experiments/ui-v2/ai.html" },
+    { "source": "/planner", "destination": "/experiments/ui-v2/planner.html" },
+    { "source": "/aim-trainer", "destination": "/experiments/ui-v2/aim-trainer.html" }
+  ]
+}

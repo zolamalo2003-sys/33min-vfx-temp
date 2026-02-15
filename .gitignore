@@ -6,6 +6,7 @@ node_modules/
 *.json
 !package.json
 !package-lock.json
+!vercel.json
 
 # Local Netlify folder
 .netlify
