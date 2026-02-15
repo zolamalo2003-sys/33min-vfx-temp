@@ -377,21 +377,9 @@ function applyStorePayload(data) {
     return normalized;
 }
 async function loadFromCloud() {
-    try {
-        const data = await fetchJson(CLOUD_ENDPOINT);
-        const normalized = applyStorePayload(data);
-        if (!normalized)
-            return false;
-        cloudAvailable = true;
-        if (normalized.hadMissingId) {
-            await syncAllToCloud(animations);
-        }
-        return true;
-    }
-    catch (error) {
-        cloudAvailable = false;
-        return false;
-    }
+    // Legacy cloud API is disabled - now using Supabase (supabase-app.js)
+    cloudAvailable = false;
+    return false;
 }
 async function syncAllToCloud(list) {
     if (!cloudAvailable)
