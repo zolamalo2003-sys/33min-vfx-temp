@@ -1840,21 +1840,14 @@ const DINO_ASSETS = {
 const BIRD_FRAMES = [];
 const CACTUS_SMALL = [];
 const CACTUS_LARGE = [];
+// DISABLED - Old game functions
 function setDinoImage(src) {
-    const dinoImg = document.getElementById('dinoImg');
-    if (dinoImg)
-        dinoImg.src = src;
+    // Disabled - no longer loading assets
+    return;
 }
 function startRunAnimation() {
-    clearInterval(dinoRunTimer);
-    let frame = 0;
-    setDinoImage(DINO_ASSETS.run[frame]);
-    dinoRunTimer = setInterval(() => {
-        if (!isGameRunning)
-            return;
-        frame = (frame + 1) % DINO_ASSETS.run.length;
-        setDinoImage(DINO_ASSETS.run[frame]);
-    }, 140);
+    // Disabled - old game
+    return;
 }
 function stopRunAnimation() {
     clearInterval(dinoRunTimer);

@@ -96,24 +96,10 @@ export class AiService {
         this.progressCallback = onProgress;
 
         try {
-            // Use Public CDN (HuggingFace) configuration so it works on Vercel without large file hosting
-            const myAppConfig = {
-                model_list: [
-                    {
-                        "model": "https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC",
-                        "model_id": "Llama-3.2-1B-Instruct-q4f16_1-MLC",
-                        "model_lib": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0.2.48/Llama-3.2-1B-Instruct-q4f16_1-MLC-ctx4k_cs1k-webgpu.wasm",
-                        "vram_required_MB": 1125.43,
-                        "low_resource_required": true,
-                    }
-                ],
-                use_web_worker: true
-            };
-
+            // Use built-in WebLLM model registry (simpler, more reliable)
             this.engine = await CreateMLCEngine(
                 MODEL_ID,
                 {
-                    appConfig: myAppConfig,
                     initProgressCallback: (report) => {
                         console.log("AI Progress:", report);
                         this.handleProgress(report);
