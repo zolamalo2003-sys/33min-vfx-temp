@@ -1833,25 +1833,25 @@ let collisionTimer;
 let dinoRunTimer;
 const DINO_ASSETS = {
     run: [
-        'assets/dino/DinoRun1.png',
-        'assets/dino/DinoRun2.png'
+        '/experiments/ui-v2/assets/dino/DinoRun1.png',
+        '/experiments/ui-v2/assets/dino/DinoRun2.png'
     ],
-    jump: 'assets/dino/DinoJump.png',
-    dead: 'assets/dino/DinoDead.png'
+    jump: '/experiments/ui-v2/assets/dino/DinoJump.png',
+    dead: '/experiments/ui-v2/assets/dino/DinoDead.png'
 };
 const BIRD_FRAMES = [
-    'assets/bird/Bird1.png',
-    'assets/bird/Bird2.png'
+    '/experiments/ui-v2/assets/bird/Bird1.png',
+    '/experiments/ui-v2/assets/bird/Bird2.png'
 ];
 const CACTUS_SMALL = [
-    'assets/cactus/SmallCactus1.png',
-    'assets/cactus/SmallCactus2.png',
-    'assets/cactus/SmallCactus3.png'
+    '/experiments/ui-v2/assets/cactus/SmallCactus1.png',
+    '/experiments/ui-v2/assets/cactus/SmallCactus2.png',
+    '/experiments/ui-v2/assets/cactus/SmallCactus3.png'
 ];
 const CACTUS_LARGE = [
-    'assets/cactus/LargeCactus1.png',
-    'assets/cactus/LargeCactus2.png',
-    'assets/cactus/LargeCactus3.png'
+    '/experiments/ui-v2/assets/cactus/LargeCactus1.png',
+    '/experiments/ui-v2/assets/cactus/LargeCactus2.png',
+    '/experiments/ui-v2/assets/cactus/LargeCactus3.png'
 ];
 function setDinoImage(src) {
     const dinoImg = document.getElementById('dinoImg');

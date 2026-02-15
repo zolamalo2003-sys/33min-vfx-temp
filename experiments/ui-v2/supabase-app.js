@@ -1330,6 +1330,17 @@ if (authSignupBtn) {
     });
 }
 
+// Wrapper function that calls renderCloudConsole for backward compatibility
+// Defined early to be available for event listeners
+function renderCloudTable() {
+    if (typeof renderCloudConsole === 'function') {
+        renderCloudConsole();
+    } else {
+        console.warn("renderCloudConsole not available yet");
+    }
+}
+
+// Register event listeners AFTER renderCloudTable is defined
 ["cloudFilterFolge", "cloudFilterStatus", "cloudSort"].forEach((id) => {
     const input = document.getElementById(id);
     if (input) {
@@ -1337,15 +1348,6 @@ if (authSignupBtn) {
         input.addEventListener("change", renderCloudTable);
     }
 });
-
-// Wrapper function that calls renderCloudConsole for backward compatibility
-function renderCloudTable() {
-    if (typeof renderCloudConsole === 'function') {
-        renderCloudConsole();
-    } else {
-        console.warn("renderCloudConsole not available");
-    }
-}
 
 const cloudExportTsv = document.getElementById("cloudExportTsv");
 const cloudExportCsv = document.getElementById("cloudExportCsv");
