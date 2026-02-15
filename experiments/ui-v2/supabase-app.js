@@ -1621,22 +1621,24 @@ async function startAiGeneration(type, textarea) {
 }
 
 function showSuggestions(suggestions, textarea) {
+    // Remove any existing suggestions first
+    document.querySelectorAll('.ai-suggestions').forEach(el => el.remove());
+
     const container = document.createElement('div');
     container.className = 'ai-suggestions';
 
-    // Get textarea position for absolute positioning
-    const rect = textarea.getBoundingClientRect();
-    const scrollY = window.scrollY || window.pageYOffset;
-    const scrollX = window.scrollX || window.pageXOffset;
+    // Get main area position (composer is on the left side)
+    const mainArea = document.querySelector('.main-area');
+    const mainRect = mainArea.getBoundingClientRect();
 
     container.innerHTML = `
         <div class="ai-header">
-            <div class="ai-label"><span class="material-icons" style="font-size:14px;">auto_awesome</span> Vorschläge</div>
+            <div class="ai-label"><span class="material-icons" style="font-size:14px;">auto_awesome</span> AI Vorschläge</div>
             <button class="icon-btn" style="width:20px; height:20px; border:none;" onclick="this.closest('.ai-suggestions').remove()">
                 <span class="material-icons" style="font-size:16px;">close</span>
             </button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto;">
+        <div style="display:flex; flex-direction:column; gap:12px; max-height: 70vh; overflow-y:auto; padding-right: 8px;">
             ${suggestions.map((s, i) => `
                 <div class="ai-suggestion-card" data-index="${i}">
                     ${s}
@@ -1650,15 +1652,15 @@ function showSuggestions(suggestions, textarea) {
         </div>
     `;
 
-    // Position absolutely relative to textarea
+    // Position RECHTS vom Composer - fixed on right side
     container.style.position = 'fixed';
-    container.style.left = rect.left + 'px';
-    container.style.top = (rect.bottom + 8) + 'px';
-    container.style.width = Math.min(rect.width, 400) + 'px';
-    container.style.maxWidth = 'calc(100vw - 40px)';
+    container.style.right = '20px';
+    container.style.top = '120px';
+    container.style.width = '380px';
+    container.style.maxWidth = 'calc(100vw - 500px)';
+    container.style.maxHeight = 'calc(100vh - 140px)';
     container.style.zIndex = '10000';
 
-    // Append to body instead of wrapper to avoid overflow issues
     document.body.appendChild(container);
 
     // Store reference to textarea for later use
