@@ -159,7 +159,11 @@ function updateAuthUI() {
 
 async function openProfileModal() {
     const modal = document.getElementById("profileModal");
-    if (!modal || !session) return;
+    if (!modal) {
+        console.warn("Profile modal not found in DOM");
+        return;
+    }
+    if (!session) return;
 
     // Email
     const emailDisp = document.getElementById("profileEmailDisplay");
@@ -708,7 +712,7 @@ function renderCloudConsole() {
     // --- EVENT LISTENERS ---
 
     // Checkbox Done
-    body.querySelectorAll("[data-done]").forEach((checkbox) => {
+    container.querySelectorAll("[data-done]").forEach((checkbox) => {
         checkbox.addEventListener("change", async () => {
             if (checkbox.disabled) return;
             const id = checkbox.getAttribute("data-done");
@@ -733,7 +737,7 @@ function renderCloudConsole() {
     });
 
     // Edit Enable
-    body.querySelectorAll("[data-edit]").forEach(btn => {
+    container.querySelectorAll("[data-edit]").forEach(btn => {
         btn.addEventListener("click", () => {
             const editId = btn.getAttribute("data-edit");
             activeEditId = editId;
@@ -742,7 +746,7 @@ function renderCloudConsole() {
     });
 
     // Delete
-    body.querySelectorAll("[data-delete]").forEach(btn => {
+    container.querySelectorAll("[data-delete]").forEach(btn => {
         btn.addEventListener("click", async () => {
             const deleteId = btn.getAttribute("data-delete");
             if (!confirm("Eintrag wirklich löschen?")) return;
@@ -752,7 +756,7 @@ function renderCloudConsole() {
     });
 
     // Cancel Edit
-    body.querySelectorAll(".cancel-edit-btn").forEach(btn => {
+    container.querySelectorAll(".cancel-edit-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             activeEditId = null;
             renderCloudTable();
@@ -760,7 +764,7 @@ function renderCloudConsole() {
     });
 
     // Save Edit
-    body.querySelectorAll(".save-edit-btn").forEach(btn => {
+    container.querySelectorAll(".save-edit-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const id = btn.getAttribute("data-save-edit");
             const rowElem = document.querySelector(`tr[data-cloud-id="${id}"]`);
@@ -1331,15 +1335,13 @@ if (authSignupBtn) {
     }
 });
 
-// stub to prevent crash
+// Wrapper function that calls renderCloudConsole for backward compatibility
 function renderCloudTable() {
-    console.log("renderCloudTable called (Stub)");
-    // implementation missing in current file, likely intended to re-render the cloud table
-    // For now we just ignore or re-call renderCloudConsole if that was the intent?
-    // But renderCloudConsole is also not fully defined in the snippets I saw?
-    // Let's just make it safe.
-    // Actually, looking at previous code, there was a function that rendered rows.
-    // We will leave it empty to unblock execution.
+    if (typeof renderCloudConsole === 'function') {
+        renderCloudConsole();
+    } else {
+        console.warn("renderCloudConsole not available");
+    }
 }
 
 const cloudExportTsv = document.getElementById("cloudExportTsv");
@@ -1373,10 +1375,10 @@ async function setupAiFeature() {
     try {
         const module = await import("./ai-service.js");
         globalAiService = module.aiService;
-        console.log("AI Service module loaded.");
+        console.log("AI Service module loaded successfully.");
     } catch (e) {
-        console.error("AI Service failed to load (Network?):", e);
-        // We can still try to inject UI but disable it? No, better wait.
+        console.warn("AI Service failed to load (this is optional):", e.message);
+        // AI feature is optional - don't block the app
         return;
     }
 
