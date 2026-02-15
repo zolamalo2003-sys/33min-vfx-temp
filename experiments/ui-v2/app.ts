@@ -140,10 +140,10 @@ function handleAuthClick() {
     //noinspection JSUnresolvedVariable,JSUnresolvedFunction
     if (gapi.client.getToken() === null) {
         //noinspection JSUnresolvedFunction
-        tokenClient.requestAccessToken({prompt: 'consent'});
+        tokenClient.requestAccessToken({ prompt: 'consent' });
     } else {
         //noinspection JSUnresolvedFunction
-        tokenClient.requestAccessToken({prompt: ''});
+        tokenClient.requestAccessToken({ prompt: '' });
     }
 }
 
@@ -198,14 +198,14 @@ async function pushToGoogleSheets() {
 
     try {
         showNotification('Sende Daten zu Google Sheets...');
-        
+
         // Header und Daten vorbereiten
         const values = [SHEET_HEADERS, ...buildAnimationRows(animations)];
 
         // Zuerst das Blatt leeren oder einfach überschreiben? 
         // Wir überschreiben das gesamte Blatt "Sheet1" ab A1
         const range = 'Sheet1!A1';
-        
+
         //noinspection JSUnresolvedVariable,JSUnresolvedFunction
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId,
@@ -423,7 +423,7 @@ function getAnimationById(id) {
 
 async function fetchJson(url, options = {}) {
     const response = await fetch(url, {
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         ...options
     });
     if (!response.ok) {
@@ -749,7 +749,7 @@ function selectType(type) {
     if (typeSelect) typeSelect.value = type;
     form.style.display = 'block';
     form.style.animation = 'fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-    
+
     // Update active class in selector
     document.querySelectorAll('.type-item').forEach(item => {
         const onclickValue = item.getAttribute('onclick') || '';
@@ -761,7 +761,7 @@ function selectType(type) {
     });
 
     updateFields();
-    
+
     // Smooth scroll to form
     setTimeout(() => {
         form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -771,7 +771,7 @@ function selectType(type) {
 function showNotification(message, duration = 3000) {
     const notification = document.createElement('div');
     notification.className = 'notification';
-    
+
     let icon = 'info';
     const msg = message.toLowerCase();
     if (msg.includes('gespeichert') || msg.includes('heruntergeladen') || msg.includes('dupliziert') || msg.includes('kopiert')) icon = 'check_circle';
@@ -959,7 +959,7 @@ function updateFields() {
 
     setNotesPanel(false, '');
 
-    switch(type) {
+    switch (type) {
         case 'temperatur':
             dynamicLabel.textContent = 'Temperatur';
             dynamicField.style.display = 'flex';
@@ -1268,7 +1268,7 @@ async function addAnimation(event) {
     const qValueElem = document.getElementById('qValue');
     const qValue = qValueElem ? qValueElem.value : '';
 
-    switch(type) {
+    switch (type) {
         case 'temperatur': {
             let temp = qValue.trim();
             if (temp && !temp.includes('°')) {
@@ -1364,7 +1364,7 @@ async function addAnimation(event) {
             });
             extraFields.querySelectorAll('.city-checkbox').forEach(l => l.classList.remove('active'));
         }
-        
+
         const qTimestamp = document.getElementById('qTimestamp');
         const qCutterInfo = document.getElementById('qCutterInfo');
         if (qTimestamp) qTimestamp.value = '';
@@ -1862,247 +1862,7 @@ function handleExport(format) {
     hideExportModal();
 }
 
-// Game Logic
-let isGameRunning = false;
-let currentGameId = 0;
-let gameScore;
-let gameSpeed;
-let obstacleTimer;
-let collisionTimer;
-let dinoRunTimer;
 
-const DINO_ASSETS = {
-    run: [
-        'assets/dino/DinoRun1.png',
-        'assets/dino/DinoRun2.png'
-    ],
-    jump: 'assets/dino/DinoJump.png',
-    dead: 'assets/dino/DinoDead.png'
-};
-
-const BIRD_FRAMES = [
-    'assets/bird/Bird1.png',
-    'assets/bird/Bird2.png'
-];
-
-const CACTUS_SMALL = [
-    'assets/cactus/SmallCactus1.png',
-    'assets/cactus/SmallCactus2.png',
-    'assets/cactus/SmallCactus3.png'
-];
-
-const CACTUS_LARGE = [
-    'assets/cactus/LargeCactus1.png',
-    'assets/cactus/LargeCactus2.png',
-    'assets/cactus/LargeCactus3.png'
-];
-
-function setDinoImage(src) {
-    const dinoImg = document.getElementById('dinoImg');
-    if (dinoImg) dinoImg.src = src;
-}
-
-function startRunAnimation() {
-    clearInterval(dinoRunTimer);
-    let frame = 0;
-    setDinoImage(DINO_ASSETS.run[frame]);
-    dinoRunTimer = setInterval(() => {
-        if (!isGameRunning) return;
-        frame = (frame + 1) % DINO_ASSETS.run.length;
-        setDinoImage(DINO_ASSETS.run[frame]);
-    }, 140);
-}
-
-function stopRunAnimation() {
-    clearInterval(dinoRunTimer);
-}
-
-function showGameModal() {
-    const modal = document.getElementById('gameModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        startGame();
-    }
-}
-
-function hideGameModal() {
-    const modal = document.getElementById('gameModal');
-    if (modal) {
-        modal.style.display = 'none';
-        stopGame();
-    }
-}
-
-function startGame() {
-    currentGameId++;
-    const gameId = currentGameId;
-    isGameRunning = true;
-    gameScore = 0;
-    gameSpeed = 6;
-    updateScore(0);
-    startRunAnimation();
-    
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    if (gameOverScreen) gameOverScreen.style.display = 'none';
-    
-    const objective = document.getElementById('gameObjective');
-    if (objective) objective.innerHTML = '';
-    
-    const dino = document.getElementById('dino');
-    if (dino) {
-        dino.classList.remove('jump-anim');
-        // Sicherstellen, dass der Dino am Boden ist
-        dino.style.bottom = '10px';
-    }
-    
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-
-    // Kleiner Delay vor dem ersten Obstacle für besseres Spielgefühl
-    obstacleTimer = setTimeout(() => {
-        if (isGameRunning && gameId === currentGameId) {
-            spawnObstacle();
-        }
-    }, 300);
-    
-    collisionTimer = setInterval(() => {
-        if (isGameRunning && gameId === currentGameId) checkCollision();
-    }, 10);
-
-}
-
-function stopGame() {
-    isGameRunning = false;
-    stopRunAnimation();
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-    const objective = document.getElementById('gameObjective');
-    if (objective) objective.innerHTML = '';
-}
-
-function jump() {
-    const dino = document.getElementById('dino');
-    if (dino && !dino.classList.contains('jump-anim') && isGameRunning) {
-        stopRunAnimation();
-        setDinoImage(DINO_ASSETS.jump);
-        dino.classList.add('jump-anim');
-        setTimeout(() => {
-            dino.classList.remove('jump-anim');
-            if (isGameRunning) startRunAnimation();
-        }, 600);
-    }
-}
-
-function spawnObstacle() {
-    if (!isGameRunning) return;
-    
-    createObstacle(currentGameId);
-    
-    const minDelay = Math.max(600, 1500 - (gameScore * 5));
-    const maxDelay = Math.max(1000, 3000 - (gameScore * 8));
-    const delay = Math.floor(Math.random() * (maxDelay - minDelay)) + minDelay;
-    
-    obstacleTimer = setTimeout(spawnObstacle, delay);
-}
-
-function createObstacle(gameId) {
-    const objective = document.getElementById('gameObjective');
-    if (!objective) return;
-    
-    const obstacle = document.createElement('div') as ObstacleEl;
-    const isBird = Math.random() < 0.2;
-    let type;
-    if (isBird) {
-        type = 'bird';
-    } else {
-        const cactusTypes = ['cactus-small', 'cactus-large'];
-        type = cactusTypes[Math.floor(Math.random() * cactusTypes.length)];
-    }
-    
-    obstacle.className = `obstacle ${type}`;
-    const img = document.createElement('img');
-    img.alt = type === 'bird' ? 'Bird' : 'Cactus';
-    if (type === 'bird') {
-        const birdHeights = [45, 70];
-        const height = birdHeights[Math.floor(Math.random() * birdHeights.length)];
-        obstacle.style.bottom = `${height}px`;
-        let frame = 0;
-        img.src = BIRD_FRAMES[frame];
-        obstacle._flapTimer = setInterval(() => {
-            frame = (frame + 1) % BIRD_FRAMES.length;
-            img.src = BIRD_FRAMES[frame];
-        }, 200);
-    } else if (type === 'cactus-large') {
-        img.src = CACTUS_LARGE[Math.floor(Math.random() * CACTUS_LARGE.length)];
-    } else {
-        img.src = CACTUS_SMALL[Math.floor(Math.random() * CACTUS_SMALL.length)];
-    }
-    obstacle.appendChild(img);
-    objective.appendChild(obstacle);
-
-    let position = -50;
-    const currentSpeed = gameSpeed;
-    const moveInterval = setInterval(() => {
-        if (!isGameRunning || gameId !== currentGameId) {
-            clearInterval(moveInterval);
-            if (obstacle._flapTimer) clearInterval(obstacle._flapTimer);
-            obstacle.remove();
-            return;
-        }
-
-        position += currentSpeed;
-        obstacle.style.right = position + 'px';
-
-        if (position > 550) {
-            clearInterval(moveInterval);
-            if (obstacle._flapTimer) clearInterval(obstacle._flapTimer);
-            obstacle.remove();
-            if (isGameRunning && gameId === currentGameId) {
-                gameScore++;
-                updateScore(gameScore);
-                if (gameScore % 5 === 0) gameSpeed += 0.15;
-            }
-        }
-    }, 20);
-}
-
-function updateScore(score) {
-    const scoreElem = document.getElementById('gameScore');
-    if (scoreElem) scoreElem.textContent = score.toString().padStart(5, '0');
-}
-
-function checkCollision() {
-    const dino = document.getElementById('dino');
-    const obstacles = document.querySelectorAll('.obstacle');
-    if (!dino) return;
-
-    const dinoRect = dino.getBoundingClientRect();
-
-    obstacles.forEach(obstacle => {
-        const obsRect = obstacle.getBoundingClientRect();
-        
-        if (
-            dinoRect.left < obsRect.right &&
-            dinoRect.right > obsRect.left &&
-            dinoRect.top < obsRect.bottom &&
-            dinoRect.bottom > obsRect.top
-        ) {
-            gameOver();
-        }
-    });
-}
-
-function gameOver() {
-    isGameRunning = false;
-    stopRunAnimation();
-    setDinoImage(DINO_ASSETS.dead);
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const finalScore = document.getElementById('finalScore');
-    if (gameOverScreen) gameOverScreen.style.display = 'flex';
-    if (finalScore) finalScore.textContent = `SCORE: ${gameScore.toString().padStart(5, '0')}`;
-}
 
 // Export functions used by inline HTML handlers.
 //noinspection JSUnusedGlobalSymbols
@@ -2120,8 +1880,7 @@ Object.assign(window, {
     setStatusForEntry,
     scrollToEntries,
     toggleTheme,
-    showGameModal,
-    hideGameModal,
+
     selectType,
     toggleGlobalFields,
     showSheetsModal,
@@ -2131,8 +1890,7 @@ Object.assign(window, {
     saveSheetsSettings,
     pushToGoogleSheets,
     pullFromGoogleSheets,
-    startGame,
-    jump,
+
     saveEdit,
     cancelEdit,
     duplicateRow,
@@ -2155,9 +1913,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (event.target === sheetsModal) {
             hideSheetsModal();
         }
-        if (event.target === gameModal) {
-            hideGameModal();
-        }
+
         if (event.target === previewModal) {
             hidePreview();
         }
@@ -2170,20 +1926,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Space to jump or restart
-    document.addEventListener('keydown', (e) => {
-        const gameModal = document.getElementById('gameModal');
-        if (e.code === 'Space' && gameModal && gameModal.style.display === 'flex') {
-            e.preventDefault();
-            
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            if (gameOverScreen && gameOverScreen.style.display === 'flex') {
-                startGame(); // Restart if game over
-            } else {
-                jump(); // Jump if game running
-            }
-        }
-    });
+
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const normalized = normalizeAnimations(stored);

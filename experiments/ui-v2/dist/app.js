@@ -1823,209 +1823,7 @@ function handleExport(format) {
     showNotification(`${extension.toUpperCase()}-Datei wurde heruntergeladen!`);
     hideExportModal();
 }
-// Game Logic
-let isGameRunning = false;
-let currentGameId = 0;
-let gameScore;
-let gameSpeed;
-let obstacleTimer;
-let collisionTimer;
-// Legacy Dino Game - DISABLED (old game, not used anymore)
-let dinoRunTimer;
-const DINO_ASSETS = {
-    run: [],
-    jump: '',
-    dead: ''
-};
-const BIRD_FRAMES = [];
-const CACTUS_SMALL = [];
-const CACTUS_LARGE = [];
-// DISABLED - Old game functions
-function setDinoImage(src) {
-    // Disabled - no longer loading assets
-    return;
-}
-function startRunAnimation() {
-    // Disabled - old game
-    return;
-}
-function stopRunAnimation() {
-    clearInterval(dinoRunTimer);
-}
-function showGameModal() {
-    const modal = document.getElementById('gameModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        startGame();
-    }
-}
-function hideGameModal() {
-    const modal = document.getElementById('gameModal');
-    if (modal) {
-        modal.style.display = 'none';
-        stopGame();
-    }
-}
-function startGame() {
-    currentGameId++;
-    const gameId = currentGameId;
-    isGameRunning = true;
-    gameScore = 0;
-    gameSpeed = 6;
-    updateScore(0);
-    startRunAnimation();
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    if (gameOverScreen)
-        gameOverScreen.style.display = 'none';
-    const objective = document.getElementById('gameObjective');
-    if (objective)
-        objective.innerHTML = '';
-    const dino = document.getElementById('dino');
-    if (dino) {
-        dino.classList.remove('jump-anim');
-        // Sicherstellen, dass der Dino am Boden ist
-        dino.style.bottom = '10px';
-    }
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-    // Kleiner Delay vor dem ersten Obstacle für besseres Spielgefühl
-    obstacleTimer = setTimeout(() => {
-        if (isGameRunning && gameId === currentGameId) {
-            spawnObstacle();
-        }
-    }, 300);
-    collisionTimer = setInterval(() => {
-        if (isGameRunning && gameId === currentGameId)
-            checkCollision();
-    }, 10);
-}
-function stopGame() {
-    isGameRunning = false;
-    stopRunAnimation();
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-    const objective = document.getElementById('gameObjective');
-    if (objective)
-        objective.innerHTML = '';
-}
-function jump() {
-    const dino = document.getElementById('dino');
-    if (dino && !dino.classList.contains('jump-anim') && isGameRunning) {
-        stopRunAnimation();
-        setDinoImage(DINO_ASSETS.jump);
-        dino.classList.add('jump-anim');
-        setTimeout(() => {
-            dino.classList.remove('jump-anim');
-            if (isGameRunning)
-                startRunAnimation();
-        }, 600);
-    }
-}
-function spawnObstacle() {
-    if (!isGameRunning)
-        return;
-    createObstacle(currentGameId);
-    const minDelay = Math.max(600, 1500 - (gameScore * 5));
-    const maxDelay = Math.max(1000, 3000 - (gameScore * 8));
-    const delay = Math.floor(Math.random() * (maxDelay - minDelay)) + minDelay;
-    obstacleTimer = setTimeout(spawnObstacle, delay);
-}
-function createObstacle(gameId) {
-    const objective = document.getElementById('gameObjective');
-    if (!objective)
-        return;
-    const obstacle = document.createElement('div');
-    const isBird = Math.random() < 0.2;
-    let type;
-    if (isBird) {
-        type = 'bird';
-    }
-    else {
-        const cactusTypes = ['cactus-small', 'cactus-large'];
-        type = cactusTypes[Math.floor(Math.random() * cactusTypes.length)];
-    }
-    obstacle.className = `obstacle ${type}`;
-    const img = document.createElement('img');
-    img.alt = type === 'bird' ? 'Bird' : 'Cactus';
-    if (type === 'bird') {
-        const birdHeights = [45, 70];
-        const height = birdHeights[Math.floor(Math.random() * birdHeights.length)];
-        obstacle.style.bottom = `${height}px`;
-        let frame = 0;
-        img.src = BIRD_FRAMES[frame];
-        obstacle._flapTimer = setInterval(() => {
-            frame = (frame + 1) % BIRD_FRAMES.length;
-            img.src = BIRD_FRAMES[frame];
-        }, 200);
-    }
-    else if (type === 'cactus-large') {
-        img.src = CACTUS_LARGE[Math.floor(Math.random() * CACTUS_LARGE.length)];
-    }
-    else {
-        img.src = CACTUS_SMALL[Math.floor(Math.random() * CACTUS_SMALL.length)];
-    }
-    obstacle.appendChild(img);
-    objective.appendChild(obstacle);
-    let position = -50;
-    const currentSpeed = gameSpeed;
-    const moveInterval = setInterval(() => {
-        if (!isGameRunning || gameId !== currentGameId) {
-            clearInterval(moveInterval);
-            if (obstacle._flapTimer)
-                clearInterval(obstacle._flapTimer);
-            obstacle.remove();
-            return;
-        }
-        position += currentSpeed;
-        obstacle.style.right = position + 'px';
-        if (position > 550) {
-            clearInterval(moveInterval);
-            if (obstacle._flapTimer)
-                clearInterval(obstacle._flapTimer);
-            obstacle.remove();
-            if (isGameRunning && gameId === currentGameId) {
-                gameScore++;
-                updateScore(gameScore);
-                if (gameScore % 5 === 0)
-                    gameSpeed += 0.15;
-            }
-        }
-    }, 20);
-}
-function updateScore(score) {
-    const scoreElem = document.getElementById('gameScore');
-    if (scoreElem)
-        scoreElem.textContent = score.toString().padStart(5, '0');
-}
-function checkCollision() {
-    const dino = document.getElementById('dino');
-    const obstacles = document.querySelectorAll('.obstacle');
-    if (!dino)
-        return;
-    const dinoRect = dino.getBoundingClientRect();
-    obstacles.forEach(obstacle => {
-        const obsRect = obstacle.getBoundingClientRect();
-        if (dinoRect.left < obsRect.right &&
-            dinoRect.right > obsRect.left &&
-            dinoRect.top < obsRect.bottom &&
-            dinoRect.bottom > obsRect.top) {
-            gameOver();
-        }
-    });
-}
-function gameOver() {
-    isGameRunning = false;
-    stopRunAnimation();
-    setDinoImage(DINO_ASSETS.dead);
-    clearTimeout(obstacleTimer);
-    clearInterval(collisionTimer);
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const finalScore = document.getElementById('finalScore');
-    if (gameOverScreen)
-        gameOverScreen.style.display = 'flex';
-    if (finalScore)
-        finalScore.textContent = `SCORE: ${gameScore.toString().padStart(5, '0')}`;
-}
+
 // Export functions used by inline HTML handlers.
 //noinspection JSUnusedGlobalSymbols
 Object.assign(window, {
@@ -2042,8 +1840,7 @@ Object.assign(window, {
     setStatusForEntry,
     scrollToEntries,
     toggleTheme,
-    showGameModal,
-    hideGameModal,
+
     selectType,
     toggleGlobalFields,
     showSheetsModal,
@@ -2053,8 +1850,7 @@ Object.assign(window, {
     saveSheetsSettings,
     pushToGoogleSheets,
     pullFromGoogleSheets,
-    startGame,
-    jump,
+
     saveEdit,
     cancelEdit,
     duplicateRow,
@@ -2110,9 +1906,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (event.target === sheetsModal) {
             hideSheetsModal();
         }
-        if (event.target === gameModal) {
-            hideGameModal();
-        }
+
         if (event.target === previewModal) {
             hidePreview();
         }
@@ -2125,19 +1919,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     // Space to jump or restart
-    document.addEventListener('keydown', (e) => {
-        const gameModal = document.getElementById('gameModal');
-        if (e.code === 'Space' && gameModal && gameModal.style.display === 'flex') {
-            e.preventDefault();
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            if (gameOverScreen && gameOverScreen.style.display === 'flex') {
-                startGame(); // Restart if game over
-            }
-            else {
-                jump(); // Jump if game running
-            }
-        }
-    });
+
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const normalized = normalizeAnimations(stored);
     animations = normalized.list;
