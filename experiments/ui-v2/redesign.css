@@ -2370,18 +2370,12 @@ details#notesPanel>div {
 
 /* Suggestions Overlay */
 .ai-suggestions {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 300px;
-    max-width: calc(100vw - 40px);
+    /* Position is set dynamically via JS (fixed positioning) */
     background: var(--panel-alt);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 12px;
-    margin-top: 8px;
     box-shadow: var(--shadow-float);
-    z-index: 100;
     display: flex;
     flex-direction: column;
     gap: 8px;

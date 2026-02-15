@@ -1621,10 +1621,13 @@ async function startAiGeneration(type, textarea) {
 }
 
 function showSuggestions(suggestions, textarea) {
-    const wrapper = textarea.parentElement;
-
     const container = document.createElement('div');
     container.className = 'ai-suggestions';
+
+    // Get textarea position for absolute positioning
+    const rect = textarea.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
 
     container.innerHTML = `
         <div class="ai-header">
@@ -1647,9 +1650,19 @@ function showSuggestions(suggestions, textarea) {
         </div>
     `;
 
-    wrapper.appendChild(container);
+    // Position absolutely relative to textarea
+    container.style.position = 'fixed';
+    container.style.left = rect.left + 'px';
+    container.style.top = (rect.bottom + 8) + 'px';
+    container.style.width = Math.min(rect.width, 400) + 'px';
+    container.style.maxWidth = 'calc(100vw - 40px)';
+    container.style.zIndex = '10000';
 
-    // Helper to store suggestion data if needed
+    // Append to body instead of wrapper to avoid overflow issues
+    document.body.appendChild(container);
+
+    // Store reference to textarea for later use
+    container.dataset.textareaId = textarea.id;
     container.dataset.suggestions = JSON.stringify(suggestions);
 
     // Add click handlers to suggestion cards
@@ -1659,15 +1672,30 @@ function showSuggestions(suggestions, textarea) {
             applySuggestion(card, index);
         });
     });
+
+    // Close on outside click
+    setTimeout(() => {
+        const closeOnOutsideClick = (e) => {
+            if (!container.contains(e.target)) {
+                container.remove();
+                document.removeEventListener('click', closeOnOutsideClick);
+            }
+        };
+        document.addEventListener('click', closeOnOutsideClick);
+    }, 100);
 }
 
 function applySuggestion(card, index) {
-    const suggestions = JSON.parse(card.closest('.ai-suggestions').dataset.suggestions);
+    const suggestionsContainer = card.closest('.ai-suggestions');
+    const suggestions = JSON.parse(suggestionsContainer.dataset.suggestions);
     const text = suggestions[index];
 
-    const textarea = card.closest('.input-wrap').querySelector('textarea');
+    // Find the textarea by stored ID
+    const textareaId = suggestionsContainer.dataset.textareaId;
+    const textarea = document.getElementById(textareaId);
+
     if (!textarea) {
-        console.error("Textarea not found");
+        console.error("Textarea not found with ID:", textareaId);
         return;
     }
 
