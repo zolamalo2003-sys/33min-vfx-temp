@@ -2300,6 +2300,7 @@ details#notesPanel>div {
     gap: 12px;
     justify-content: flex-end;
 }
+
 /* ── AI Rewrite Feature ── */
 .ai-trigger-wrap {
     position: relative;
@@ -2337,9 +2338,17 @@ details#notesPanel>div {
 }
 
 @keyframes pulse-glow {
-    0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(139, 92, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    }
 }
 
 /* Download Progress Ring */
@@ -2379,8 +2388,15 @@ details#notesPanel>div {
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .ai-header {
@@ -2445,4 +2461,150 @@ details#notesPanel>div {
 
 .ai-hero-icon .material-icons {
     font-size: 32px;
+}
+
+/* ── AI Modal Redesign ── */
+.ai-modal-content {
+    max-width: 520px !important;
+    text-align: center;
+    padding: 32px 40px !important;
+}
+
+.ai-desc-text {
+    text-align: left;
+    margin-top: 24px;
+}
+
+.ai-desc-text p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.ai-desc-text p:first-of-type {
+    margin-bottom: 18px;
+}
+
+.ai-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 18px 0;
+    width: 100%;
+}
+
+/* Callout Block - Updated */
+.ai-callout {
+    margin-top: 20px;
+    padding-left: 16px;
+    border-left: 2px solid rgba(139, 92, 246, 0.35);
+    font-size: 13px;
+    /* Reduced to exactly 13px per request */
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.68);
+    font-weight: 500;
+    margin-bottom: 18px;
+    /* Added spacing to buttons */
+}
+
+/* Open Source Link Styling */
+.ai-link-highlight {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+
+  gap: 4px;            /* vorher 6px */
+  line-height: inherit; /* vorher 1 */
+  white-space: nowrap;  /* neu */
+}
+
+.ai-link-highlight:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+    text-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+}
+
+.ai-link-highlight:hover .ai-icon-external {
+    opacity: 1;
+}
+
+/* Icon Styles */
+.ai-icon-external {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  position: relative;
+  top: 1px;            /* damit es optisch mittig sitzt */
+  opacity: 0.9;
+  color: currentColor;
+  transition: opacity 0.2s;
+}
+
+.ai-icon-link {
+    width: 14px;
+    height: 14px;
+    margin-left: 8px;
+    opacity: 0.85;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+/* Button Layout */
+.ai-modal-actions-primary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.ai-modal-actions-secondary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 12px;
+}
+
+/* Ghost Button for 'Mehr erfahren' - Updated */
+.ai-btn-ghost {
+    height: 30px;
+    /* Reduced */
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.78);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.ai-btn-ghost:hover {
+    border: 1px solid rgba(139, 92, 246, 0.42);
+    background: rgba(139, 92, 246, 0.08);
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.ai-btn-ghost:hover .ai-icon-link {
+    opacity: 1;
+    color: var(--primary);
+    /* subtle shift */
+}
+
+/* Fix primary button alignment */
+.ai-modal-actions-primary .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* Keep existing sizes but ensure flex centering */
 }

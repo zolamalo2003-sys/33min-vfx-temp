@@ -4,7 +4,7 @@ import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.
 const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 const MODEL_PATH = `./ai-models/${MODEL_ID}/`;
 const SYSTEM_PROMPTS = {
-  textbox: `
+    textbox: `
 You rewrite on-screen info text for a German TV/YouTube race series.
 
 Context (do not output this):
@@ -28,7 +28,7 @@ Return ONLY valid JSON:
 {"suggestions":["...","...","..."]}
 `.trim(),
 
-  todo: `
+    todo: `
 You rewrite German To-Do overlay items for the same race series.
 
 Context (do not output this):
@@ -96,58 +96,29 @@ export class AiService {
         this.progressCallback = onProgress;
 
         try {
-            // Configure to look for model in local folder
-            const appConfig = {
+            // Use Public CDN (HuggingFace) configuration so it works on Vercel without large file hosting
+            const myAppConfig = {
                 model_list: [
                     {
-                        model: `https://huggingface.co/mlc-ai/${MODEL_ID}`, // Fallback or metadata source
-                        model_id: MODEL_ID,
-                        model_lib: `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0.2.48/${MODEL_ID}-ctx4k_cs1k-webgpu.wasm`, // This might need adjustment based on specific model version
-                        low_resource_required: true,
-                        // For self-hosted, we override the weight path if needed, 
-                        // but WebLLM usually expects a specific structure. 
-                        // We'll point to our local directory if we can.
-                        // However, WebLLM's `CreateMLCEngine` expects a clear config.
-                        // To keep it simple for now, we'll try standard loading which caches in browser cache.
-                        // If "Self-host" means serving files from /public, we need to map the URL.
+                        "model": "https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC",
+                        "model_id": "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+                        "model_lib": "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0.2.48/Llama-3.2-1B-Instruct-q4f16_1-MLC-ctx4k_cs1k-webgpu.wasm",
+                        "vram_required_MB": 1125.43,
+                        "low_resource_required": true,
                     }
                 ],
                 use_web_worker: true
             };
 
-            // To strictly force local path:
-            /*
-            const localConfig = {
-                model_list: [
-                    {
-                        model: MODEL_PATH, // Local path
-                        model_id: MODEL_ID,
-                        model_lib: `${MODEL_PATH}model-lib.wasm`, // Assuming we accepted the wasm there too
-                        low_resource_required: true,
-                    }
-                ]
-            }
-            */
-
-            // For this implementation, we will perform standard load which caches.
-            // To truly self-host, the user MUST download the weights to MODEL_PATH.
-            // We will assume they are there or we will fallback to CDN if allowed (but requirements say "Only static model asset downloads... hosted on our own Vercel domain").
-            // So we point `model` to the relative path.
-
-            const myAppConfig = {
-                model_list: [
-                    {
-                        model: MODEL_PATH,
-                        model_id: MODEL_ID,
-                        model_lib: `https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models/v0.2.48/${MODEL_ID}-ctx4k_cs1k-webgpu.wasm`, // WASM is usually small enough to fetch from GitHub, or we can self-host it too.
-                        low_resource_required: true,
-                    }
-                ]
-            };
-
             this.engine = await CreateMLCEngine(
                 MODEL_ID,
-                { appConfig: myAppConfig, initProgressCallback: this.handleProgress.bind(this) }
+                {
+                    appConfig: myAppConfig,
+                    initProgressCallback: (report) => {
+                        console.log("AI Progress:", report);
+                        this.handleProgress(report);
+                    }
+                }
             );
 
             this.isLoading = false;

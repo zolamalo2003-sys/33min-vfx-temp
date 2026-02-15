@@ -205,11 +205,36 @@ const server = http.createServer(
             return;
         }
 
-        const requestedPath = req.url === '/' ? '/index.html' : req.url;
-        const filePath = path.join(__dirname, requestedPath);
+        let requestedPath = req.url === '/' ? '/index.html' : req.url;
+        // Remove trailing slash for consistency
+        if (requestedPath.length > 1 && requestedPath.endsWith('/')) {
+            requestedPath = requestedPath.slice(0, -1);
+        }
+
+        let filePath = path.join(__dirname, requestedPath);
+
+        // Routing logic: Try exact -> .html -> index.html
+        if (!fs.existsSync(filePath)) {
+            if (fs.existsSync(filePath + '.html')) {
+                filePath += '.html';
+            } else if (fs.existsSync(path.join(filePath, 'index.html'))) {
+                filePath = path.join(filePath, 'index.html');
+            }
+        } else {
+            // If it exists, check if directory
+            try {
+                if (fs.statSync(filePath).isDirectory()) {
+                    const idxPath = path.join(filePath, 'index.html');
+                    if (fs.existsSync(idxPath)) {
+                        filePath = idxPath;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
 
         fs.readFile(filePath, (err, data) => {
             if (err) {
+                // Finally 404
                 sendJson(res, 404, { error: 'Nicht gefunden' });
                 return;
             }

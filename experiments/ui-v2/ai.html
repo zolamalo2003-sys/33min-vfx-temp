@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI – Mehr Infos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="redesign.css">
+
+    <style>
+        /* Minimal layout overrides for AI info page */
+        body {
+            background-color: var(--bg);
+            background-image: var(--bg-gradient);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            /* Allow scrolling */
+            overflow-y: auto;
+            display: block;
+        }
+
+        .ai-page-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ai-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            transition: color 0.2s;
+            font-weight: 500;
+        }
+
+        .ai-back-link:hover {
+            color: var(--text);
+        }
+
+        .ai-info-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow-out);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle glow effect similar to main app */
+        .ai-info-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
+        }
+
+        h1 {
+            color: var(--text);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ai-subtitle {
+            color: var(--primary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 32px;
+            opacity: 0.9;
+        }
+
+        /* Skeletal placeholders */
+        .placeholder-block {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0.6;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+        }
+
+        .ai-links-section {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .ai-links-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .ai-placeholder-link {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.15s;
+        }
+
+        .ai-placeholder-link:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* Documentation Styles */
+        .doc-section {
+            margin-bottom: 40px;
+        }
+
+        .doc-subtitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 32px;
+            margin-bottom: 12px;
+        }
+
+        .doc-text {
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .doc-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 24px;
+        }
+
+        .doc-list li {
+            position: relative;
+            padding-left: 24px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .doc-list li::before {
+            content: '•';
+            position: absolute;
+            left: 8px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* MacOS Terminal Code Style */
+        .code-window {
+            background: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            margin: 24px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        }
+
+        .window-header {
+            background: #2d2d2d;
+            padding: 10px 14px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            align-items: center;
+        }
+
+        .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+
+        .dot.red {
+            background: #ff5f56;
+        }
+
+        .dot.yellow {
+            background: #ffbd2e;
+        }
+
+        .dot.green {
+            background: #27c93f;
+        }
+
+        .window-title {
+            margin-left: 8px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .code-content {
+            padding: 18px;
+            overflow-x: auto;
+            color: #d4d4d4;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre;
+        }
+
+        .code-keyword {
+            color: #569cd6;
+        }
+
+        .code-string {
+            color: #ce9178;
+        }
+
+        .code-comment {
+            color: #6a9955;
+        }
+
+        .code-function {
+            color: #dcdcaa;
+        }
+
+        .code-number {
+            color: #b5cea8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="ai-page-container">
+        <!-- Back Link -->
+        <a href="/experiments/ui-v2/" class="ai-back-link">
+            <span class="material-icons" style="font-size:18px;">arrow_back</span>
+            Zurück zur Übersicht
+        </a>
+
+        <!-- Main Content Card -->
+        <div class="ai-info-panel">
+            <h1>
+                <span class="material-icons" style="color:var(--primary);">auto_awesome</span>
+                AI – Mehr Infos
+            </h1>
+            <div class="ai-subtitle" style="margin-bottom: 40px;">Technische Dokumentation & Funktionsweise</div>
+
+            <div class="doc-section">
+                <div class="doc-subtitle">A) Wie funktioniert unsere Website?</div>
+                <div class="doc-text">
+                    Unsere Website ist eine moderne <strong>Single-Page-Application (SPA)</strong>. Das bedeutet, sie
+                    lädt nur einmal (beim ersten Besuch) und tauscht danach Inhalte dynamisch aus, ohne dass die Seite
+                    neu laden muss.
+                </div>
+                <div class="doc-text">
+                    Der Kern der Anwendung ist in <code>supabase-app.js</code> geschrieben. Dieser Code verbindet sich
+                    mit unserer Datenbank (Supabase) für Echtzeit-Updates, steuert die Benutzeroberfläche und lädt bei
+                    Bedarf Zusatzmodule nach – wie unsere AI.
+                </div>
+
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                        <div class="window-title">supabase-app.js</div>
+                    </div>
+                    <div class="code-content"><span class="code-comment">// Polling interval to ensure UI is
+                            injected</span>
+                        <span class="code-function">setInterval</span>(() => {
+                        <span class="code-keyword">const</span> textContent = <span
+                            class="code-keyword">document</span>.<span class="code-function">getElementById</span>(<span
+                            class="code-string">'qTextContent'</span>);
+
+                        <span class="code-comment">// Wenn ein Eingabefeld gefunden wird, injiziere den AI-Button</span>
+                        <span class="code-keyword">if</span> (textContent && !textContent.parentElement.<span
+                            class="code-function">querySelector</span>(<span class="code-string">'.ai-btn'</span>)) {
+                        <span class="code-function">injectAiUI</span>(<span class="code-string">'textbox'</span>,
+                        textContent.parentElement, textContent);
+                        }
+                        }, <span class="code-number">800</span>);
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-section">
+                <div class="doc-subtitle">B) Was ist diese AI und wie funktioniert sie?</div>
+                <div class="doc-text">
+                    Normalerweise laufen KIs (wie ChatGPT) auf riesigen Serverfarmen in den USA. Du sendest deinen Text
+                    dorthin, er wird verarbeitet, und die Antwort kommt zurück. <strong>Wir machen das anders.</strong>
+                </div>
+                <div class="doc-text">
+                    Wir nutzen eine Technologie namens <strong>WebLLM</strong> (basierend auf WebGPU). Damit laden wir
+                    ein "komprimiertes Gehirn" (das Sprachmodell) direkt in den <strong>Arbeitsspeicher deiner
+                        Grafikkarte</strong>.
+                </div>
+                <ul class="doc-list">
+                    <li>Der Browser lädt die Modell-Dateien (~600MB) von einem Server (HuggingFace) herunter.</li>
+                    <li>Er speichert sie <strong>lokal</strong> in deinem Browser-Cache.</li>
+                    <li>Die "Engine" startet und nutzt <strong>deine eigene Hardware</strong> zum Denken.</li>
+                </ul>
+
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                        <div class="window-title">ai-service.js</div>
+                    </div>
+                    <div class="code-content"><span class="code-keyword">import</span> { CreateMLCEngine } <span
+                            class="code-keyword">from</span> <span
+                            class="code-string">"https://cdn.jsdelivr.net..."</span>;
+
+                        <span class="code-keyword">const</span> MODEL_ID = <span
+                            class="code-string">"Llama-3.2-1B-Instruct-q4f16_1-MLC"</span>;
+
+                        <span class="code-comment">// Hier startet die lokale Intelligenz auf DEINER Hardware</span>
+                        <span class="code-keyword">this</span>.engine = <span class="code-keyword">await</span> <span
+                            class="code-function">CreateMLCEngine</span>(
+                        MODEL_ID,
+                        {
+                        <span class="code-function">initProgressCallback</span>: (progress) => {
+                        <span class="code-keyword">console</span>.<span class="code-function">log</span>(<span
+                            class="code-string">"Lade Modell:"</span>, progress);
+                        }
+                        }
+                        );
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-section">
+                <div class="doc-subtitle">C) Was bedeutet Open Source?</div>
+                <div class="doc-text">
+                    Das Modell, das wir verwenden, heißt <strong>Llama-3.2-1B</strong> (entwickelt von Meta, optimiert
+                    von der Open-Source-Community MLC.ai).
+                </div>
+                <ul class="doc-list">
+                    <li><strong>Transparenz:</strong> Der Bauplan und die "Gewichte" (das Wissen) des Modells sind
+                        öffentlich einsehbar.</li>
+                    <li><strong>Freiheit:</strong> Wir dürfen es kostenlos nutzen und auf eigener Hardware betreiben,
+                        ohne von einer Firma abhängig zu sein.</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <div class="doc-subtitle">D) Warum ist das sicher? (Privacy by Design)</div>
+                <div class="doc-text">
+                    Da die AI <strong>lokal</strong> läuft, verlässt <strong>kein einziges Wort</strong> deinen
+                    Computer, nachdem das Modell einmal geladen ist. Unser Code hat keine Schnittstelle für den Text
+                    nach außen.
+                </div>
+
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                        <div class="window-title">ai-service.js</div>
+                    </div>
+                    <div class="code-content"><span class="code-keyword">async</span> <span
+                            class="code-function">generateRewrites</span>(text, type) {
+                        <span class="code-comment">// Die Anfrage bleibt im Browser-Speicher</span>
+                        <span class="code-keyword">const</span> response = <span class="code-keyword">await</span> <span
+                            class="code-keyword">this</span>.engine.chat.completions.<span
+                            class="code-function">create</span>({
+                        messages: [
+                        { role: <span class="code-string">"system"</span>, content: systemPrompt },
+                        { role: <span class="code-string">"user"</span>, content: text } <span class="code-comment">//
+                            Dein Text</span>
+                        ]
+                        });
+                        <span class="code-keyword">return</span> <span class="code-keyword">JSON</span>.<span
+                            class="code-function">parse</span>(response.choices[<span
+                            class="code-number">0</span>].message.content);
+                        }
+                    </div>
+                </div>
+
+                <div class="doc-text">
+                    Wir senden dem Modell strikte Anweisungen (System Prompts), wie es sich verhalten soll:
+                </div>
+
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                        <div class="window-title">System Prompt Config</div>
+                    </div>
+                    <div class="code-content"><span class="code-keyword">const</span> SYSTEM_PROMPTS = {
+                        textbox: <span class="code-string">`
+                            You rewrite on-screen info text for a German TV/YouTube race series.
+                            Context:
+                            - 5 participants: Jerry, Marc, Käthe, Taube, Kodiak.
+                            - Style: informative + slightly narrative.
+                            `</span>
+                        };</div>
+                </div>
+            </div>
+
+            <!-- Links Section -->
+            <div class="ai-links-section">
+                <div class="ai-links-label">Quick Links</div>
+                <a href="#" class="ai-placeholder-link">Detaillierte Dokumentation (Coming Soon)</a>
+                <a href="#" class="ai-placeholder-link">Source Code Repository (Coming Soon)</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
