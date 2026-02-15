@@ -571,7 +571,10 @@ window.toggleEntryDetails = function (id) {
     }
 };
 
-function renderCloudConsole() {
+// Forward declaration for renderCloudConsole to avoid ReferenceError
+let renderCloudConsole;
+
+renderCloudConsole = function() {
     const container = document.getElementById("cloudContentArea");
     if (!container) return;
 

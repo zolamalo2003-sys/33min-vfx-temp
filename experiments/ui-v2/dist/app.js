@@ -72,7 +72,14 @@ function updateAuthStatus() {
     if (!statusDiv || !authBtn || !actionsDiv)
         return;
     //noinspection JSUnresolvedVariable,JSUnresolvedFunction
-    const token = gapi.client.getToken();
+    let token = null;
+    try {
+        if (gapi && gapi.client && typeof gapi.client.getToken === 'function') {
+            token = gapi.client.getToken();
+        }
+    } catch (e) {
+        console.warn("Google API token check failed (optional feature):", e.message);
+    }
     if (token) {
         statusDiv.innerHTML = `<span class="material-icons" style="color: #0f9d58;">check_circle</span> <span>Verbunden</span>`;
         authBtn.innerHTML = `<span class="material-icons">logout</span> Abmelden`;
