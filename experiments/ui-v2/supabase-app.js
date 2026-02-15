@@ -1381,6 +1381,17 @@ async function setupAiFeature() {
         const module = await import("/experiments/ui-v2/ai-service.js");
         globalAiService = module.aiService;
         console.log("AI Service module loaded successfully.");
+
+        // Try to auto-load model from cache (silent)
+        try {
+            await globalAiService.loadModel(() => {
+                // Silent progress - no UI during auto-load
+            });
+            console.log("AI Model auto-loaded from cache!");
+        } catch (e) {
+            // Model not in cache - user will need to download on first use
+            console.log("AI Model not cached yet - will download on first use");
+        }
     } catch (e) {
         console.warn("AI Service failed to load (this is optional):", e.message);
         // AI feature is optional - don't block the app
@@ -1542,24 +1553,41 @@ function showAiConsentModal(onConfirm) {
         // Start download
         document.getElementById(modalId).remove();
 
-        // Show progress on button?
-        // We'll show a toast or global loader for first time
-        showToast("Lade AI Model...", 5000);
+        // Create progress indicator
+        const progressToast = document.createElement('div');
+        progressToast.className = 'notification';
+        progressToast.id = 'aiProgressToast';
+        progressToast.innerHTML = `
+            <span class="material-icons">download</span>
+            <div style="flex: 1;">
+                <div style="font-size: 0.9rem; margin-bottom: 4px;">Lade AI Model...</div>
+                <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;">
+                    <div id="aiProgressBar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(progressToast);
 
         const btn = document.querySelector('.ai-btn');
-        if (btn) btn.classList.add('thinking'); // Use pulsing as loading ind for now
+        if (btn) btn.classList.add('thinking');
 
         try {
             await globalAiService.loadModel((progress) => {
                 console.log("AI Progress:", progress);
-                // We could update a progress bar here
-                if (progress.text) showToast(progress.text, 1000);
+                // Update progress bar
+                const progressBar = document.getElementById('aiProgressBar');
+                if (progressBar && progress.progress !== undefined) {
+                    progressBar.style.width = (progress.progress * 100) + '%';
+                }
             });
+
             if (btn) btn.classList.remove('thinking');
+            progressToast.remove();
             showToast("AI Bereit!", 2000);
             onConfirm();
         } catch (err) {
             if (btn) btn.classList.remove('thinking');
+            progressToast.remove();
             alert("Fehler beim Laden: " + err.message);
         }
     };
@@ -1607,7 +1635,7 @@ function showSuggestions(suggestions, textarea) {
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto;">
             ${suggestions.map((s, i) => `
-                <div class="ai-suggestion-card" onclick="applySuggestion(this, ${i})">
+                <div class="ai-suggestion-card" data-index="${i}">
                     ${s}
                 </div>
             `).join('')}
@@ -1623,13 +1651,26 @@ function showSuggestions(suggestions, textarea) {
 
     // Helper to store suggestion data if needed
     container.dataset.suggestions = JSON.stringify(suggestions);
+
+    // Add click handlers to suggestion cards
+    container.querySelectorAll('.ai-suggestion-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const index = parseInt(card.dataset.index);
+            applySuggestion(card, index);
+        });
+    });
 }
 
-window.applySuggestion = function (card, index) {
+function applySuggestion(card, index) {
     const suggestions = JSON.parse(card.closest('.ai-suggestions').dataset.suggestions);
     const text = suggestions[index];
 
     const textarea = card.closest('.input-wrap').querySelector('textarea');
+    if (!textarea) {
+        console.error("Textarea not found");
+        return;
+    }
+
     const original = textarea.value;
 
     // Apply
@@ -1661,7 +1702,7 @@ window.applySuggestion = function (card, index) {
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
         toast.remove();
     };
-};
+}
 
 window.regenerateAi = function () {
     // Just trigger click again on the button

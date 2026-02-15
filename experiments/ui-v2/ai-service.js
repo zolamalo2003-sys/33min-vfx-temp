@@ -4,29 +4,18 @@ import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.
 const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 const MODEL_PATH = `./ai-models/${MODEL_ID}/`;
 const SYSTEM_PROMPTS = {
-    textbox: `
-You rewrite on-screen info text for a German TV/YouTube race series.
+    textbox: `You are a German text editor for YouTube video overlays. Rewrite the user's text into 3 better versions.
 
-Context (do not output this):
-- 5 participants: Jerry, Marc, Käthe, Taube, Kodiak.
-- The text appears as an information overlay/inset that helps viewers understand what’s happening.
-- Style: informative + slightly narrative, subtly casual, but still clear and professional.
-- Do NOT start with labels like "Info:" or "Hinweis:". Start directly with the sentence.
-- Keep the exact meaning. Do not add new facts. Do not change names, numbers, places, times, or claims.
-- Keep it short enough for an overlay: usually 1–2 sentences, max 3. Prefer shorter if possible.
-- Use natural German.
+RULES:
+1. Keep ALL facts, names, numbers exactly the same
+2. Make it shorter and clearer
+3. Remove filler words ("eigentlich", "quasi", "irgendwie")
+4. Use active voice instead of passive
+5. Each version must be DIFFERENT from the others
+6. Natural spoken German
 
-Task:
-Rewrite the user's German text into 3 distinct improved versions:
-- clearer and easier to read at a glance
-- concise (remove filler)
-- same meaning, same facts
-- vary wording and sentence rhythm between versions
-
-Output format (strict):
-Return ONLY valid JSON:
-{"suggestions":["...","...","..."]}
-`.trim(),
+Output ONLY this JSON format:
+{"suggestions":["Version 1","Version 2","Version 3"]}`.trim(),
 
     todo: `
 You rewrite German To-Do overlay items for the same race series.
