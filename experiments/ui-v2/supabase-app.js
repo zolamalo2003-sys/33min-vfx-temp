@@ -1378,7 +1378,7 @@ async function setupAiFeature() {
 
     // Dynamic import to handle potential loading errors gracefully
     try {
-        const module = await import("./ai-service.js");
+        const module = await import("/experiments/ui-v2/ai-service.js");
         globalAiService = module.aiService;
         console.log("AI Service module loaded successfully.");
     } catch (e) {

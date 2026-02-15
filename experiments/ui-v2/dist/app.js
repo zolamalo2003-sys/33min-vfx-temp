@@ -1830,29 +1830,16 @@ let gameScore;
 let gameSpeed;
 let obstacleTimer;
 let collisionTimer;
+// Legacy Dino Game - DISABLED (old game, not used anymore)
 let dinoRunTimer;
 const DINO_ASSETS = {
-    run: [
-        '/experiments/ui-v2/assets/dino/DinoRun1.png',
-        '/experiments/ui-v2/assets/dino/DinoRun2.png'
-    ],
-    jump: '/experiments/ui-v2/assets/dino/DinoJump.png',
-    dead: '/experiments/ui-v2/assets/dino/DinoDead.png'
+    run: [],
+    jump: '',
+    dead: ''
 };
-const BIRD_FRAMES = [
-    '/experiments/ui-v2/assets/bird/Bird1.png',
-    '/experiments/ui-v2/assets/bird/Bird2.png'
-];
-const CACTUS_SMALL = [
-    '/experiments/ui-v2/assets/cactus/SmallCactus1.png',
-    '/experiments/ui-v2/assets/cactus/SmallCactus2.png',
-    '/experiments/ui-v2/assets/cactus/SmallCactus3.png'
-];
-const CACTUS_LARGE = [
-    '/experiments/ui-v2/assets/cactus/LargeCactus1.png',
-    '/experiments/ui-v2/assets/cactus/LargeCactus2.png',
-    '/experiments/ui-v2/assets/cactus/LargeCactus3.png'
-];
+const BIRD_FRAMES = [];
+const CACTUS_SMALL = [];
+const CACTUS_LARGE = [];
 function setDinoImage(src) {
     const dinoImg = document.getElementById('dinoImg');
     if (dinoImg)
