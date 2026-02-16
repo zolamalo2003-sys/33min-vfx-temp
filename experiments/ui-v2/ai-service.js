@@ -4,27 +4,32 @@ import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.
 const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 const MODEL_PATH = `./ai-models/${MODEL_ID}/`;
 const SYSTEM_PROMPTS = {
-    textbox: `Du bist ein strenger Text-Editor.
-Aufgabe: Schreibe den Input in korrektem Deutsch um.
-Ziel: 3 bessere Varianten.
-Format: NUR eine nummerierte Liste. KEINE Einleitung. KEIN "Hier sind...". KEIN Gelaber.
+    textbox: `Muster:
+Input: "Das ist voll der Mist"
+1. Das gefällt mir überhaupt nicht.
+2. Die Qualität ist mangelhaft.
+3. Das ist sehr schlecht gemacht.
 
-Beispiel Input: "Der Text ist irgendwie blöd geschrieben und lang"
-Beispiel Output:
-1. Der Text ist ungünstig formuliert und zu lang.
-2. Dieser Text wirkt unprofessionell und weitschweifig.
-3. Eine kürzere, präzisere Formulierung wäre besser.`.trim(),
+Input: "Wir gehen später essen"
+1. Später werden wir speisen.
+2. Wir gehen nachher ins Restaurant.
+3. Später gibt es Essen.
 
-    todo: `Du bist ein To-Do Bot.
-Aufgabe: Formuliere To-Dos als kurze Befehle (Imperativ).
-Ziel: 3 Varianten, max 6 Wörter.
-Format: NUR eine nummerierte Liste. KEINE Einleitung.
+Input: "Der Typ ist betrunken"
+1. Er hat zu viel getrunken.
+2. Der Mann ist alkoholisiert.
+3. Er ist nicht mehr nüchtern.`.trim(),
 
-Beispiel Input: "Wir müssen unbedingt noch die Musik schneiden"
-Beispiel Output:
+    todo: `Muster:
+Input: "Musik schneiden"
 1. Musik schneiden
-2. Audio-Schnitt erledigen
-3. Soundtrack finalisieren`.trim(),
+2. Audio-Edit
+3. Musik anpassen
+
+Input: "Farbe machen"
+1. Color Grading
+2. Farben anpassen
+3. Look erstellen`.trim(),
 };
 
 /**
@@ -127,7 +132,6 @@ export class AiService {
                 max_tokens: 256,
             });
 
-
             const content = reply.choices[0].message.content;
             console.log("AI Raw Output:", content);
 
@@ -144,15 +148,20 @@ export class AiService {
                 if (/^(\d+[\.)]|-|\*)\s+/.test(trimmed)) {
                     strictSuggestions.push(trimmed.replace(/^(\d+[\.)]|-|\*)\s+/, ''));
                 }
-                // loose check: if it looks like a sentence but has no number
-                else if (!trimmed.startsWith('Output') && !trimmed.startsWith('Input') && !trimmed.startsWith('{') && !trimmed.startsWith('}')) {
-                    fallbackSuggestions.push(trimmed);
+                // loose check: look for content that is NOT conversational
+                // Exclude: "Oder:", "Here is:", "Sure:", lines ending in ":", lines that are just quotes
+                else if (
+                    !trimmed.startsWith('Output') &&
+                    !trimmed.startsWith('Input') &&
+                    !trimmed.includes('{') &&
+                    !trimmed.endsWith(':') &&
+                    !trimmed.match(/^(Hier|Da|That|This|Sure|Okay|I can)/i)
+                ) {
+                    // Remove wrapping quotes if present
+                    const cleaned = trimmed.replace(/^["']|["']$/g, '');
+                    fallbackSuggestions.push(cleaned);
                 }
             }
-
-            // DECISION LOGIC:
-            // If we found strict numbered items, ONLY use those. This filters out "Sure, here are suggestions:" conversational filler.
-            // If we found nothing strict, we use the fallback lines as a last resort.
 
             let finalSuggestions = strictSuggestions.length > 0 ? strictSuggestions : fallbackSuggestions;
 

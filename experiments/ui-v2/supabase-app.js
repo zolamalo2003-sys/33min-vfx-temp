@@ -1382,54 +1382,45 @@ async function setupAiFeature() {
         globalAiService = module.aiService;
         console.log("AI Service module loaded successfully.");
 
-        // Try to auto-load model from cache (silent)
-        try {
-            await globalAiService.loadModel(() => {
-                // Silent progress - no UI during auto-load
-            });
-            console.log("AI Model auto-loaded from cache!");
-        } catch (e) {
-            // Model not in cache - user will need to download on first use
-            console.log("AI Model not cached yet - will download on first use");
-        }
-    } catch (e) {
-        console.warn("AI Service failed to load (this is optional):", e.message);
-        // AI feature is optional - don't block the app
-        return;
-    }
+        // START POLLING IMMEDIATELY (Do not wait for loadModel)
+        setInterval(() => {
+            try {
+                const textContent = document.getElementById('qTextContent');
+                const todoContent = document.getElementById('qTodoContent');
 
-    // Polling interval to ensure UI is injected
-    setInterval(() => {
-        try {
-            const textContent = document.getElementById('qTextContent');
-            const todoContent = document.getElementById('qTodoContent');
+                const targets = [
+                    { el: textContent, type: 'textbox' },
+                    { el: todoContent, type: 'todo' }
+                ];
 
-            const targets = [
-                { el: textContent, type: 'textbox' },
-                { el: todoContent, type: 'todo' }
-            ];
+                targets.forEach(({ el, type }) => {
+                    if (el) {
+                        const wrapper = el.parentElement;
+                        if (wrapper) {
+                            // Ensure wrapper is positioned
+                            if (getComputedStyle(wrapper).position === 'static') {
+                                wrapper.style.position = 'relative';
+                            }
 
-            targets.forEach(({ el, type }) => {
-                if (el) {
-                    const wrapper = el.parentElement;
-                    if (wrapper) {
-                        // Ensure wrapper is positioned
-                        if (getComputedStyle(wrapper).position === 'static') {
-                            wrapper.style.position = 'relative';
-                        }
-
-                        // Check if button already exists
-                        if (!wrapper.querySelector('.ai-btn')) {
-                            console.log(`AI: Injecting button for ${type}`);
-                            injectAiUI(type, wrapper, el);
+                            // Check if button already exists
+                            if (!wrapper.querySelector('.ai-btn')) {
+                                console.log(`AI: Injecting button for ${type}`);
+                                injectAiUI(type, wrapper, el);
+                            }
                         }
                     }
-                }
-            });
-        } catch (err) {
-            console.error("AI Poll Error:", err);
-        }
-    }, 800);
+                });
+            } catch (err) {
+                console.error("AI Poll Error:", err);
+            }
+        }, 800);
+
+        // Try background pre-load (fire and forget)
+        globalAiService.loadModel(() => { }).catch(() => { });
+
+    } catch (e) {
+        console.warn("AI Service failed to load:", e);
+    }
 }
 
 let currentAiAbort = null;
@@ -1748,5 +1739,5 @@ function showToast(msg, duration = 3000) {
 }
 
 // Start Setup on module load
-setupAiFeature();
+// setupAiFeature(); // DISABLED PER USER REQUEST (2026-02-16)
 
