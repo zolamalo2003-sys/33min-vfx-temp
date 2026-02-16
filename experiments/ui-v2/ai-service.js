@@ -4,23 +4,24 @@ import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.
 const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 const MODEL_PATH = `./ai-models/${MODEL_ID}/`;
 const SYSTEM_PROMPTS = {
-    textbox: `Du bist ein professioneller deutscher Texteditor. Schreibe den Text 3x neu - kürzer und klarer.
+    textbox: `Du bist ein professioneller deutscher Redakteur. Deine Aufgabe ist es, den gegebenen Text in korrektem Deutsch umzuschreiben.
 
-REGELN:
-- Behalte ALLE Fakten/Namen/Zahlen exakt gleich
-- Entferne Füllwörter (eigentlich, quasi, halt, irgendwie)
-- Kurze Sätze, aktive Sprache
-- Jede Version MUSS unterschiedlich sein
+WICHTIGE REGELN:
+1. KORRIGIERE Grammatik- und Rechtschreibfehler.
+2. Formuliere den Satz KÜRZER und PRÄGNANTER.
+3. Behalte den ursprünglichen SINN bei. Erfinde nichts dazu.
+4. Ändere NICHT die Namen oder Fakten.
+5. Das Ergebnis muss grammatikalisch korrektes Deutsch sein.
 
 BEISPIELE:
 
 Input: "Jerry und Marc haben quasi zusammen an der Strecke gearbeitet und dabei eigentlich ziemlich viel Zeit gebraucht"
-Output: {"suggestions":["Jerry und Marc bauten gemeinsam die Strecke - das dauerte lange","Die Strecke: Jerry und Marc brauchten viel Zeit dafür","Jerry und Marc arbeiteten lange an der Strecke"]}
+Output: {"suggestions":["Jerry und Marc arbeiteten lange gemeinsam an der Strecke","Zeitaufwendige Streckenarbeit von Jerry und Marc","Jerry und Marc brauchten viel Zeit für den Streckenbau"]}
 
-Input: "Die Aufgabe war irgendwie schwierig weil es ziemlich viele Regeln gab die man beachten musste"
-Output: {"suggestions":["Schwierige Aufgabe: Viele Regeln zu beachten","Die Aufgabe war schwer - viele Regeln","Komplexe Aufgabe mit vielen Regeln"]}
+Input: "Marc fährt gefährliches Verkehr in einer Kneipe an ihre Passanten ab"
+Output: {"suggestions":["Marc gefährdet Passanten mit seinem Fahrstil vor der Kneipe","Vor der Kneipe: Marc fährt gefährlich nah an Passanten vorbei","Marc fährt rücksichtslos an Passanten bei der Kneipe vorbei"]}
 
-Antworte NUR mit JSON: {"suggestions":["...","...","..."]}`.trim(),
+Antworte NUR mit diesem JSON Format: {"suggestions":["Satz 1", "Satz 2", "Satz 3"]}`.trim(),
 
     todo: `Du schreibst deutsche To-Do Einträge für Video-Overlays um. 3 Versionen - kurz und klar.
 
@@ -143,47 +144,39 @@ Return strictly valid JSON: { "suggestions": ["Variation 1 here", "Variation 2 h
         try {
             const reply = await this.engine.chat.completions.create({
                 messages,
-                response_format: { type: "json_object" }, // WebLLM supports forcing JSON if model supports it
-                temperature: 0.7,
-                max_tokens: 500,
+                temperature: 0.3,
+                max_tokens: 256,
             });
 
             const content = reply.choices[0].message.content;
             console.log("AI Raw Output:", content);
 
-            try {
-                let parsed = JSON.parse(content);
+            // Parse numbered list (1. ... 2. ... 3. ...)
+            const lines = content.split('\n');
+            const suggestions = [];
 
-                // Handle if the model returned an array of objects (common with some models)
-                if (Array.isArray(parsed)) {
-                    // Find the best candidate that has suggestions
-                    const candidate = parsed.find(item =>
-                        item.suggestions &&
-                        Array.isArray(item.suggestions) &&
-                        !item.suggestions.includes("var1")
-                    );
-                    parsed = candidate || parsed[parsed.length - 1]; // Fallback to last item
+            for (const line of lines) {
+                const trimmed = line.trim();
+                // Match "1.", "1)", "- ", or just text if it looks like a sentence
+                if (/^(\d+[\.)]|-|\*)\s+/.test(trimmed)) {
+                    suggestions.push(trimmed.replace(/^(\d+[\.)]|-|\*)\s+/, ''));
+                } else if (trimmed.length > 5 && !trimmed.startsWith('Output') && !trimmed.startsWith('Input') && !trimmed.startsWith('{') && !trimmed.startsWith('}')) {
+                    // Fallback for lines that look like content but miss enumeration
+                    suggestions.push(trimmed);
                 }
-
-                if (parsed && Array.isArray(parsed.suggestions)) {
-                    // Filter out any placeholder values if they snuck in
-                    const cleanSuggestions = parsed.suggestions
-                        .filter(s => s !== "var1" && s !== "var2" && s !== "var3")
-                        .slice(0, 3);
-
-                    if (cleanSuggestions.length > 0) {
-                        return cleanSuggestions;
-                    }
-                }
-                return [];
-            } catch (e) {
-                console.warn("JSON Parse failed, trying regex fallback");
-                // Fallback regex to find list items if JSON fails
-                return content.split('\n')
-                    .map(l => l.replace(/^[\d-]\.\s*/, '').trim()) // Remove "1. " or "- "
-                    .filter(l => l.length > 0 && !l.includes('{') && !l.includes('}'))
-                    .slice(0, 3);
             }
+
+            // Clean up suggestions
+            const uniqueSuggestions = [...new Set(suggestions)] // Remove duplicates
+                .filter(s => !s.includes('Input:') && !s.includes('Output:'))
+                .slice(0, 3);
+
+            if (uniqueSuggestions.length > 0) {
+                return uniqueSuggestions;
+            }
+
+            // Fallback: If list parsing failed completely, return raw lines
+            return lines.filter(l => l.length > 10).slice(0, 3);
 
         } catch (error) {
             console.error("Generation failed:", error);
