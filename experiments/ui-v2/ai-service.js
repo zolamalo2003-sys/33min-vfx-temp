@@ -132,7 +132,7 @@ Original Text: "${text}"
 
 Rewrite the text above. 
 Output exactly 3 variations.
-Return strictly valid JSON: { "suggestions": ["var1", "var2", "var3"] }
+Return strictly valid JSON: { "suggestions": ["Variation 1 here", "Variation 2 here", "Variation 3 here"] }
         `;
 
         const messages = [
@@ -152,15 +152,37 @@ Return strictly valid JSON: { "suggestions": ["var1", "var2", "var3"] }
             console.log("AI Raw Output:", content);
 
             try {
-                const parsed = JSON.parse(content);
-                if (Array.isArray(parsed.suggestions)) {
-                    return parsed.suggestions.slice(0, 3);
+                let parsed = JSON.parse(content);
+
+                // Handle if the model returned an array of objects (common with some models)
+                if (Array.isArray(parsed)) {
+                    // Find the best candidate that has suggestions
+                    const candidate = parsed.find(item =>
+                        item.suggestions &&
+                        Array.isArray(item.suggestions) &&
+                        !item.suggestions.includes("var1")
+                    );
+                    parsed = candidate || parsed[parsed.length - 1]; // Fallback to last item
+                }
+
+                if (parsed && Array.isArray(parsed.suggestions)) {
+                    // Filter out any placeholder values if they snuck in
+                    const cleanSuggestions = parsed.suggestions
+                        .filter(s => s !== "var1" && s !== "var2" && s !== "var3")
+                        .slice(0, 3);
+
+                    if (cleanSuggestions.length > 0) {
+                        return cleanSuggestions;
+                    }
                 }
                 return [];
             } catch (e) {
                 console.warn("JSON Parse failed, trying regex fallback");
                 // Fallback regex to find list items if JSON fails
-                return content.split('\n').filter(l => l.trim().length > 0).slice(0, 3);
+                return content.split('\n')
+                    .map(l => l.replace(/^[\d-]\.\s*/, '').trim()) // Remove "1. " or "- "
+                    .filter(l => l.length > 0 && !l.includes('{') && !l.includes('}'))
+                    .slice(0, 3);
             }
 
         } catch (error) {

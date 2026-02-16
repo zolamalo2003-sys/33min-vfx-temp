@@ -574,7 +574,7 @@ window.toggleEntryDetails = function (id) {
 // Forward declaration for renderCloudConsole to avoid ReferenceError
 let renderCloudConsole;
 
-renderCloudConsole = function() {
+renderCloudConsole = function () {
     const container = document.getElementById("cloudContentArea");
     if (!container) return;
 
@@ -1627,9 +1627,7 @@ function showSuggestions(suggestions, textarea) {
     const container = document.createElement('div');
     container.className = 'ai-suggestions';
 
-    // Get main area position (composer is on the left side)
-    const mainArea = document.querySelector('.main-area');
-    const mainRect = mainArea.getBoundingClientRect();
+
 
     container.innerHTML = `
         <div class="ai-header">
