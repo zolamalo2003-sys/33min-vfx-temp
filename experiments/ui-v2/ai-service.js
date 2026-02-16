@@ -4,42 +4,27 @@ import { CreateMLCEngine } from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.
 const MODEL_ID = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 const MODEL_PATH = `./ai-models/${MODEL_ID}/`;
 const SYSTEM_PROMPTS = {
-    textbox: `Du bist ein professioneller deutscher Redakteur. Deine Aufgabe ist es, den gegebenen Text in korrektem Deutsch umzuschreiben.
+    textbox: `Du bist ein strenger Text-Editor.
+Aufgabe: Schreibe den Input in korrektem Deutsch um.
+Ziel: 3 bessere Varianten.
+Format: NUR eine nummerierte Liste. KEINE Einleitung. KEIN "Hier sind...". KEIN Gelaber.
 
-WICHTIGE REGELN:
-1. KORRIGIERE Grammatik- und Rechtschreibfehler.
-2. Formuliere den Satz KÜRZER und PRÄGNANTER.
-3. Behalte den ursprünglichen SINN bei. Erfinde nichts dazu.
-4. Ändere NICHT die Namen oder Fakten.
-5. Das Ergebnis muss grammatikalisch korrektes Deutsch sein.
+Beispiel Input: "Der Text ist irgendwie blöd geschrieben und lang"
+Beispiel Output:
+1. Der Text ist ungünstig formuliert und zu lang.
+2. Dieser Text wirkt unprofessionell und weitschweifig.
+3. Eine kürzere, präzisere Formulierung wäre besser.`.trim(),
 
-BEISPIELE:
+    todo: `Du bist ein To-Do Bot.
+Aufgabe: Formuliere To-Dos als kurze Befehle (Imperativ).
+Ziel: 3 Varianten, max 6 Wörter.
+Format: NUR eine nummerierte Liste. KEINE Einleitung.
 
-Input: "Jerry und Marc haben quasi zusammen an der Strecke gearbeitet und dabei eigentlich ziemlich viel Zeit gebraucht"
-Output: {"suggestions":["Jerry und Marc arbeiteten lange gemeinsam an der Strecke","Zeitaufwendige Streckenarbeit von Jerry und Marc","Jerry und Marc brauchten viel Zeit für den Streckenbau"]}
-
-Input: "Marc fährt gefährliches Verkehr in einer Kneipe an ihre Passanten ab"
-Output: {"suggestions":["Marc gefährdet Passanten mit seinem Fahrstil vor der Kneipe","Vor der Kneipe: Marc fährt gefährlich nah an Passanten vorbei","Marc fährt rücksichtslos an Passanten bei der Kneipe vorbei"]}
-
-Antworte NUR mit diesem JSON Format: {"suggestions":["Satz 1", "Satz 2", "Satz 3"]}`.trim(),
-
-    todo: `Du schreibst deutsche To-Do Einträge für Video-Overlays um. 3 Versionen - kurz und klar.
-
-REGELN:
-- Maximal 6 Wörter
-- Imperativ (Befehlsform)
-- Keine neuen Infos hinzufügen
-- Jede Version unterschiedlich
-
-BEISPIELE:
-
-Input: "Die Musik muss noch für das Video bearbeitet werden"
-Output: {"suggestions":["Musik bearbeiten","Audio fürs Video anpassen","Musik-Editing erledigen"]}
-
-Input: "Noch schnell die Farben im Video korrigieren bevor es online geht"
-Output: {"suggestions":["Farben korrigieren","Farbkorrektur durchführen","Color Grading machen"]}
-
-Antworte NUR mit JSON: {"suggestions":["...","...","..."]}`.trim(),
+Beispiel Input: "Wir müssen unbedingt noch die Musik schneiden"
+Beispiel Output:
+1. Musik schneiden
+2. Audio-Schnitt erledigen
+3. Soundtrack finalisieren`.trim(),
 };
 
 /**
@@ -128,13 +113,7 @@ export class AiService {
         if (!this.engine) throw new Error("Model not loaded");
 
         const systemPrompt = SYSTEM_PROMPTS[type] || SYSTEM_PROMPTS.textbox;
-        const prompt = `
-Original Text: "${text}"
-
-Rewrite the text above. 
-Output exactly 3 variations.
-Return strictly valid JSON: { "suggestions": ["Variation 1 here", "Variation 2 here", "Variation 3 here"] }
-        `;
+        const prompt = `Input: "${text}"\nOutput:\n`;
 
         const messages = [
             { role: "system", content: systemPrompt },
@@ -148,35 +127,46 @@ Return strictly valid JSON: { "suggestions": ["Variation 1 here", "Variation 2 h
                 max_tokens: 256,
             });
 
+
             const content = reply.choices[0].message.content;
             console.log("AI Raw Output:", content);
 
             // Parse numbered list (1. ... 2. ... 3. ...)
             const lines = content.split('\n');
-            const suggestions = [];
+            const strictSuggestions = [];
+            const fallbackSuggestions = [];
 
             for (const line of lines) {
                 const trimmed = line.trim();
-                // Match "1.", "1)", "- ", or just text if it looks like a sentence
+                if (trimmed.length < 5) continue; // Skip very short lines
+
+                // strict check: starts with "1.", "1)", "- ", "* "
                 if (/^(\d+[\.)]|-|\*)\s+/.test(trimmed)) {
-                    suggestions.push(trimmed.replace(/^(\d+[\.)]|-|\*)\s+/, ''));
-                } else if (trimmed.length > 5 && !trimmed.startsWith('Output') && !trimmed.startsWith('Input') && !trimmed.startsWith('{') && !trimmed.startsWith('}')) {
-                    // Fallback for lines that look like content but miss enumeration
-                    suggestions.push(trimmed);
+                    strictSuggestions.push(trimmed.replace(/^(\d+[\.)]|-|\*)\s+/, ''));
+                }
+                // loose check: if it looks like a sentence but has no number
+                else if (!trimmed.startsWith('Output') && !trimmed.startsWith('Input') && !trimmed.startsWith('{') && !trimmed.startsWith('}')) {
+                    fallbackSuggestions.push(trimmed);
                 }
             }
 
-            // Clean up suggestions
-            const uniqueSuggestions = [...new Set(suggestions)] // Remove duplicates
-                .filter(s => !s.includes('Input:') && !s.includes('Output:'))
+            // DECISION LOGIC:
+            // If we found strict numbered items, ONLY use those. This filters out "Sure, here are suggestions:" conversational filler.
+            // If we found nothing strict, we use the fallback lines as a last resort.
+
+            let finalSuggestions = strictSuggestions.length > 0 ? strictSuggestions : fallbackSuggestions;
+
+            // Clean up
+            finalSuggestions = [...new Set(finalSuggestions)] // Remove duplicates
+                .filter(s => !s.match(/^(Here are|Sure|I hope|Let me know|Input|Output)/i)) // Extra filter for conversational starts
                 .slice(0, 3);
 
-            if (uniqueSuggestions.length > 0) {
-                return uniqueSuggestions;
+            if (finalSuggestions.length > 0) {
+                return finalSuggestions;
             }
 
-            // Fallback: If list parsing failed completely, return raw lines
-            return lines.filter(l => l.length > 10).slice(0, 3);
+            // Absolute Fallback
+            return lines.filter(l => l.length > 15).slice(0, 3);
 
         } catch (error) {
             console.error("Generation failed:", error);
