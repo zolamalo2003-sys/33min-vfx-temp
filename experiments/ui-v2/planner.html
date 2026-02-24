@@ -192,6 +192,34 @@
             border-color: #8b5cf6;
             background: rgba(139, 92, 246, 0.1);
         }
+
+        /* Remove default number input spinners */
+        .hide-spinners::-webkit-inner-spin-button,
+        .hide-spinners::-webkit-outer-spin-button {
+            appearance: none;
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .hide-spinners {
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        /* Standardize select elements to not look weird in dark modes */
+        select.styled-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.25rem;
+        }
+
+        select.styled-select-add {
+            appearance: none;
+            -webkit-appearance: none;
+        }
     </style>
 </head>
 
@@ -290,8 +318,8 @@
 
                 <!-- Sidebar Content -->
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="flex flex-col gap-2">
+                    <div class="grid grid-cols-12 gap-x-4 gap-y-6 mb-6">
+                        <div class="col-span-12 md:col-span-5 flex flex-col gap-2">
                             <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Anim ID</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -302,7 +330,7 @@
                                     type="text" value="ANIM-NEW" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="col-span-12 md:col-span-7 grid grid-cols-2 gap-4">
                             <div class="flex flex-col gap-2">
                                 <label
                                     class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Format</label>
@@ -345,8 +373,8 @@
                                     class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
                                     <div id="participantsChips" class="contents"></div>
                                     <select id="participantSelect"
-                                        class="bg-transparent border-none p-0 h-6 text-sm text-gray-400 focus:ring-0 min-w-[80px]">
-                                        <option value="">+ Person</option>
+                                        class="styled-select-add bg-black/20 border border-white/10 rounded-md px-3 h-8 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-white/5 transition-colors focus:ring-0 min-w-[90px] cursor-pointer outline-none">
+                                        <option value="" disabled selected>+ Person</option>
                                         <!-- Options populated dynamically -->
                                     </select>
                                 </div>
@@ -416,7 +444,7 @@
                         <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Person
                             zuweisen</label>
                         <select id="trackPersonSelect"
-                            class="mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 text-sm text-white focus:ring-1 focus:ring-primary">
+                            class="styled-select mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 pr-8 text-sm text-white focus:ring-1 focus:ring-primary cursor-pointer outline-none">
                             <!-- Populated dynamically -->
                         </select>
                     </div>

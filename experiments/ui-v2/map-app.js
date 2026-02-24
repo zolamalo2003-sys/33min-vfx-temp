@@ -428,7 +428,7 @@ function updateMapBadge(name) {
         if (badge) badge.style.display = 'none';
         return;
     }
-    const color = COLORS[name] || COLORS.default;
+    const color = getParticipantColor(name);
     badge.style.display = 'flex';
     badge.style.backgroundColor = color;
     badge.style.boxShadow = `0 0 15px ${color}66`; // Glow
@@ -438,27 +438,66 @@ function updateMapBadge(name) {
     badge.querySelector(".badge-name").textContent = name;
 }
 
+function renderParticipantSelect() {
+    const format = document.getElementById("formatSelect") ? document.getElementById("formatSelect").value : "WCC";
+    const select = document.getElementById("participantSelect");
+    if (select) {
+        let html = `<option value="" disabled selected>+ Person</option>`;
+        FORMAT_PARTICIPANTS[format].forEach(p => {
+            html += `<option value="${p.name}">${p.name}</option>`;
+            if (p.gap) html += `<option disabled>──────────</option>`;
+        });
+        select.innerHTML = html;
+    }
+
+    const trackSelect = document.getElementById("trackPersonSelect");
+    if (trackSelect) {
+        let tHtml = "";
+        FORMAT_PARTICIPANTS[format].forEach(p => {
+            tHtml += `<option value="${p.name}">${p.name}</option>`;
+            if (p.gap) tHtml += `<option disabled>──────────</option>`;
+        });
+        trackSelect.innerHTML = tHtml;
+    }
+}
+
 function renderParticipants() {
+    const format = document.getElementById("formatSelect") ? document.getElementById("formatSelect").value : "WCC";
+    const config = FORMAT_PARTICIPANTS[format];
+
+    // Sort to match team order
+    participants.sort((a, b) => {
+        const idxA = config.findIndex(x => x.name === a);
+        const idxB = config.findIndex(x => x.name === b);
+        return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+    });
+
     const container = document.getElementById("participantsChips");
     container.innerHTML = participants.map(p => {
         const isSelected = p === selectedParticipant;
-        const color = COLORS[p] || COLORS.default;
+        const color = getParticipantColor(p);
 
         // Style Logic
         let style = "";
         let classes = "cursor-pointer border px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all hover:scale-105";
 
         if (isSelected) {
-            // Active Style (Solid color pop)
             style = `background: ${color}22; border-color: ${color}; color: white; box-shadow: 0 0 8px ${color}44;`;
         } else {
-            // Inactive Style (Dimmed)
             style = `background: #1f2937; border-color: #374151; color: #9ca3af;`;
+        }
+
+        let gapClass = "";
+        if (format === "TR3") {
+            const pConfig = config.find(x => x.name === p);
+            if (pConfig && pConfig.gap) {
+                if (participants[participants.length - 1] !== p) gapClass = "mr-3";
+            }
         }
 
         return `
             <div onclick="window.selectParticipant('${p}')" 
-                 class="${classes}"
+                 class="${classes} ${gapClass}"
                  style="${style}">
                 <div style="width:8px; height:8px; background:${color}; border-radius:50%;"></div>
                 <span class="font-bold text-xs uppercase">${p}</span>
@@ -474,38 +513,37 @@ function renderParticipants() {
 window.removeParticipantLink = removeParticipant;
 window.selectParticipant = selectParticipant;
 
-function addWaypoint(lat, lng, person, mode = "walking") {
-    const id = crypto.randomUUID();
+function createMarkerForWP(wp) {
+    const icon = createMarkerIcon(wp.person, true);
+    wp.markerRef = L.marker([wp.lat, wp.lng], { draggable: true, icon: icon }).addTo(map);
 
-    // Create Marker
-    const icon = createMarkerIcon(person, true);
-    const marker = L.marker([lat, lng], { draggable: true, icon: icon }).addTo(map);
-
-    // Data Object
-    const wp = { id, lat, lng, person, mode, markerRef: marker };
-    waypointData.push(wp);
-
-    // Drag Listener
-    marker.on('dragend', (e) => {
+    wp.markerRef.on('dragend', (e) => {
         const pos = e.target.getLatLng();
         wp.lat = pos.lat;
         wp.lng = pos.lng;
         // Update input if visible
-        const inputLat = document.getElementById(`lat-${id}`);
-        const inputLng = document.getElementById(`lng-${id}`);
+        const inputLat = document.getElementById(`lat-${wp.id}`);
+        const inputLng = document.getElementById(`lng-${wp.id}`);
         if (inputLat) inputLat.value = pos.lat.toFixed(6);
         if (inputLng) inputLng.value = pos.lng.toFixed(6);
 
-        updateVisuals(); // Re-route
+        updateVisuals();
     });
 
-    // Clicking a marker selects that person
-    marker.on('click', () => {
-        if (selectedParticipant !== person) {
-            selectParticipant(person);
+    wp.markerRef.on('click', () => {
+        if (selectedParticipant !== wp.person) {
+            selectParticipant(wp.person);
         }
     });
 
+    return wp.markerRef;
+}
+
+function addWaypoint(lat, lng, person, mode = "driving") {
+    const id = crypto.randomUUID();
+    const wp = { id, lat, lng, person, mode };
+    createMarkerForWP(wp);
+    waypointData.push(wp);
     updateVisuals();
 }
 
