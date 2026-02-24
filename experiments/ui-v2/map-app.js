@@ -230,10 +230,17 @@ function updateVisuals() {
 function updateRoutes() {
     // Clean up old controls
     Object.values(routeControls).forEach(ctrls => {
+        const removeCtrl = (c) => {
+            if (c.getPlan && c.getPlan()) {
+                c.getPlan().setWaypoints([]);
+            }
+            map.removeControl(c);
+        };
+
         if (Array.isArray(ctrls)) {
-            ctrls.forEach(c => map.removeControl(c));
+            ctrls.forEach(c => removeCtrl(c));
         } else {
-            map.removeControl(ctrls);
+            removeCtrl(ctrls);
         }
     });
     routeControls = {};
@@ -290,7 +297,8 @@ function updateRoutes() {
             ctrl.on('routesfound', function (e) {
                 const wps = ctrl.getWaypoints();
                 // Check if user dragged line to add a via-point
-                if (wps.length > 2) {
+                if (wps.length > 2 && !ctrl._wasSplit) {
+                    ctrl._wasSplit = true;
                     const newLat = wps[1].latLng.lat;
                     const newLng = wps[1].latLng.lng;
 
