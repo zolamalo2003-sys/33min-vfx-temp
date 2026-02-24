@@ -335,7 +335,7 @@
                                 <label
                                     class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Format</label>
                                 <select id="formatSelect"
-                                    class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary shadow-sm">
+                                    class="styled-select w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 pr-8 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary shadow-sm outline-none cursor-pointer">
                                     <option value="WCC">WCC</option>
                                     <option value="TR3">TR3</option>
                                 </select>
@@ -344,163 +344,166 @@
                                 <label
                                     class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dauer</label>
                                 <div
-                                    class="relative flex items-center bg-surface-dark border border-border-dark rounded-lg shadow-sm focus-within:ring-1 focus-within:ring-primary focus-within:border-primary">
+                                    class="relative flex items-center bg-surface-dark border border-border-dark rounded-lg shadow-sm focus-within:ring-1 focus-within:ring-primary focus-within:border-primary overflow-hidden">
                                     <input id="animDuration"
-                                        class="w-full bg-transparent border-none py-2.5 pl-3 pr-10 text-sm text-white focus:ring-0 placeholder-gray-500"
+                                        class="hide-spinners w-full bg-transparent border-none py-2.5 pl-3 pr-[70px] text-sm text-white focus:ring-0 placeholder-gray-500"
                                         type="number" value="10" />
-                                    <div class="absolute right-9 flex flex-col border-l border-white/10 h-full">
-                                        <button onclick="document.getElementById('animDuration').stepUp()"
-                                            class="flex-1 px-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center border-b border-white/10">
-                                            <span class="material-symbols-outlined text-[14px]">expand_less</span>
-                                        </button>
-                                        <button onclick="document.getElementById('animDuration').stepDown()"
-                                            class="flex-1 px-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-[14px]">expand_more</span>
-                                        </button>
-                                    </div>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 text-xs font-medium">Sek</span>
+                                    <!-- UI Overlay End -->
+                                    <div class="absolute right-0 inset-y-0 flex items-center">
+                                        <div class="flex flex-col border-l border-white/10 w-6 h-full bg-surface">
+                                            <button onclick="document.getElementById('animDuration').stepUp()"
+                                                class="flex-1 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center border-b border-white/10">
+                                                <span class="material-symbols-outlined text-[14px]">expand_less</span>
+                                            </button>
+                                            <button onclick="document.getElementById('animDuration').stepDown()"
+                                                class="flex-1 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                                            </button>
+                                        </div>
+                                        <div
+                                            class="border-l border-white/10 px-2 h-full flex items-center justify-center bg-surface pointer-events-none">
+                                            <span
+                                                class="text-gray-500 text-[10px] font-bold uppercase tracking-wider">Sek</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="flex flex-col gap-2 mb-6">
-                            <label
-                                class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teilnehmer</label>
-                            <div class="relative">
-                                <div
-                                    class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
-                                    <div id="participantsChips" class="contents"></div>
-                                    <select id="participantSelect"
-                                        class="styled-select-add bg-black/20 border border-white/10 rounded-md px-3 h-8 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-white/5 transition-colors focus:ring-0 min-w-[90px] cursor-pointer outline-none">
-                                        <option value="" disabled selected>+ Person</option>
-                                        <!-- Options populated dynamically -->
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2 mb-8">
-                            <label
-                                class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kommentar</label>
-                            <textarea id="animComment"
-                                class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
-                                placeholder="Bewegung beschreiben..."></textarea>
-                        </div>
-
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
-                                Routen-Wegpunkte
-                            </h3>
-                        </div>
-                        <div id="waypointsList" class="flex flex-col gap-4 relative"></div>
-                        <button id="btnAddWaypoint"
-                            class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
-                            <span
-                                class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
-                            <span class="text-sm font-medium">Wegpunkt hinzufügen (Mitte)</span>
-                        </button>
                     </div>
 
-                    <!-- Planner Footer -->
-                    <div class="p-6 border-t border-white/10 bg-[#111e22]/50 shrink-0">
-                        <div class="flex flex-col gap-3">
-                            <div class="grid grid-cols-2 gap-3">
-                                <button id="btnLoadList"
-                                    class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
-                                    <span class="material-symbols-outlined">list</span> Laden
-                                </button>
-                                <button id="btnSave"
-                                    class="bg-primary hover:bg-[#7c3aed] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
-                                    <span class="material-symbols-outlined">save</span> Speichern
-                                </button>
+                    <div class="flex flex-col gap-2 mb-6">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teilnehmer</label>
+                        <div class="relative">
+                            <div
+                                class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
+                                <div id="participantsChips" class="contents"></div>
+                                <select id="participantSelect"
+                                    class="styled-select-add bg-black/20 border border-white/10 rounded-md px-3 h-8 text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:bg-white/5 transition-colors focus:ring-0 min-w-[90px] cursor-pointer outline-none">
+                                    <option value="" disabled selected>+ Person</option>
+                                    <!-- Options populated dynamically -->
+                                </select>
                             </div>
-                            <button id="btnExport"
-                                class="bg-[#111e22] hover:bg-surface-dark text-gray-300 font-medium py-2 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2 w-full">
-                                <span class="material-symbols-outlined text-[18px]">download</span> Export GPX
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 mb-8">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kommentar</label>
+                        <textarea id="animComment"
+                            class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
+                            placeholder="Bewegung beschreiben..."></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
+                            Routen-Wegpunkte
+                        </h3>
+                    </div>
+                    <div id="waypointsList" class="flex flex-col gap-4 relative"></div>
+                    <button id="btnAddWaypoint"
+                        class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
+                        <span
+                            class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+                        <span class="text-sm font-medium">Wegpunkt hinzufügen (Mitte)</span>
+                    </button>
+                </div>
+
+                <!-- Planner Footer -->
+                <div class="p-6 border-t border-white/10 bg-[#111e22]/50 shrink-0">
+                    <div class="flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="btnLoadList"
+                                class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">list</span> Laden
+                            </button>
+                            <button id="btnSave"
+                                class="bg-primary hover:bg-[#7c3aed] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">save</span> Speichern
                             </button>
                         </div>
+                        <button id="btnExport"
+                            class="bg-[#111e22] hover:bg-surface-dark text-gray-300 font-medium py-2 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2 w-full">
+                            <span class="material-symbols-outlined text-[18px]">download</span> Export GPX
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TRACKING MODE ==================== -->
+            <div id="trackingMode" class="flex flex-col flex-1 overflow-hidden" style="display:none">
+                <!-- Upload Zone -->
+                <div class="p-4 border-b border-white/10 shrink-0">
+                    <div id="dropZone" class="drop-zone">
+                        <input type="file" id="trackFileInput" accept=".gpx,.kmz,.kml" multiple class="hidden" />
+                        <span class="material-symbols-outlined text-[32px] text-gray-500 mb-2">upload_file</span>
+                        <p class="text-sm text-gray-400 font-medium">GPX / KML / KMZ Datei hierhin ziehen</p>
+                        <p class="text-xs text-gray-600 mt-1">oder <span
+                                class="text-primary cursor-pointer hover:underline"
+                                onclick="document.getElementById('trackFileInput').click()">durchsuchen</span></p>
                     </div>
                 </div>
 
-                <!-- ==================== TRACKING MODE ==================== -->
-                <div id="trackingMode" class="flex flex-col flex-1 overflow-hidden" style="display:none">
-                    <!-- Upload Zone -->
-                    <div class="p-4 border-b border-white/10 shrink-0">
-                        <div id="dropZone" class="drop-zone">
-                            <input type="file" id="trackFileInput" accept=".gpx,.kmz,.kml" multiple class="hidden" />
-                            <span class="material-symbols-outlined text-[32px] text-gray-500 mb-2">upload_file</span>
-                            <p class="text-sm text-gray-400 font-medium">GPX / KML / KMZ Datei hierhin ziehen</p>
-                            <p class="text-xs text-gray-600 mt-1">oder <span
-                                    class="text-primary cursor-pointer hover:underline"
-                                    onclick="document.getElementById('trackFileInput').click()">durchsuchen</span></p>
-                        </div>
+                <!-- Person Assignment -->
+                <div class="px-4 pt-3 pb-2 shrink-0">
+                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Person
+                        zuweisen</label>
+                    <select id="trackPersonSelect"
+                        class="styled-select mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 pr-8 text-sm text-white focus:ring-1 focus:ring-primary cursor-pointer outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <!-- Tracks List -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
+                            Importierte Tracks
+                        </h3>
+                        <button id="btnClearTracks"
+                            class="text-xs text-gray-500 hover:text-red-400 transition-colors">Alle löschen</button>
+                    </div>
+                    <div id="tracksList" class="flex flex-col gap-2">
+                        <div class="text-xs text-gray-500 text-center py-6">Noch keine Tracks importiert.</div>
                     </div>
 
-                    <!-- Person Assignment -->
-                    <div class="px-4 pt-3 pb-2 shrink-0">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Person
-                            zuweisen</label>
-                        <select id="trackPersonSelect"
-                            class="styled-select mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 pr-8 text-sm text-white focus:ring-1 focus:ring-primary cursor-pointer outline-none">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-
-                    <!-- Tracks List -->
-                    <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
+                    <!-- Track Detail (shown when a track is selected) -->
+                    <div id="trackDetail" class="mt-4" style="display:none">
                         <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
-                                Importierte Tracks
-                            </h3>
-                            <button id="btnClearTracks"
-                                class="text-xs text-gray-500 hover:text-red-400 transition-colors">Alle löschen</button>
-                        </div>
-                        <div id="tracksList" class="flex flex-col gap-2">
-                            <div class="text-xs text-gray-500 text-center py-6">Noch keine Tracks importiert.</div>
-                        </div>
-
-                        <!-- Track Detail (shown when a track is selected) -->
-                        <div id="trackDetail" class="mt-4" style="display:none">
-                            <div class="flex items-center justify-between mb-3">
-                                <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                                    <span
-                                        class="material-symbols-outlined text-primary text-[16px]">edit_location_alt</span>
-                                    <span id="trackDetailName">Track</span>
-                                </h4>
-                                <div class="flex gap-1">
-                                    <button id="btnTrimTrack"
-                                        class="text-xs bg-surface-dark hover:bg-surface px-2 py-1 rounded border border-border-dark text-gray-300 transition-colors"
-                                        title="Track trimmen">
-                                        <span
-                                            class="material-symbols-outlined text-[14px] align-middle">content_cut</span>
-                                        Trimmen
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Track Comment -->
-                            <div class="mb-3">
-                                <textarea id="trackComment"
-                                    class="w-full bg-black/20 border border-white/5 rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 resize-none h-16 focus:ring-1 focus:ring-primary focus:border-primary"
-                                    placeholder="Notizen zum Track..."></textarea>
-                            </div>
-
-                            <!-- Track Points -->
-                            <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-bold text-white flex items-center gap-2">
                                 <span
-                                    class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Trackpoints</span>
-                                <span id="trackPointCount" class="text-xs text-gray-500">0 Punkte</span>
+                                    class="material-symbols-outlined text-primary text-[16px]">edit_location_alt</span>
+                                <span id="trackDetailName">Track</span>
+                            </h4>
+                            <div class="flex gap-1">
+                                <button id="btnTrimTrack"
+                                    class="text-xs bg-surface-dark hover:bg-surface px-2 py-1 rounded border border-border-dark text-gray-300 transition-colors"
+                                    title="Track trimmen">
+                                    <span class="material-symbols-outlined text-[14px] align-middle">content_cut</span>
+                                    Trimmen
+                                </button>
                             </div>
-                            <div id="trackPointsList"
-                                class="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            </div>
+                        </div>
+
+                        <!-- Track Comment -->
+                        <div class="mb-3">
+                            <textarea id="trackComment"
+                                class="w-full bg-black/20 border border-white/5 rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 resize-none h-16 focus:ring-1 focus:ring-primary focus:border-primary"
+                                placeholder="Notizen zum Track..."></textarea>
+                        </div>
+
+                        <!-- Track Points -->
+                        <div class="flex items-center justify-between mb-2">
+                            <span
+                                class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Trackpoints</span>
+                            <span id="trackPointCount" class="text-xs text-gray-500">0 Punkte</span>
+                        </div>
+                        <div id="trackPointsList"
+                            class="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
                         </div>
                     </div>
                 </div>
+            </div>
         </aside>
     </div>
 
