@@ -206,77 +206,18 @@
                 <span class="material-symbols-outlined text-white">home</span>
             </div>
             <div>
-                <h1 class="text-lg font-bold leading-tight text-text">VFX GeoPlaner</h1>
-                <p class="text-xs text-text-sec font-medium">Projekt: 33 Minuten</p>
+                <h1 class="text-lg font-bold leading-tight text-text mt-1">VFX GeoPlaner</h1>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <!-- Notification Bell -->
-            <div class="relative">
+            <div class="relative group">
                 <button id="ntfyBell"
-                    class="size-10 flex items-center justify-center rounded-full bg-surface hover:bg-surface-dark transition-colors cursor-pointer relative"
-                    onclick="document.getElementById('ntfyPanel').classList.toggle('hidden')">
+                    class="size-10 flex items-center justify-center rounded-full bg-surface/50 opacity-50 cursor-not-allowed transition-colors relative">
                     <span class="material-symbols-outlined text-[20px] text-text-sec">notifications</span>
-                    <div id="ntfyDot"
-                        class="absolute top-1 right-1 size-2.5 bg-green-500 rounded-full border border-bg"></div>
                 </button>
-
-                <!-- Notification Settings Panel -->
-                <div id="ntfyPanel"
-                    class="hidden absolute right-0 top-12 w-80 bg-panel border border-border rounded-2xl shadow-float z-50 overflow-hidden">
-                    <div class="p-4 border-b border-white/10">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary text-[18px]">notifications_active</span>
-                            Push-Benachrichtigungen
-                        </h3>
-                        <p class="text-[11px] text-gray-500 mt-1">Via ntfy.sh – kostenlos, kein Account nötig</p>
-                    </div>
-                    <div class="p-4 flex flex-col gap-3">
-                        <!-- Enable Toggle -->
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-300 font-medium">Aktiv</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="ntfyToggle" class="sr-only peer" checked
-                                    onchange="localStorage.setItem('33min_ntfy_enabled', this.checked); document.getElementById('ntfyDot').style.background = this.checked ? '#22c55e' : '#6b7280';">
-                                <div
-                                    class="w-9 h-5 bg-gray-600 peer-checked:bg-primary rounded-full peer-focus:ring-0 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full">
-                                </div>
-                            </label>
-                        </div>
-                        <!-- Topic -->
-                        <div>
-                            <label class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Dein
-                                Topic</label>
-                            <div class="flex gap-1 mt-1">
-                                <input id="ntfyTopicInput" type="text"
-                                    class="flex-1 bg-black/30 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:ring-1 focus:ring-primary focus:border-primary"
-                                    placeholder="33min-vfx-xxxxx" />
-                                <button
-                                    onclick="const t = document.getElementById('ntfyTopicInput').value; if(t) { window.setNtfyTopic(t); alert('Topic gespeichert: ' + t); }"
-                                    class="bg-surface-dark hover:bg-surface text-xs text-gray-300 px-2 py-1.5 rounded-lg border border-white/10 transition-colors">
-                                    <span class="material-symbols-outlined text-[14px]">save</span>
-                                </button>
-                            </div>
-                            <p class="text-[10px] text-gray-600 mt-1">Alle mit demselben Topic bekommen die
-                                Notifications</p>
-                        </div>
-                        <!-- Test Button -->
-                        <button onclick="window.sendTestNotification()"
-                            class="w-full bg-primary/15 hover:bg-primary/25 text-primary text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-[16px]">send</span>
-                            Test-Notification senden
-                        </button>
-                        <!-- Instructions -->
-                        <div class="bg-black/20 rounded-lg p-3 text-[11px] text-gray-400 leading-relaxed">
-                            <p class="font-semibold text-gray-300 mb-1">📱 So geht's:</p>
-                            <ol class="list-decimal list-inside space-y-0.5">
-                                <li>ntfy App installieren (<a href="https://ntfy.sh" target="_blank"
-                                        class="text-primary hover:underline">ntfy.sh</a>)</li>
-                                <li>Topic oben kopieren & in der App subscriben</li>
-                                <li>"Test" klicken – Push sollte ankommen</li>
-                            </ol>
-                        </div>
-                    </div>
+                <div
+                    class="absolute -bottom-10 right-0 bg-black/90 text-white text-[11px] px-3 py-1.5 rounded-lg border border-white/10 hidden group-hover:block whitespace-nowrap shadow-float z-50">
+                    Funktion noch nicht verfügbar
                 </div>
             </div>
             <!-- Auth/User Info -->
@@ -361,153 +302,177 @@
                                     type="text" value="ANIM-NEW" />
                             </div>
                         </div>
-                        <div class="flex flex-col gap-2">
-                            <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dauer</label>
-                            <div class="relative">
-                                <input id="animDuration"
-                                    class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 pl-3 pr-10 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm"
-                                    type="number" value="10" />
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 text-xs font-medium">Sek</span>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Format</label>
+                                <select id="formatSelect"
+                                    class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary shadow-sm">
+                                    <option value="WCC">WCC</option>
+                                    <option value="TR3">TR3</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dauer</label>
+                                <div
+                                    class="relative flex items-center bg-surface-dark border border-border-dark rounded-lg shadow-sm focus-within:ring-1 focus-within:ring-primary focus-within:border-primary">
+                                    <input id="animDuration"
+                                        class="w-full bg-transparent border-none py-2.5 pl-3 pr-10 text-sm text-white focus:ring-0 placeholder-gray-500"
+                                        type="number" value="10" />
+                                    <div class="absolute right-9 flex flex-col border-l border-white/10 h-full">
+                                        <button onclick="document.getElementById('animDuration').stepUp()"
+                                            class="flex-1 px-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center border-b border-white/10">
+                                            <span class="material-symbols-outlined text-[14px]">expand_less</span>
+                                        </button>
+                                        <button onclick="document.getElementById('animDuration').stepDown()"
+                                            class="flex-1 px-1.5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                                        </button>
+                                    </div>
+                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 text-xs font-medium">Sek</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex flex-col gap-2 mb-6">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teilnehmer</label>
-                        <div class="relative">
-                            <div
-                                class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
-                                <div id="participantsChips" class="contents"></div>
-                                <select id="participantSelect"
-                                    class="bg-transparent border-none p-0 h-6 text-sm text-gray-400 focus:ring-0 min-w-[80px]">
-                                    <option value="">+ Person</option>
-                                    <option value="Jerry">Jerry</option>
-                                    <option value="Marc">Marc</option>
-                                    <option value="Taube">Taube</option>
-                                    <option value="Käthe">Käthe</option>
-                                    <option value="Kodiak">Kodiak</option>
-                                </select>
+                        <div class="flex flex-col gap-2 mb-6">
+                            <label
+                                class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teilnehmer</label>
+                            <div class="relative">
+                                <div
+                                    class="min-h-[42px] w-full bg-surface-dark border border-border-dark rounded-lg p-1.5 flex flex-wrap gap-2 items-center shadow-sm">
+                                    <div id="participantsChips" class="contents"></div>
+                                    <select id="participantSelect"
+                                        class="bg-transparent border-none p-0 h-6 text-sm text-gray-400 focus:ring-0 min-w-[80px]">
+                                        <option value="">+ Person</option>
+                                        <!-- Options populated dynamically -->
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex flex-col gap-2 mb-8">
-                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kommentar</label>
-                        <textarea id="animComment"
-                            class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
-                            placeholder="Bewegung beschreiben..."></textarea>
-                    </div>
+                        <div class="flex flex-col gap-2 mb-8">
+                            <label
+                                class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kommentar</label>
+                            <textarea id="animComment"
+                                class="w-full bg-surface-dark border border-border-dark rounded-lg py-2.5 px-3 text-sm text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500 shadow-sm resize-none h-20"
+                                placeholder="Bewegung beschreiben..."></textarea>
+                        </div>
 
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
-                            Routen-Wegpunkte
-                        </h3>
-                    </div>
-                    <div id="waypointsList" class="flex flex-col gap-4 relative"></div>
-                    <button id="btnAddWaypoint"
-                        class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
-                        <span
-                            class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
-                        <span class="text-sm font-medium">Wegpunkt hinzufügen (Mitte)</span>
-                    </button>
-                </div>
-
-                <!-- Planner Footer -->
-                <div class="p-6 border-t border-white/10 bg-[#111e22]/50 shrink-0">
-                    <div class="grid grid-cols-2 gap-3">
-                        <button id="btnLoadList"
-                            class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
-                            <span class="material-symbols-outlined">list</span> Laden
-                        </button>
-                        <button id="btnSave"
-                            class="bg-primary hover:bg-[#7c3aed] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
-                            <span class="material-symbols-outlined">save</span> Speichern
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-[18px]">timeline</span>
+                                Routen-Wegpunkte
+                            </h3>
+                        </div>
+                        <div id="waypointsList" class="flex flex-col gap-4 relative"></div>
+                        <button id="btnAddWaypoint"
+                            class="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-dashed border-gray-600 text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
+                            <span
+                                class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
+                            <span class="text-sm font-medium">Wegpunkt hinzufügen (Mitte)</span>
                         </button>
                     </div>
-                </div>
-            </div>
 
-            <!-- ==================== TRACKING MODE ==================== -->
-            <div id="trackingMode" class="flex flex-col flex-1 overflow-hidden" style="display:none">
-                <!-- Upload Zone -->
-                <div class="p-4 border-b border-white/10 shrink-0">
-                    <div id="dropZone" class="drop-zone">
-                        <input type="file" id="trackFileInput" accept=".gpx,.kmz,.kml" multiple class="hidden" />
-                        <span class="material-symbols-outlined text-[32px] text-gray-500 mb-2">upload_file</span>
-                        <p class="text-sm text-gray-400 font-medium">GPX / KML / KMZ Datei hierhin ziehen</p>
-                        <p class="text-xs text-gray-600 mt-1">oder <span
-                                class="text-primary cursor-pointer hover:underline"
-                                onclick="document.getElementById('trackFileInput').click()">durchsuchen</span></p>
-                    </div>
-                </div>
-
-                <!-- Person Assignment -->
-                <div class="px-4 pt-3 pb-2 shrink-0">
-                    <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Person zuweisen</label>
-                    <select id="trackPersonSelect"
-                        class="mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 text-sm text-white focus:ring-1 focus:ring-primary">
-                        <option value="Jerry">Jerry</option>
-                        <option value="Marc">Marc</option>
-                        <option value="Taube">Taube</option>
-                        <option value="Käthe">Käthe</option>
-                        <option value="Kodiak">Kodiak</option>
-                    </select>
-                </div>
-
-                <!-- Tracks List -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
-                            Importierte Tracks
-                        </h3>
-                        <button id="btnClearTracks"
-                            class="text-xs text-gray-500 hover:text-red-400 transition-colors">Alle löschen</button>
-                    </div>
-                    <div id="tracksList" class="flex flex-col gap-2">
-                        <div class="text-xs text-gray-500 text-center py-6">Noch keine Tracks importiert.</div>
-                    </div>
-
-                    <!-- Track Detail (shown when a track is selected) -->
-                    <div id="trackDetail" class="mt-4" style="display:none">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                                <span
-                                    class="material-symbols-outlined text-primary text-[16px]">edit_location_alt</span>
-                                <span id="trackDetailName">Track</span>
-                            </h4>
-                            <div class="flex gap-1">
-                                <button id="btnTrimTrack"
-                                    class="text-xs bg-surface-dark hover:bg-surface px-2 py-1 rounded border border-border-dark text-gray-300 transition-colors"
-                                    title="Track trimmen">
-                                    <span class="material-symbols-outlined text-[14px] align-middle">content_cut</span>
-                                    Trimmen
+                    <!-- Planner Footer -->
+                    <div class="p-6 border-t border-white/10 bg-[#111e22]/50 shrink-0">
+                        <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button id="btnLoadList"
+                                    class="bg-surface-dark hover:bg-[#233f48] text-white font-medium py-3 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined">list</span> Laden
+                                </button>
+                                <button id="btnSave"
+                                    class="bg-primary hover:bg-[#7c3aed] text-white font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-colors flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined">save</span> Speichern
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- Track Comment -->
-                        <div class="mb-3">
-                            <textarea id="trackComment"
-                                class="w-full bg-black/20 border border-white/5 rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 resize-none h-16 focus:ring-1 focus:ring-primary focus:border-primary"
-                                placeholder="Notizen zum Track..."></textarea>
-                        </div>
-
-                        <!-- Track Points -->
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Trackpoints</span>
-                            <span id="trackPointCount" class="text-xs text-gray-500">0 Punkte</span>
-                        </div>
-                        <div id="trackPointsList"
-                            class="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            <button id="btnExport"
+                                class="bg-[#111e22] hover:bg-surface-dark text-gray-300 font-medium py-2 px-4 rounded-lg border border-border-dark transition-colors flex items-center justify-center gap-2 w-full">
+                                <span class="material-symbols-outlined text-[18px]">download</span> Export GPX
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- ==================== TRACKING MODE ==================== -->
+                <div id="trackingMode" class="flex flex-col flex-1 overflow-hidden" style="display:none">
+                    <!-- Upload Zone -->
+                    <div class="p-4 border-b border-white/10 shrink-0">
+                        <div id="dropZone" class="drop-zone">
+                            <input type="file" id="trackFileInput" accept=".gpx,.kmz,.kml" multiple class="hidden" />
+                            <span class="material-symbols-outlined text-[32px] text-gray-500 mb-2">upload_file</span>
+                            <p class="text-sm text-gray-400 font-medium">GPX / KML / KMZ Datei hierhin ziehen</p>
+                            <p class="text-xs text-gray-600 mt-1">oder <span
+                                    class="text-primary cursor-pointer hover:underline"
+                                    onclick="document.getElementById('trackFileInput').click()">durchsuchen</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Person Assignment -->
+                    <div class="px-4 pt-3 pb-2 shrink-0">
+                        <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Person
+                            zuweisen</label>
+                        <select id="trackPersonSelect"
+                            class="mt-1 w-full bg-surface-dark border border-border-dark rounded-lg py-2 px-3 text-sm text-white focus:ring-1 focus:ring-primary">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Tracks List -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-[18px]">satellite_alt</span>
+                                Importierte Tracks
+                            </h3>
+                            <button id="btnClearTracks"
+                                class="text-xs text-gray-500 hover:text-red-400 transition-colors">Alle löschen</button>
+                        </div>
+                        <div id="tracksList" class="flex flex-col gap-2">
+                            <div class="text-xs text-gray-500 text-center py-6">Noch keine Tracks importiert.</div>
+                        </div>
+
+                        <!-- Track Detail (shown when a track is selected) -->
+                        <div id="trackDetail" class="mt-4" style="display:none">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                                    <span
+                                        class="material-symbols-outlined text-primary text-[16px]">edit_location_alt</span>
+                                    <span id="trackDetailName">Track</span>
+                                </h4>
+                                <div class="flex gap-1">
+                                    <button id="btnTrimTrack"
+                                        class="text-xs bg-surface-dark hover:bg-surface px-2 py-1 rounded border border-border-dark text-gray-300 transition-colors"
+                                        title="Track trimmen">
+                                        <span
+                                            class="material-symbols-outlined text-[14px] align-middle">content_cut</span>
+                                        Trimmen
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Track Comment -->
+                            <div class="mb-3">
+                                <textarea id="trackComment"
+                                    class="w-full bg-black/20 border border-white/5 rounded-lg py-2 px-3 text-xs text-white placeholder-gray-500 resize-none h-16 focus:ring-1 focus:ring-primary focus:border-primary"
+                                    placeholder="Notizen zum Track..."></textarea>
+                            </div>
+
+                            <!-- Track Points -->
+                            <div class="flex items-center justify-between mb-2">
+                                <span
+                                    class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Trackpoints</span>
+                                <span id="trackPointCount" class="text-xs text-gray-500">0 Punkte</span>
+                            </div>
+                            <div id="trackPointsList"
+                                class="flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </aside>
     </div>
 

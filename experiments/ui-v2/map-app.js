@@ -12,19 +12,38 @@ let map;
 let participants = []; // ["Jerry", "Marc"]
 let selectedParticipant = null; // "Jerry"
 let waypointData = []; // Array of { id, lat, lng, mode, person, markerRef }
-let routeControls = {}; // { "Jerry": L.Routing.control }
+let routeControls = {}; // { "Jerry": [L.Routing.control] }
 let currentAnimId = null;
 
 const DEFAULT_CENTER = [51.1657, 10.4515]; // Center of Germany
 
-const COLORS = {
-    "Jerry": "#19baf0", // Blue
-    "Marc": "#10b981",  // Green
-    "Taube": "#ef4444", // Red
-    "Käthe": "#f97316", // Orange
-    "Kodiak": "#8b5cf6", // Purple
-    "default": "#9ca3af" // Gray
+const FORMAT_PARTICIPANTS = {
+    WCC: [
+        { name: "Jerry", color: "#19baf0", gap: false },
+        { name: "Marc", color: "#10b981", gap: false },
+        { name: "Taube", color: "#ef4444", gap: false },
+        { name: "Käthe", color: "#f97316", gap: false },
+        { name: "Kodiak", color: "#8b5cf6", gap: false },
+    ],
+    TR3: [
+        { name: "Adrian", color: "#fca5a5", gap: false },
+        { name: "Falk", color: "#ef4444", gap: true }, // Team 1
+        { name: "Magda", color: "#86efac", gap: false },
+        { name: "Franz", color: "#22c55e", gap: true }, // Team 2
+        { name: "OT", color: "#93c5fd", gap: false },
+        { name: "Helge", color: "#3b82f6", gap: true }, // Team 3
+        { name: "Jerry", color: "#fdba74", gap: false },
+        { name: "Kodiak", color: "#f97316", gap: true }, // Team 4
+        { name: "JP", color: "#d8b4fe", gap: false },
+        { name: "Essow", color: "#a855f7", gap: false } // Team 5
+    ]
 };
+
+function getParticipantColor(name) {
+    const format = document.getElementById("formatSelect") ? document.getElementById("formatSelect").value : "WCC";
+    const p = FORMAT_PARTICIPANTS[format].find(x => x.name === name);
+    return p ? p.color : "#9ca3af";
+}
 
 /** ================= INIT ================= */
 let currentMode = "planner"; // "planner" or "tracking"
@@ -34,15 +53,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const userEmailEl = document.getElementById("userEmail");
     if (session) {
-        userEmailEl.textContent = session.user.email;
+        const meta = session.user.user_metadata || {};
+        const displayName = meta.full_name || meta.name || session.user.email;
+        userEmailEl.textContent = displayName;
+        if (meta.avatar_url) {
+            document.querySelector("#userProfileDisplay div").style.backgroundImage = `url(${meta.avatar_url})`;
+        }
     } else {
         userEmailEl.textContent = "Gast";
     }
 
     initMap();
     bindEvents();
+    renderParticipantSelect();
     initTrackManager(map);
-    initNtfyPanel();
 });
 
 /** ================= MODE SWITCHING ================= */
@@ -152,7 +176,7 @@ function showSearchResults(results) {
 }
 
 function createMarkerIcon(person, isSelected) {
-    const color = COLORS[person] || COLORS.default;
+    const color = getParticipantColor(person);
     const opacity = isSelected ? 1 : 0.3;
     const scale = isSelected ? 1.2 : 0.8;
     const zIndex = isSelected ? 100 : 1;
@@ -205,7 +229,13 @@ function updateVisuals() {
 
 function updateRoutes() {
     // Clean up old controls
-    Object.values(routeControls).forEach(ctrl => map.removeControl(ctrl));
+    Object.values(routeControls).forEach(ctrls => {
+        if (Array.isArray(ctrls)) {
+            ctrls.forEach(c => map.removeControl(c));
+        } else {
+            map.removeControl(ctrls);
+        }
+    });
     routeControls = {};
 
     // Group waypoints by person
@@ -215,27 +245,76 @@ function updateRoutes() {
         const personWPs = waypointData.filter(wp => wp.person === person);
         if (personWPs.length < 2) return;
 
-        const waypoints = personWPs.map(wp => L.latLng(wp.lat, wp.lng));
-        const color = COLORS[person] || COLORS.default;
+        routeControls[person] = [];
+        const color = getParticipantColor(person);
         const isSelected = !selectedParticipant || person === selectedParticipant;
 
-        // Create route
-        const ctrl = L.Routing.control({
-            waypoints: waypoints,
-            routeWhileDragging: false,
-            lineOptions: {
-                styles: [{
-                    color: color,
-                    opacity: isSelected ? 0.8 : 0.15, // Dim inactive routes
-                    weight: isSelected ? 5 : 3
-                }]
-            },
-            createMarker: () => null, // No default markers
-            show: false,
-            addWaypoints: false
-        }).addTo(map);
+        for (let i = 0; i < personWPs.length - 1; i++) {
+            const wp1 = personWPs[i];
+            const wp2 = personWPs[i + 1];
 
-        routeControls[person] = ctrl;
+            let router;
+            if (wp1.mode === 'walking') router = L.Routing.osrmv1({ profile: 'foot' });
+            else if (wp1.mode === 'driving') router = L.Routing.osrmv1({ profile: 'car' });
+            else { // train or direct
+                router = {
+                    route: function (waypoints, callback) {
+                        callback(null, [{
+                            coordinates: waypoints.map(w => w.latLng),
+                            instructions: [],
+                            name: 'Direkt',
+                            summary: { totalDistance: 0, totalTime: 0 }
+                        }]);
+                    }
+                };
+            }
+
+            const ctrl = L.Routing.control({
+                waypoints: [L.latLng(wp1.lat, wp1.lng), L.latLng(wp2.lat, wp2.lng)],
+                router: router,
+                routeWhileDragging: false,
+                show: false,
+                addWaypoints: isSelected, // Can only drag line if selected
+                createMarker: () => null,
+                lineOptions: {
+                    styles: [{
+                        color: color,
+                        opacity: isSelected ? 0.8 : 0.4,
+                        weight: isSelected ? 5 : 3
+                    }],
+                    extendToWaypoints: true,
+                    missingRouteTolerance: 0
+                }
+            }).addTo(map);
+
+            ctrl.on('routesfound', function (e) {
+                const wps = ctrl.getWaypoints();
+                // Check if user dragged line to add a via-point
+                if (wps.length > 2) {
+                    const newLat = wps[1].latLng.lat;
+                    const newLng = wps[1].latLng.lng;
+
+                    const newWp = {
+                        id: crypto.randomUUID(),
+                        lat: newLat,
+                        lng: newLng,
+                        person: person,
+                        mode: wp1.mode
+                    };
+
+                    setTimeout(() => {
+                        const globalIdx = waypointData.findIndex(w => w.id === wp1.id);
+                        if (globalIdx !== -1) {
+                            createMarkerForWP(newWp);
+                            waypointData.splice(globalIdx + 1, 0, newWp);
+                            updateVisuals();
+                        }
+                    }, 50);
+                }
+            });
+
+            routeControls[person].push(ctrl);
+        }
     });
 }
 
@@ -250,6 +329,22 @@ function bindEvents() {
         }
         e.target.value = "";
     });
+
+    // Format Select
+    const formatSelect = document.getElementById("formatSelect");
+    if (formatSelect) {
+        formatSelect.addEventListener("change", () => {
+            renderParticipantSelect();
+            renderParticipants(); // Re-render chips to apply new colors/gaps
+            updateVisuals();
+        });
+    }
+
+    // Export GPX
+    const exportBtn = document.getElementById("btnExport");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", exportGPX);
+    }
 
     // Add Waypoint
     document.getElementById("btnAddWaypoint").addEventListener("click", () => {
@@ -436,14 +531,23 @@ function renderWaypointList() {
         div.innerHTML = `
             <div class="flex items-start gap-3">
                 <div class="mt-1 size-8 rounded-full bg-surface-dark border border-gray-600 text-gray-400 flex items-center justify-center shrink-0">
-                    <span class="text-xs font-bold" style="color:${COLORS[selectedParticipant]}">${index + 1}</span>
+                    <span class="text-xs font-bold" style="color:${getParticipantColor(selectedParticipant)}">${index + 1}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-bold text-gray-300">WP ${index + 1}</span>
-                        <button class="btn-del-wp size-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-red-400">
-                            <span class="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            ${index < relevantWPs.length - 1 ? `
+                            <select id="mode-${wp.id}" class="bg-black/20 text-[10px] text-gray-300 border border-white/5 rounded px-1.5 py-0.5 outline-none focus:border-primary">
+                                <option value="driving" ${wp.mode === 'driving' ? 'selected' : ''}>Auto</option>
+                                <option value="walking" ${wp.mode === 'walking' ? 'selected' : ''}>Zu Fuß</option>
+                                <option value="train" ${wp.mode === 'train' ? 'selected' : ''}>Bahn / Direkt</option>
+                            </select>
+                            ` : ``}
+                            <button class="btn-del-wp size-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-red-400">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div class="bg-black/20 rounded px-2 py-1.5 border border-white/5">
@@ -474,6 +578,13 @@ function renderWaypointList() {
         };
         latIn.addEventListener("change", updateCoords);
         lngIn.addEventListener("change", updateCoords);
+
+        if (index < relevantWPs.length - 1) {
+            div.querySelector(`#mode-${wp.id}`).addEventListener("change", (e) => {
+                wp.mode = e.target.value;
+                updateVisuals();
+            });
+        }
 
         // Delete
         div.querySelector(".btn-del-wp").addEventListener("click", () => {
@@ -532,113 +643,61 @@ async function saveAnimation() {
         alert("Fehler beim Speichern: " + error.message);
     } else {
         alert("Animation gespeichert!");
-        // Send ntfy push notification
-        sendNtfyNotification({
-            animId: animIdStr,
-            participants: participants,
-            comment: comment,
-            status: status,
-            duration: duration,
-            user: session.user.email,
-            isNew: isNew
-        });
     }
 }
 
-/** ================= NTFY NOTIFICATIONS ================= */
-const NTFY_STORAGE_KEY = "33min_ntfy_topic";
-const NTFY_ENABLED_KEY = "33min_ntfy_enabled";
+function exportGPX() {
+    let gpx = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    gpx += '<gpx version="1.1" creator="VFX GeoPlaner">\n';
 
-function getNtfyTopic() {
-    let topic = localStorage.getItem(NTFY_STORAGE_KEY);
-    if (!topic) {
-        // Generate a unique topic on first use
-        topic = "33min-vfx-" + crypto.randomUUID().slice(0, 8);
-        localStorage.setItem(NTFY_STORAGE_KEY, topic);
-    }
-    return topic;
-}
+    const persons = [...new Set(waypointData.map(wp => wp.person))];
 
-function isNtfyEnabled() {
-    return localStorage.getItem(NTFY_ENABLED_KEY) !== "false";
-}
+    persons.forEach(person => {
+        gpx += `  <trk>\n    <name>${person}</name>\n    <trkseg>\n`;
+        const personWPs = waypointData.filter(wp => wp.person === person);
 
-async function sendNtfyNotification({ animId, participants, comment, status, duration, user, isNew }) {
-    if (!isNtfyEnabled()) return;
-
-    const topic = getNtfyTopic();
-    const action = isNew ? "Neue Animation" : "Animation aktualisiert";
-    const people = participants.length > 0 ? participants.join(", ") : "–";
-    const commentPreview = comment ? comment.substring(0, 80) : "–";
-    const statusLabel = { draft: "Entwurf", active: "Aktiv", done: "Fertig" }[status] || status;
-
-    const body = [
-        `${action}: ${animId}`,
-        `Von: ${user}`,
-        `Personen: ${people}`,
-        `Status: ${statusLabel} · Dauer: ${duration}s`,
-        comment ? `Kommentar: ${commentPreview}` : ""
-    ].filter(Boolean).join("\n");
-
-    try {
-        await fetch(`https://ntfy.sh/${topic}`, {
-            method: "POST",
-            headers: {
-                "Title": `🎬 ${action}`,
-                "Priority": isNew ? "high" : "default",
-                "Tags": isNew ? "movie_camera,sparkles" : "movie_camera,pencil",
-            },
-            body: body
-        });
-        console.log(`[ntfy] Notification sent to topic: ${topic}`);
-    } catch (err) {
-        console.warn("[ntfy] Failed to send notification:", err);
-    }
-}
-
-// Test notification
-async function sendTestNotification() {
-    const topic = getNtfyTopic();
-    try {
-        await fetch(`https://ntfy.sh/${topic}`, {
-            method: "POST",
-            headers: {
-                "Title": "🔔 Test – 33min VFX",
-                "Priority": "default",
-                "Tags": "white_check_mark"
-            },
-            body: "Benachrichtigungen funktionieren! Du wirst hier informiert wenn neue Animationen erstellt werden."
-        });
-        alert(`Test-Notification gesendet!\n\nDein Topic: ${topic}\n\nInstalliere die ntfy App und subscribe das Topic.`);
-    } catch (err) {
-        alert("Fehler: " + err.message);
-    }
-}
-window.sendTestNotification = sendTestNotification;
-window.setNtfyTopic = (t) => { localStorage.setItem(NTFY_STORAGE_KEY, t); };
-window.getNtfyTopic = getNtfyTopic;
-
-function initNtfyPanel() {
-    // Populate topic input with stored/generated topic
-    const topicInput = document.getElementById("ntfyTopicInput");
-    if (topicInput) topicInput.value = getNtfyTopic();
-
-    // Sync toggle state
-    const toggle = document.getElementById("ntfyToggle");
-    const dot = document.getElementById("ntfyDot");
-    const enabled = isNtfyEnabled();
-    if (toggle) toggle.checked = enabled;
-    if (dot) dot.style.background = enabled ? "#22c55e" : "#6b7280";
-
-    // Close panel on outside click
-    document.addEventListener("click", (e) => {
-        const panel = document.getElementById("ntfyPanel");
-        const bell = document.getElementById("ntfyBell");
-        if (panel && !panel.classList.contains("hidden") &&
-            !panel.contains(e.target) && !bell.contains(e.target)) {
-            panel.classList.add("hidden");
+        let pathCoords = [];
+        if (routeControls[person] && routeControls[person].length > 0) {
+            routeControls[person].forEach(ctrl => {
+                try {
+                    const routes = ctrl._routes;
+                    if (routes && routes.length > 0 && routes[0].coordinates) {
+                        routes[0].coordinates.forEach(c => pathCoords.push([c.lat, c.lng]));
+                    } else {
+                        // fallback
+                        pathCoords.push([ctrl.getWaypoints()[0].latLng.lat, ctrl.getWaypoints()[0].latLng.lng]);
+                        pathCoords.push([ctrl.getWaypoints()[1].latLng.lat, ctrl.getWaypoints()[1].latLng.lng]);
+                    }
+                } catch (e) {
+                    console.error('Could not extract geometry string', e);
+                }
+            });
+        } else {
+            personWPs.forEach(wp => pathCoords.push([wp.lat, wp.lng]));
         }
+
+        // Deduplicate coords
+        if (pathCoords.length > 0) {
+            for (let i = 0; i < pathCoords.length; i++) {
+                if (i > 0 && pathCoords[i][0] === pathCoords[i - 1][0] && pathCoords[i][1] === pathCoords[i - 1][1]) continue;
+                gpx += `      <trkpt lat="${pathCoords[i][0]}" lon="${pathCoords[i][1]}"></trkpt>\n`;
+            }
+        }
+
+        gpx += `    </trkseg>\n  </trk>\n`;
     });
+
+    gpx += '</gpx>';
+
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${document.getElementById("animId").value || 'Export'}.gpx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // --- LOAD MODAL LOGIC ---
